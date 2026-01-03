@@ -25,7 +25,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from pyscrai_core import ProjectManifest
-from pyscrai_forge.agents.manager import HarvesterOrchestrator
+from pyscrai_forge.agents.harvester.manager import HarvesterOrchestrator
 from pyscrai_forge.src.prompts import Genre
 from pyscrai_core.llm_interface.provider_factory import (
     create_provider_from_env,
@@ -45,6 +45,30 @@ def launch_gui():
     """Launch the PyScrAI|Forge main application (landing page)."""
     from pyscrai_forge.src.forge import main as reviewer_main
     reviewer_main()
+
+# --- ARCHITECT Command ---
+@app.command("architect")
+def launch_architect(
+    project: Annotated[Path | None, typer.Option("--project", "-p", help="Path to existing project")] = None,
+):
+    """Launch the Architect Agent (Interactive Sorcerer Mode)."""
+    from pyscrai_forge.agents.architect import ArchitectAgent
+    
+    console.print(Panel("Initializing Architect Agent...", style="cyan"))
+    
+    # Setup Provider
+    provider, model = create_provider_from_env()
+    
+    # Start Loop
+    agent = ArchitectAgent(provider, project_path=project)
+    
+    try:
+        asyncio.run(agent.chat_loop())
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Architect session terminated.[/yellow]")
+    except Exception as e:
+        console.print(f"[red]Fatal Error: {e}[/red]")
+
 console = Console()
 DEFAULT_PROVIDER = get_default_provider_name()
 DEFAULT_MODEL = get_default_model_from_env() or ""

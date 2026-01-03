@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Optional
 from pyscrai_core import ProjectManifest, Relationship
 # Changed import to avoid circular dependency
 from pyscrai_core import RelationshipType
-from pyscrai_forge.src.prompts import Genre, get_relationship_prompt
+from pyscrai_forge.src.prompts.harvester_prompts import Genre, get_relationship_prompt
 
 from .scout import ScoutAgent
 from .analyst import AnalystAgent

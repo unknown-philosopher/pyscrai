@@ -16,7 +16,7 @@ Usage:
 # Users should import app from .cli if needed
 # But standard pattern is __main__ calls cli.app()
 
-from .prompts import PromptTemplate, get_scout_prompt
+from .prompts.harvester_prompts import PromptTemplate, get_scout_prompt
 try:
     from .forge import ReviewerApp, main as reviewer_main
 except ImportError:
