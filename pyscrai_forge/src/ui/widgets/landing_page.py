@@ -58,23 +58,18 @@ class LandingPageWidget(ttk.Frame):
         btn_frame.pack(pady=20)
         
         # New Project button
-        new_btn = tk.Button(btn_frame, text="New Project",
+        new_btn = ttk.Button(btn_frame, text="New Project",
                            command=self.on_new_project,
-                           width=18, height=2,
-                           font=("Arial", 11),
-                           bg="#219124", fg="white",
-                           activebackground="#125d15", activeforeground="white",
-                           relief=tk.FLAT, cursor="hand2")
+                           width=18,
+                           style="Accent.TButton",
+                           cursor="hand2")
         new_btn.pack(side=tk.LEFT, padx=15)
         
         # Open Project button
-        open_btn = tk.Button(btn_frame, text="Open Project",
+        open_btn = ttk.Button(btn_frame, text="Open Project",
                             command=self.on_open_project,
-                            width=18, height=2,
-                            font=("Arial", 11),
-                            bg="#1D70B4", fg="white",
-                            activebackground="#0a4677", activeforeground="white",
-                            relief=tk.FLAT, cursor="hand2")
+                            width=18,
+                            cursor="hand2")
         open_btn.pack(side=tk.LEFT, padx=15)
         
         # Recent projects section
@@ -94,14 +89,11 @@ class LandingPageWidget(ttk.Frame):
                 proj_frame = ttk.Frame(recent_inner)
                 proj_frame.pack(fill=tk.X, pady=3)
                 
-                proj_btn = tk.Button(
+                proj_btn = ttk.Button(
                     proj_frame,
                     text=f"• {proj.name}",
                     command=lambda p=proj.path: self.on_open_recent(Path(p)),
-                    anchor='w',
-                    relief=tk.FLAT,
-                    fg="#054F8B",
-                    font=("Arial", 10, "underline"),
+                    style="Link.TButton",
                     cursor="hand2"
                 )
                 proj_btn.pack(side=tk.LEFT, fill=tk.X, expand=True)

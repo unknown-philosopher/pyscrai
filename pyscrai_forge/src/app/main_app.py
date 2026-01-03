@@ -11,6 +11,8 @@ from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING, Optional
 
+import sv_ttk
+
 from .data_manager import DataManager
 from .menu_manager import MenuManager
 from .project_manager import ProjectController
@@ -40,6 +42,14 @@ class ReviewerApp:
         self.config_manager = ConfigManager.get_instance()
         self.user_config = self.config_manager.get_config()
         
+        # APPLY THEME HERE
+        # Check user config preference, or default to dark
+        theme = self.user_config.preferences.theme
+        if theme == "light":
+            sv_ttk.set_theme("light")
+        else:
+            sv_ttk.set_theme("dark") # Default to dark
+
         # Initialize managers
         self.project_controller = ProjectController(
             self.user_config,
