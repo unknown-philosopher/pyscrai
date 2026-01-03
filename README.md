@@ -10,10 +10,10 @@
 
 - **ECS Architecture**: Pydantic-based, schema-flexible data models for Entities, Components, and Relationships.
 - **Multi-Agent Harvester**: Automated extraction of structured world data from unstructured text using Scout, Analyst, Validator, and Reviewer agents.
-- **Project-First Workflow**: All data and tools are organized around explicit projects for robust data management.
-- **Modern GUI**: 3-state UI (Landing Page, Project Dashboard, Active Work View) for seamless project navigation and editing.
-- **Provider Agnostic LLM Interface**: Integrates with OpenRouter, local LLMs, and more via `pyscrai_core/llm_interface`.
-- **Extensible CLI**: Run extraction, validation, and management tasks from the command line or scripts.
+- **Project-First Workflow**: Explicit projects with manifests, databases, and a centralized `ConfigManager` for preferences and recents.
+- **Modern GUI**: 3-state UI with manager-based architecture (`main_app`, `state_manager`, `menu_manager`, `project_manager`, `data_manager`), sv-ttk dark/light theming, and click-to-sort Treeviews.
+- **Converter Pipeline**: Centralized registry for PDF/DOCX/HTML/OCR converters used by both GUI and CLI imports.
+- **Provider-Agnostic Interfaces & CLI**: OpenRouter/local LLM support plus a Typer-powered CLI for automation.
 
 ## Documentation
 
@@ -42,7 +42,7 @@ pip install -e .
   ```bash
   forge gui
   ```
-  Opens the main PyScrAI|Forge application (Landing Page, Project Dashboard, and tools).
+  Opens the main PyScrAI|Forge application (Landing Page, Project Dashboard, and tools) with sv-ttk theming (dark by default, respects `user_config` preference).
 
 - **CLI Harvester:**
   ```bash
@@ -62,6 +62,10 @@ pytest
   - `llm_interface/` — LLM provider adapters (OpenRouter, local LLMs, etc.).
 - `pyscrai_forge/` — Creation tools: Harvester agents, GUI, CLI, project management.
   - `docs/` — Documentation, guides, and dev plans.
+  - `src/app/` — Manager-based GUI core (`main_app.py`, `state_manager.py`, `menu_manager.py`, `project_manager.py`, `data_manager.py`).
+  - `src/ui/widgets/treeview_sorter.py` — Reusable column-sorting utility for Treeviews (Component Editor, DB Explorer).
+  - `src/converters/__init__.py` — `create_registry()` centralizes converter registration.
+  - `config_manager.py` — Singleton configuration manager for user preferences.
 
 ## For Developers
 
@@ -69,10 +73,12 @@ pytest
   - `forge gui` — Launch GUI (Tkinter-based, 3-state UI)
   - `forge process` — Run Harvester pipeline from CLI
 - **Extending the System:**
+  - Work with the GUI core in `pyscrai_forge/src/app/` (coordinator + managers)
   - Add new agents in `pyscrai_forge/agents/`
   - Customize UI widgets in `pyscrai_forge/src/ui/widgets/`
   - Define world schemas in `project.json` within your project folder
   - Extend LLM providers via `pyscrai_core/llm_interface/`
+  - Use `ConfigManager` for shared access to user preferences (theme, recents, geometry)
 
 ---
 

@@ -82,6 +82,8 @@ forge process <your_text_file.txt> --genre <genre> --output <output.json>
 - **Validation Banner**: Always visible, shows status (Valid, Warnings, Critical Errors).
 
 #### Key GUI Features
+- **Dark Theme Ready**: sv-ttk theme applied by default (respects `user_config` preference for light/dark)
+- **Sortable Tables**: Click any column header in Component Editor or Database Explorer to sort (↑/↓ indicators)
 - **Tabbed Entity Editor**: Edit Descriptor, Cognitive, Spatial, and State (resources) for each entity. State tab adapts to your project schema.
 - **Relationship Editor**: Edit source/target, type, strength, and visibility for relationships.
 - **Validation**: Issues are highlighted; resolve critical errors before committing.
@@ -212,6 +214,7 @@ The `world.db` SQLite database stores all committed entities and relationships.
 - **File Not Found**: Double-check file paths and extensions.
 - **Schema Issues**: Edit your `project.json` to define or update your world schema.
 - **GUI Not Launching**: Make sure you are running `forge gui` from an environment where the package is installed (`pip install -e .`).
+- **UI looks unthemed**: Install `sv-ttk` (pulled in via pip dependencies). The GUI defaults to dark; switch your `user_config` preference to `light` if needed.
 - **Validation Errors**: Critical errors must be resolved before committing. Warnings are informational.
 - **Database Locked**: Ensure no other process is accessing `world.db`. Close other Forge instances.
 - **For More**: See [Harvester Agents Guide](harvester_agents.md), [Completed Dev Plans](dev_plans/completed/), [Tkinter Guides](dev_plans/tkinter_dev/), and the [Current Dev Blueprint](dev_plans/phase_1-3.md).
@@ -225,6 +228,7 @@ PyScrAI|Forge is built on top of `pyscrai_core`, which provides the ECS foundati
 **Core Components:**
 - **Harvester Pipeline**: Multi-agent extraction system (Scout → Analyst → Validator → forge)
 - **GUI Framework**: Tkinter-based 3-state UI with modular windows and widgets
+- **App Architecture**: Manager-based GUI (`main_app.py` coordinator plus `state_manager.py`, `menu_manager.py`, `project_manager.py`, `data_manager.py`)
 - **Project Management**: Schema-aware project creation and validation
 - **Database Integration**: SQLite persistence with foreign key validation
 
@@ -313,6 +317,11 @@ The GUI is built with Tkinter and organized into modular components.
 - `pyscrai_forge/src/ui/widgets/` - Reusable UI components
 - `pyscrai_forge/src/ui/windows/` - Full window implementations
 - `pyscrai_forge/src/ui/dialogs/` - Modal dialogs
+
+### Theme & Sorting
+
+- **sv-ttk Theming**: The GUI applies sv-ttk (dark by default, respects light/dark preference in `user_config`). Prefer `ttk` widgets to inherit styling.
+- **Treeview Sorting**: Use `pyscrai_forge/src/ui/widgets/treeview_sorter.py` to add click-to-sort headers (already wired into Component Editor and Database Explorer).
 
 ### Adding a New Window
 
