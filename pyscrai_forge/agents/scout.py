@@ -5,7 +5,7 @@ import re
 from typing import TYPE_CHECKING
 from pyscrai_core import EntityType
 from pyscrai_forge.prompts.harvester_prompts import Genre, get_scout_prompt
-from .models import EntityStub
+from pyscrai_forge.agents.models import EntityStub
 
 if TYPE_CHECKING:
     from pyscrai_core.llm_interface import LLMProvider
@@ -22,16 +22,17 @@ class ScoutAgent:
         system_prompt, user_prompt = get_scout_prompt(text, genre)
         
         try:
+            # Use model if provided, otherwise use provider's default (same pattern as Analyst/Narrator)
             response = await self.provider.complete_simple(
                 prompt=user_prompt,
-                model=self.model,
+                model=self.model or self.provider.default_model,
                 system_prompt=system_prompt,
                 temperature=0.1
             )
             return self._parse_response(response)
         except Exception as e:
-            print(f"Scout failed: {e}")
-            return []
+            # Re-raise with more context instead of silently returning empty list
+            raise RuntimeError(f"Scout phase failed: {e}") from e
 
     def _parse_response(self, response: str) -> list[EntityStub]:
         """Parse JSON response into EntityStubs."""

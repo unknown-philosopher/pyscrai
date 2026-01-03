@@ -261,12 +261,12 @@ class ReviewerApp:
         from pyscrai_forge.src.ui.import_dialog import ImportDialog
         
         def on_import(text, metadata, file_path):
-            # Use the real Harvester Orchestrator to extract entities
+            # Use ForgeManager to extract entities
             import asyncio
-            from pyscrai_forge.agents.harvester.manager import HarvesterOrchestrator
-            from pyscrai_forge.prompts.harvester_prompts import Genre
+            from pyscrai_forge.agents.manager import ForgeManager
+            from pyscrai_forge.prompts.core import Genre
             from pyscrai_core.llm_interface.provider_factory import create_provider_from_env
-            from pyscrai_core import ProjectManifest
+            from pathlib import Path
             
             # Create progress dialog
             progress_win = tk.Toplevel(self.root)
@@ -291,46 +291,54 @@ class ReviewerApp:
                     update_progress("Connecting to LLM provider...", "This requires API key configuration")
                     provider, model = create_provider_from_env()
                     
-                    # Use project manifest if available
-                    manifest = self.project_controller.manifest or ProjectManifest(name="Import Session")
+                    # Use current project path if available
+                    project_path = None
+                    if self.project_controller.current_project:
+                        project_path = self.project_controller.current_project
                     
                     async with provider:
-                        orchestrator = HarvesterOrchestrator(provider, manifest, model=model)
+                        manager = ForgeManager(provider, project_path=project_path)
                         
-                        # Scout phase
-                        update_progress("Phase 1: Scouting for entities...", f"Model: {model or 'default'}")
-                        stubs = await orchestrator.scout.discover_entities(text, Genre.GENERIC)
+                        # Run extraction pipeline (creates review packet)
+                        update_progress("Running extraction pipeline...", f"Model: {model or 'default'}")
+                        import tempfile
+                        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
+                            tmp_path = Path(tmp.name)
                         
-                        if not stubs:
-                            return [], [], orchestrator.validator.validate([], [], manifest)
-                        
-                        # Dedup
-                        seen_ids = set()
-                        unique_stubs = []
-                        for stub in stubs:
-                            if stub.id not in seen_ids:
-                                unique_stubs.append(stub)
-                                seen_ids.add(stub.id)
-                        
-                        update_progress(f"Phase 2: Analyzing {len(unique_stubs)} entities...", "This may take a moment")
-                        
-                        # Analyze entities in parallel
-                        tasks = []
-                        for stub in unique_stubs:
-                            schema = manifest.entity_schemas.get(stub.entity_type.value, {})
-                            tasks.append(orchestrator.analyst.analyze_entity(stub, text, schema))
-                        
-                        entities = await asyncio.gather(*tasks)
-                        
-                        # Extract relationships
-                        update_progress("Phase 3: Extracting relationships...", f"Between {len(entities)} entities")
-                        relationships = await orchestrator._extract_relationships(text, entities, Genre.GENERIC)
-                        
-                        # Validate
-                        update_progress("Phase 4: Validating results...", "")
-                        report = orchestrator.validator.validate(entities, relationships, manifest)
-                        
-                        return entities, relationships, report
+                        try:
+                            packet_path = await manager.run_extraction_pipeline(
+                                text=text,
+                                genre=Genre.GENERIC,
+                                output_path=tmp_path
+                            )
+                            
+                            # Load the packet to get entities and relationships
+                            import json
+                            with open(packet_path, 'r', encoding='utf-8') as f:
+                                packet = json.load(f)
+                            
+                            # Convert back to Entity/Relationship objects
+                            from pyscrai_core import Entity, Relationship, RelationshipType
+                            entities = []
+                            for e_data in packet.get('entities', []):
+                                entities.append(Entity.model_validate(e_data))
+                            
+                            relationships = []
+                            for r_data in packet.get('relationships', []):
+                                relationships.append(Relationship.model_validate(r_data))
+                            
+                            # Extract validation report from packet
+                            from pyscrai_forge.agents.validator import ValidationReport
+                            validation_data = packet.get('validation_report', {})
+                            report = ValidationReport(
+                                critical_errors=validation_data.get('critical_errors', []),
+                                warnings=validation_data.get('warnings', [])
+                            )
+                            
+                            return entities, relationships, report
+                        except ValueError as ve:
+                            # Handle pipeline failures (e.g., Scout phase failed)
+                            raise Exception(f"Extraction pipeline failed: {ve}")
                         
                 except Exception as e:
                     raise Exception(f"LLM connection or extraction failed: {str(e)}")

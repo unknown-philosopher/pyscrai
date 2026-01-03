@@ -25,7 +25,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from pyscrai_core import ProjectManifest
-from pyscrai_forge.agents.harvester.manager import HarvesterOrchestrator
+from pyscrai_forge.agents.manager import ForgeManager
 from pyscrai_forge.prompts.core import Genre
 from pyscrai_core.llm_interface.provider_factory import (
     create_provider_from_env,
@@ -51,21 +51,19 @@ def launch_gui():
 def launch_architect(
     project: Annotated[Path | None, typer.Option("--project", "-p", help="Path to existing project")] = None,
 ):
-    """Launch the Architect Agent (Interactive Sorcerer Mode)."""
-    from pyscrai_forge.agents.architect.core import ArchitectAgent
-    
-    console.print(Panel("Initializing Architect Agent...", style="cyan"))
+    """Launch the ForgeManager (Interactive Sorcerer Mode)."""
+    console.print(Panel("Initializing ForgeManager...", style="cyan"))
     
     # Setup Provider
     provider, model = create_provider_from_env()
     
     # Start Loop
-    agent = ArchitectAgent(provider, project_path=project)
+    manager = ForgeManager(provider, project_path=project)
     
     try:
-        asyncio.run(agent.chat_loop())
+        asyncio.run(manager.interactive_chat())
     except KeyboardInterrupt:
-        console.print("\n[yellow]Architect session terminated.[/yellow]")
+        console.print("\n[yellow]ForgeManager session terminated.[/yellow]")
     except Exception as e:
         console.print(f"[red]Fatal Error: {e}[/red]")
 
@@ -100,21 +98,33 @@ async def _process_file(
     if manifest is None:
         manifest = ProjectManifest(name="CLI Session")
     
+    # Read text first
+    from pyscrai_forge.src.extractor import FileExtractor
+    extractor = FileExtractor()
+    try:
+        extraction_result = await extractor.extract_from_file(str(file_path), genre=genre)
+        text = extraction_result.text
+    except Exception as e:
+        console.print(f"[red]Extraction failed: {e}[/red]")
+        raise
+    
+    # Create temporary project if none provided
+    from pathlib import Path
+    from pyscrai_core import ProjectController
+    temp_project_path = None
+    if project_path:
+        temp_project_path = project_path
+    else:
+        # Create a temporary project for the extraction
+        temp_project_path = Path.cwd() / ".temp_extraction_project"
+        if not temp_project_path.exists():
+            temp_controller = ProjectController(temp_project_path)
+            temp_controller.create_project(manifest)
+    
     async with provider:
-        orchestrator = HarvesterOrchestrator(provider, manifest, model=selected_model)
-        
-        # Read text
-        from pyscrai_forge.src.extractor import FileExtractor
-        extractor = FileExtractor()
-        try:
-            extraction_result = await extractor.extract_from_file(str(file_path), genre=genre)
-            text = extraction_result.text
-        except Exception as e:
-            console.print(f"[red]Extraction failed: {e}[/red]")
-            raise
-            
-        console.print(f"Starting Harvester on {file_path.name}...")
-        result_path = await orchestrator.run_harvester(
+        manager = ForgeManager(provider, project_path=temp_project_path)
+        console.print(f"Starting extraction pipeline on {file_path.name}...")
+        result_path = await manager.run_extraction_pipeline(
             text=text,
             genre=genre,
             output_path=output

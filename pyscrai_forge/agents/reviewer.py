@@ -1,10 +1,10 @@
-"""The forge Agent: Orchestrates the Harvester loop and manages HIL."""
+"""The Reviewer Agent: Orchestrates the Human-in-the-Loop process."""
 
 import json
 from dataclasses import dataclass, asdict, field
 from pathlib import Path
 from pyscrai_core import Entity, Relationship
-from .validator import ValidationReport
+from pyscrai_forge.agents.validator import ValidationReport
 
 @dataclass
 class ReviewPacket:
@@ -64,3 +64,5 @@ class ReviewerAgent:
              data = json.load(f)
              # Basic reconstruction (omitted for brevity, assume UI handles dicts)
              return ReviewPacket(**data)
+
+__all__ = ["ReviewerAgent", "ReviewPacket"]
