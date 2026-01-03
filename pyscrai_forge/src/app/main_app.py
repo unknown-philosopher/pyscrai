@@ -44,7 +44,7 @@ class ReviewerApp:
         
         # APPLY THEME HERE
         # Check user config preference, or default to dark
-        theme = self.user_config.preferences.theme
+        theme = self.user_config.preferences.theme 
         if theme == "light":
             sv_ttk.set_theme("light")
         else:

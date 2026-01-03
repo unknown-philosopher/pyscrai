@@ -432,18 +432,18 @@ class DataManager:
         crit = len(self.validation_report.get("critical_errors", []))
         warn = len(self.validation_report.get("warnings", []))
         
-        color = "#ccffcc"  # Green
+        # In dark mode/themed mode, we change text color instead of background
         msg = "Validation Passed"
         
-        if warn > 0:
-            color = "#fff4cc"  # Yellow
-            msg = f"Validation: {warn} Warnings"
         if crit > 0:
-            color = "#ffcccc"  # Red
-            msg = f"Validation: {crit} Critical Errors"
-        
-        self.validation_frame.config(bg=color)
-        self.validation_label.config(text=msg, bg=color)
+            # Error state
+            self.validation_label.config(text=f"Validation: {crit} Critical Errors", foreground="#ff5555") # Bright Red text
+        elif warn > 0:
+            # Warning state
+            self.validation_label.config(text=f"Validation: {warn} Warnings", foreground="#ffaa00") # Gold text
+        else:
+            # Valid state
+            self.validation_label.config(text="Validation Passed", foreground="#55ff55") # Bright Green text
     
     def commit_to_database(self) -> bool:
         """Commit current data to database.
