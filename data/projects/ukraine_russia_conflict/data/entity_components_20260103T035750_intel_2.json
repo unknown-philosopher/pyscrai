@@ -1,0 +1,1800 @@
+{
+  "entities": [
+    {
+      "id": "ent_russian_forces_001",
+      "created_at": "2026-01-03T08:57:20.974671Z",
+      "updated_at": "2026-01-03T08:57:20.974674Z",
+      "descriptor": {
+        "name": "Russian forces",
+        "bio": "Military forces employing new operational templates and BAI campaigns",
+        "tags": [
+          "offensive",
+          "military"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_ukrainian_forces_001",
+      "created_at": "2026-01-03T08:57:20.974692Z",
+      "updated_at": "2026-01-03T08:57:20.974692Z",
+      "descriptor": {
+        "name": "Ukrainian forces",
+        "bio": "Defending forces conducting counter-BAI campaigns",
+        "tags": [
+          "military",
+          "defensive"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_pokrovsk_001",
+      "created_at": "2026-01-03T08:57:20.974709Z",
+      "updated_at": "2026-01-03T08:57:20.974710Z",
+      "descriptor": {
+        "name": "Pokrovsk",
+        "bio": "Town in Donetsk Oblast targeted by Russian advances",
+        "tags": [
+          "donetsk",
+          "town"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_oleksandrivka_001",
+      "created_at": "2026-01-03T08:57:20.974722Z",
+      "updated_at": "2026-01-03T08:57:20.974723Z",
+      "descriptor": {
+        "name": "Oleksandrivka",
+        "bio": "Location in Donetsk Oblast",
+        "tags": [
+          "donetsk",
+          "location"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_hulyaipole_001",
+      "created_at": "2026-01-03T08:57:20.974731Z",
+      "updated_at": "2026-01-03T08:57:20.974731Z",
+      "descriptor": {
+        "name": "Hulyaipole",
+        "bio": "Town in Zaporizhia Oblast targeted by Russian advances",
+        "tags": [
+          "zaporizhia",
+          "town"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_rubikon_center_001",
+      "created_at": "2026-01-03T08:57:20.974738Z",
+      "updated_at": "2026-01-03T08:57:20.974739Z",
+      "descriptor": {
+        "name": "Rubikon Center for Advanced Unmanned Technologies",
+        "bio": "Russian elite drone operator unit",
+        "tags": [
+          "drone_unit",
+          "special_forces"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_siversk_001",
+      "created_at": "2026-01-03T08:57:20.974746Z",
+      "updated_at": "2026-01-03T08:57:20.974747Z",
+      "descriptor": {
+        "name": "Siversk",
+        "bio": "Town in Donetsk Oblast seized by Russian forces",
+        "tags": [
+          "donetsk",
+          "town"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_serebryanske_forest_001",
+      "created_at": "2026-01-03T08:57:20.974754Z",
+      "updated_at": "2026-01-03T08:57:20.974755Z",
+      "descriptor": {
+        "name": "Serebryanske forest area",
+        "bio": "Forested area where radio-controlled drones struggle",
+        "tags": [
+          "forest",
+          "donetsk"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_donetsk_oblast_001",
+      "created_at": "2026-01-03T08:57:20.974764Z",
+      "updated_at": "2026-01-03T08:57:20.974764Z",
+      "descriptor": {
+        "name": "Donetsk Oblast",
+        "bio": "Region in eastern Ukraine targeted for seizure",
+        "tags": [
+          "oblast",
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_luhansk_oblast_001",
+      "created_at": "2026-01-03T08:57:20.974772Z",
+      "updated_at": "2026-01-03T08:57:20.974772Z",
+      "descriptor": {
+        "name": "Luhansk Oblast",
+        "bio": "Region in eastern Ukraine",
+        "tags": [
+          "oblast",
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_sumy_oblast_001",
+      "created_at": "2026-01-03T08:57:20.974780Z",
+      "updated_at": "2026-01-03T08:57:20.974780Z",
+      "descriptor": {
+        "name": "Sumy Oblast",
+        "bio": "Northern region of Ukraine targeted for buffer zone",
+        "tags": [
+          "oblast",
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_kharkiv_oblast_001",
+      "created_at": "2026-01-03T08:57:20.974789Z",
+      "updated_at": "2026-01-03T08:57:20.974789Z",
+      "descriptor": {
+        "name": "Kharkiv Oblast",
+        "bio": "Northeastern region of Ukraine",
+        "tags": [
+          "oblast",
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_pavlo_palisa_001",
+      "created_at": "2026-01-03T08:57:20.974799Z",
+      "updated_at": "2026-01-03T08:57:20.974799Z",
+      "descriptor": {
+        "name": "Pavlo Palisa",
+        "bio": "Ukrainian Presidential Office Deputy Head",
+        "tags": [
+          "military",
+          "official"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_dnipropetrovsk_oblast_001",
+      "created_at": "2026-01-03T08:57:20.974808Z",
+      "updated_at": "2026-01-03T08:57:20.974808Z",
+      "descriptor": {
+        "name": "Dnipropetrovsk Oblast",
+        "bio": "Central-southern region of Ukraine",
+        "tags": [
+          "oblast",
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_velyka_novosilka_001",
+      "created_at": "2026-01-03T08:57:20.974815Z",
+      "updated_at": "2026-01-03T08:57:20.974816Z",
+      "descriptor": {
+        "name": "Velyka Novosilka",
+        "bio": "Town seized by Russian forces in January 2025",
+        "tags": [
+          "zaporizhia",
+          "town"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_dobropillya_001",
+      "created_at": "2026-01-03T08:57:20.974824Z",
+      "updated_at": "2026-01-03T08:57:20.974824Z",
+      "descriptor": {
+        "name": "Dobropillya",
+        "bio": "Town targeted by Russian sabotage groups",
+        "tags": [
+          "donetsk",
+          "town"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_slovyansk_001",
+      "created_at": "2026-01-03T08:57:20.974832Z",
+      "updated_at": "2026-01-03T08:57:20.974832Z",
+      "descriptor": {
+        "name": "Slovyansk",
+        "bio": "City in Donetsk Oblast",
+        "tags": [
+          "donetsk",
+          "city"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_lyman_001",
+      "created_at": "2026-01-03T08:57:20.974840Z",
+      "updated_at": "2026-01-03T08:57:20.974841Z",
+      "descriptor": {
+        "name": "Lyman",
+        "bio": "Town advanced into by Russian forces",
+        "tags": [
+          "donetsk",
+          "town"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_toretsk_001",
+      "created_at": "2026-01-03T08:57:20.974848Z",
+      "updated_at": "2026-01-03T08:57:20.974848Z",
+      "descriptor": {
+        "name": "Toretsk",
+        "bio": "Town seized by Russian forces by August 2025",
+        "tags": [
+          "donetsk",
+          "town"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_kostyantynivka_001",
+      "created_at": "2026-01-03T08:57:20.974855Z",
+      "updated_at": "2026-01-03T08:57:20.974856Z",
+      "descriptor": {
+        "name": "Kostyantynivka",
+        "bio": "Town targeted for seizure by Russian forces",
+        "tags": [
+          "donetsk",
+          "town"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_kursk_oblast_001",
+      "created_at": "2026-01-03T08:57:20.974863Z",
+      "updated_at": "2026-01-03T08:57:20.974863Z",
+      "descriptor": {
+        "name": "Kursk Oblast",
+        "bio": "Russian region where Ukrainian forces were pushed out",
+        "tags": [
+          "oblast",
+          "russia",
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_velykyi_burluk_001",
+      "created_at": "2026-01-03T08:57:20.974873Z",
+      "updated_at": "2026-01-03T08:57:20.974873Z",
+      "descriptor": {
+        "name": "Velykyi Burluk",
+        "bio": "Town in Kharkiv Oblast targeted for offensive",
+        "tags": [
+          "kharkiv",
+          "town"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_kupyansk_001",
+      "created_at": "2026-01-03T08:57:20.974881Z",
+      "updated_at": "2026-01-03T08:57:20.974881Z",
+      "descriptor": {
+        "name": "Kupyansk",
+        "bio": "Town in Kharkiv Oblast targeted by Russian forces",
+        "tags": [
+          "kharkiv",
+          "town"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_zaporizhia_oblast_001",
+      "created_at": "2026-01-03T08:57:20.974890Z",
+      "updated_at": "2026-01-03T08:57:20.974890Z",
+      "descriptor": {
+        "name": "Zaporizhia Oblast",
+        "bio": "Southern region of Ukraine",
+        "tags": [
+          "oblast",
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_orikhiv_001",
+      "created_at": "2026-01-03T08:57:20.974897Z",
+      "updated_at": "2026-01-03T08:57:20.974898Z",
+      "descriptor": {
+        "name": "Orikhiv",
+        "bio": "Town in Zaporizhia Oblast",
+        "tags": [
+          "zaporizhia",
+          "town"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_zaporizhzhia_city_001",
+      "created_at": "2026-01-03T08:57:20.974906Z",
+      "updated_at": "2026-01-03T08:57:20.974907Z",
+      "descriptor": {
+        "name": "Zaporizhzhia City",
+        "bio": "Major city targeted by Russian offensive plans",
+        "tags": [
+          "zaporizhzhia",
+          "city"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_myrnohrad_001",
+      "created_at": "2026-01-03T08:57:20.974915Z",
+      "updated_at": "2026-01-03T08:57:20.974915Z",
+      "descriptor": {
+        "name": "Myrnohrad",
+        "bio": "Town in Donetsk Oblast part of fortified area",
+        "tags": [
+          "donetsk",
+          "town"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_robert_brovdi_001",
+      "created_at": "2026-01-03T08:57:20.974922Z",
+      "updated_at": "2026-01-03T08:57:20.974922Z",
+      "descriptor": {
+        "name": "Robert Brovdi",
+        "bio": "Ukrainian Unmanned Systems Forces Commander",
+        "tags": [
+          "military",
+          "commander"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_ukrainian_unmanned_systems_forces_001",
+      "created_at": "2026-01-03T08:57:20.974929Z",
+      "updated_at": "2026-01-03T08:57:20.974929Z",
+      "descriptor": {
+        "name": "Ukrainian Unmanned Systems Forces",
+        "bio": "Ukrainian military unit specializing in unmanned systems",
+        "tags": [
+          "drone_unit",
+          "military"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_crimea_001",
+      "created_at": "2026-01-03T08:57:20.974936Z",
+      "updated_at": "2026-01-03T08:57:20.974937Z",
+      "descriptor": {
+        "name": "Crimea",
+        "bio": "Peninsula targeted by Ukrainian strikes",
+        "tags": [
+          "peninsula",
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_rovenky_001",
+      "created_at": "2026-01-03T08:57:20.974944Z",
+      "updated_at": "2026-01-03T08:57:20.974944Z",
+      "descriptor": {
+        "name": "Rovenky",
+        "bio": "Occupied city in Luhansk Oblast with oil depot strike",
+        "tags": [
+          "luhansk",
+          "city"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_selydove_001",
+      "created_at": "2026-01-03T08:57:20.974952Z",
+      "updated_at": "2026-01-03T08:57:20.974952Z",
+      "descriptor": {
+        "name": "Selydove",
+        "bio": "Town in Donetsk Oblast near strike targets",
+        "tags": [
+          "donetsk",
+          "town"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_74th_motorized_rifle_brigade_001",
+      "created_at": "2026-01-03T08:57:20.974959Z",
+      "updated_at": "2026-01-03T08:57:20.974959Z",
+      "descriptor": {
+        "name": "74th Motorized Rifle Brigade",
+        "bio": "Russian military unit struck by Ukrainian forces",
+        "tags": [
+          "military_unit",
+          "russia"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_41st_combined_arms_army_001",
+      "created_at": "2026-01-03T08:57:20.974965Z",
+      "updated_at": "2026-01-03T08:57:20.974966Z",
+      "descriptor": {
+        "name": "41st Combined Arms Army",
+        "bio": "Russian military formation",
+        "tags": [
+          "military_unit",
+          "russia"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_central_military_district_001",
+      "created_at": "2026-01-03T08:57:20.974972Z",
+      "updated_at": "2026-01-03T08:57:20.974972Z",
+      "descriptor": {
+        "name": "Central Military District",
+        "bio": "Russian military district",
+        "tags": [
+          "military_district",
+          "russia"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_589th_motorized_rifle_regiment_001",
+      "created_at": "2026-01-03T08:57:20.974979Z",
+      "updated_at": "2026-01-03T08:57:20.974979Z",
+      "descriptor": {
+        "name": "589th Motorized Rifle Regiment",
+        "bio": "Russian military unit struck by Ukrainian forces",
+        "tags": [
+          "military_unit",
+          "russia"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_27th_motorized_rifle_division_001",
+      "created_at": "2026-01-03T08:57:20.974985Z",
+      "updated_at": "2026-01-03T08:57:20.974985Z",
+      "descriptor": {
+        "name": "27th Motorized Rifle Division",
+        "bio": "Russian military formation",
+        "tags": [
+          "military_unit",
+          "russia"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_2nd_caa_001",
+      "created_at": "2026-01-03T08:57:20.974993Z",
+      "updated_at": "2026-01-03T08:57:20.974993Z",
+      "descriptor": {
+        "name": "2nd Combined Arms Army",
+        "bio": "Russian military formation",
+        "tags": [
+          "military_unit",
+          "russia"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_melitopol_001",
+      "created_at": "2026-01-03T08:57:20.975005Z",
+      "updated_at": "2026-01-03T08:57:20.975005Z",
+      "descriptor": {
+        "name": "Melitopol",
+        "bio": "Occupied city in Zaporizhia Oblast with substation strike",
+        "tags": [
+          "zaporizhia",
+          "city"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_molochansk_001",
+      "created_at": "2026-01-03T08:57:20.975012Z",
+      "updated_at": "2026-01-03T08:57:20.975012Z",
+      "descriptor": {
+        "name": "Molochansk",
+        "bio": "Occupied city in Zaporizhia Oblast with substation strike",
+        "tags": [
+          "zaporizhia",
+          "city"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_olenivka_001",
+      "created_at": "2026-01-03T08:57:20.975020Z",
+      "updated_at": "2026-01-03T08:57:20.975020Z",
+      "descriptor": {
+        "name": "Olenivka",
+        "bio": "Location in Crimea with base strike",
+        "tags": [
+          "crimea",
+          "location"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_92nd_river_boat_brigade_001",
+      "created_at": "2026-01-03T08:57:20.975026Z",
+      "updated_at": "2026-01-03T08:57:20.975026Z",
+      "descriptor": {
+        "name": "92nd River Boat Brigade",
+        "bio": "Russian military unit struck by Ukrainian forces",
+        "tags": [
+          "military_unit",
+          "russia"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_blizhnye_001",
+      "created_at": "2026-01-03T08:57:20.975035Z",
+      "updated_at": "2026-01-03T08:57:20.975035Z",
+      "descriptor": {
+        "name": "Blizhnye",
+        "bio": "Location in Donetsk Oblast with ammunition depot strike",
+        "tags": [
+          "donetsk",
+          "location"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_siatel_001",
+      "created_at": "2026-01-03T08:57:20.975042Z",
+      "updated_at": "2026-01-03T08:57:20.975042Z",
+      "descriptor": {
+        "name": "Siatel",
+        "bio": "Location in Donetsk Oblast with ammunition depot strike",
+        "tags": [
+          "donetsk",
+          "location"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_russian_defense_industrial_base_001",
+      "created_at": "2026-01-03T08:57:20.975049Z",
+      "updated_at": "2026-01-03T08:57:20.975049Z",
+      "descriptor": {
+        "name": "Russian defense industrial base",
+        "bio": "Russian military-industrial complex",
+        "tags": [
+          "military",
+          "industry"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_peoples_republic_of_china_001",
+      "created_at": "2026-01-03T08:57:20.975056Z",
+      "updated_at": "2026-01-03T08:57:20.975056Z",
+      "descriptor": {
+        "name": "People's Republic of China",
+        "bio": "Russian partner providing critical components",
+        "tags": [
+          "nation",
+          "partner"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_north_korea_001",
+      "created_at": "2026-01-03T08:57:20.975062Z",
+      "updated_at": "2026-01-03T08:57:20.975063Z",
+      "descriptor": {
+        "name": "North Korea",
+        "bio": "Russian ally providing missiles and labor",
+        "tags": [
+          "nation",
+          "partner"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_republic_of_tatarstan_001",
+      "created_at": "2026-01-03T08:57:20.975070Z",
+      "updated_at": "2026-01-03T08:57:20.975070Z",
+      "descriptor": {
+        "name": "Republic of Tatarstan",
+        "bio": "Russian region with Shahed-producing factory",
+        "tags": [
+          "russia",
+          "region"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel_001",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_pokrovsk_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.9,
+      "description": "Russian forces advanced into Pokrovsk in September 2025 and seized 67.63 percent of the town as of December 2025",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831049Z"
+    },
+    {
+      "id": "rel_002",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_oleksandrivka_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.7,
+      "description": "Russian forces enabled advances in Oleksandrivka direction and intensified efforts toward it in Fall 2025",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831057Z"
+    },
+    {
+      "id": "rel_003",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_hulyaipole_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.7,
+      "description": "Russian forces enabled advances in Hulyaipole direction and began operating within the town in early December 2025",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831059Z"
+    },
+    {
+      "id": "rel_004",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_rubikon_center_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 0.9,
+      "description": "Rubikon Center for Advanced Unmanned Technologies is an elite drone operator unit of Russian forces",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831063Z"
+    },
+    {
+      "id": "rel_005",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_siversk_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.9,
+      "description": "Russian forces seized Siversk in December 2025",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831065Z"
+    },
+    {
+      "id": "rel_006",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_serebryanske_forest_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.6,
+      "description": "Russian forces operate in Serebryanske forest area to interdict Ukrainian GLOCs",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831067Z"
+    },
+    {
+      "id": "rel_007",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_donetsk_oblast_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Russian forces prioritized seizing Donetsk Oblast in 2025",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831071Z"
+    },
+    {
+      "id": "rel_008",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_sumy_oblast_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.5,
+      "description": "Russian forces attempted to establish buffer zone in northern Sumy Oblast but failed",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831073Z"
+    },
+    {
+      "id": "rel_009",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_kharkiv_oblast_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.5,
+      "description": "Russian forces attempted to establish buffer zone in northern Kharkiv Oblast",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831075Z"
+    },
+    {
+      "id": "rel_010",
+      "source_id": "ent_pavlo_palisa_001",
+      "target_id": "ent_russian_forces_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.9,
+      "description": "Pavlo Palisa stated Russia's failed intentions to seize Donetsk and Luhansk oblasts",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831085Z"
+    },
+    {
+      "id": "rel_011",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_dnipropetrovsk_oblast_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.4,
+      "description": "Russian forces attempted to push into southeastern Dnipropetrovsk Oblast in 2025",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831087Z"
+    },
+    {
+      "id": "rel_012",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_velyka_novosilka_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.9,
+      "description": "Russian forces seized Velyka Novosilka in late January 2025",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831090Z"
+    },
+    {
+      "id": "rel_013",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_dobropillya_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.3,
+      "description": "Russian sabotage groups infiltrated toward Dobropillya in August 2025 but were repelled",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831092Z"
+    },
+    {
+      "id": "rel_014",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_slovyansk_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.4,
+      "description": "Russian forces conducted offensive operations northeast of Slovyansk",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831094Z"
+    },
+    {
+      "id": "rel_015",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_lyman_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.7,
+      "description": "Russian forces advanced into Lyman in December 2025",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831096Z"
+    },
+    {
+      "id": "rel_016",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_toretsk_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.9,
+      "description": "Russian forces completed seizure of Toretsk by August 1, 2025",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831098Z"
+    },
+    {
+      "id": "rel_017",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_kostyantynivka_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.5,
+      "description": "Russian forces began efforts to seize Kostyantynivka in October 2025",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831101Z"
+    },
+    {
+      "id": "rel_018",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_kursk_oblast_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.9,
+      "description": "Russian forces pushed Ukrainian forces out of Kursk Oblast in March 2025",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831104Z"
+    },
+    {
+      "id": "rel_019",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_velykyi_burluk_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.5,
+      "description": "Russian forces opened offensive toward Velykyi Burluk in July 2025",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831106Z"
+    },
+    {
+      "id": "rel_020",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_kupyansk_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.4,
+      "description": "Russian forces intensified efforts to seize Kupyansk in Summer 2025 but failed",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831109Z"
+    },
+    {
+      "id": "rel_021",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_zaporizhia_oblast_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.6,
+      "description": "Russian forces conducted operations in Zaporizhia Oblast",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831111Z"
+    },
+    {
+      "id": "rel_022",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_orikhiv_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.4,
+      "description": "Russian forces attempted advances toward Orikhiv but were constrained",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831113Z"
+    },
+    {
+      "id": "rel_023",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_zaporizhzhia_city_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.3,
+      "description": "Russian military command intends to advance on Zaporizhzhia City",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831115Z"
+    },
+    {
+      "id": "rel_024",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_myrnohrad_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.6,
+      "description": "Russian forces fought for 18 months to seize Pokrovsk-Myrnohrad area",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831117Z"
+    },
+    {
+      "id": "rel_025",
+      "source_id": "ent_robert_brovdi_001",
+      "target_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 0.9,
+      "description": "Robert Brovdi is the Commander of Ukrainian Unmanned Systems Forces",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831119Z"
+    },
+    {
+      "id": "rel_026",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_rovenky_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian Unmanned Systems Forces struck Russian oil depot in Rovenky",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831123Z"
+    },
+    {
+      "id": "rel_027",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_rubikon_center_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck positions of Russian Rubikon-D Spetsnaz unit",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831127Z"
+    },
+    {
+      "id": "rel_028",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_74th_motorized_rifle_brigade_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck 74th Motorized Rifle Brigade near Selydove",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831131Z"
+    },
+    {
+      "id": "rel_029",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_41st_combined_arms_army_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck unit belonging to 41st Combined Arms Army",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831134Z"
+    },
+    {
+      "id": "rel_030",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_central_military_district_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck units belonging to Central Military District",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831137Z"
+    },
+    {
+      "id": "rel_031",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_589th_motorized_rifle_regiment_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck 589th Motorized Rifle Regiment near Selydove",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831141Z"
+    },
+    {
+      "id": "rel_032",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_27th_motorized_rifle_division_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck unit belonging to 27th Motorized Rifle Division",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831144Z"
+    },
+    {
+      "id": "rel_033",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_2nd_caa_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck unit belonging to 2nd Combined Arms Army",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831147Z"
+    },
+    {
+      "id": "rel_034",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_melitopol_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck substations in occupied Melitopol",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831150Z"
+    },
+    {
+      "id": "rel_035",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_molochansk_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck substations in occupied Molochansk",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831156Z"
+    },
+    {
+      "id": "rel_036",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_olenivka_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck base of Russian 92nd River Boat Brigade near Olenivka",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831159Z"
+    },
+    {
+      "id": "rel_037",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_92nd_river_boat_brigade_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck 92nd River Boat Brigade near Olenivka",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831161Z"
+    },
+    {
+      "id": "rel_038",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_blizhnye_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck Russian ammunition depot near Blizhnye",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831164Z"
+    },
+    {
+      "id": "rel_039",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_siatel_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck Russian ammunition depot near Siatel",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831167Z"
+    },
+    {
+      "id": "rel_040",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_selydove_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 0.5,
+      "description": "Ukrainian forces struck Russian units near Selydove",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831169Z"
+    },
+    {
+      "id": "rel_041",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_crimea_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck targets in Crimea",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831172Z"
+    },
+    {
+      "id": "rel_042",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_luhansk_oblast_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck targets in occupied Luhansk Oblast",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831175Z"
+    },
+    {
+      "id": "rel_043",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_donetsk_oblast_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck targets in occupied Donetsk Oblast",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831180Z"
+    },
+    {
+      "id": "rel_044",
+      "source_id": "ent_ukrainian_unmanned_systems_forces_001",
+      "target_id": "ent_zaporizhia_oblast_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Ukrainian forces struck targets in occupied Zaporizhia Oblast",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831183Z"
+    },
+    {
+      "id": "rel_045",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_russian_defense_industrial_base_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 0.9,
+      "description": "Russian defense industrial base supports Russian forces with production",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831185Z"
+    },
+    {
+      "id": "rel_046",
+      "source_id": "ent_russian_defense_industrial_base_001",
+      "target_id": "ent_peoples_republic_of_china_001",
+      "relationship_type": "trade",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Russian defense industrial base imports critical components from People's Republic of China",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831189Z"
+    },
+    {
+      "id": "rel_047",
+      "source_id": "ent_russian_defense_industrial_base_001",
+      "target_id": "ent_north_korea_001",
+      "relationship_type": "trade",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Russian defense industrial base relies on North Korea for KN-23 missiles and labor",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831191Z"
+    },
+    {
+      "id": "rel_048",
+      "source_id": "ent_russian_defense_industrial_base_001",
+      "target_id": "ent_republic_of_tatarstan_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 0.9,
+      "description": "Russian defense industrial base has Shahed-producing factory in Republic of Tatarstan",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831193Z"
+    },
+    {
+      "id": "rel_049",
+      "source_id": "ent_russian_forces_001",
+      "target_id": "ent_ukrainian_forces_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Russian forces are engaged in military conflict with Ukrainian forces",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831196Z"
+    },
+    {
+      "id": "rel_050",
+      "source_id": "ent_ukrainian_forces_001",
+      "target_id": "ent_russian_forces_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Ukrainian forces are engaged in military conflict with Russian forces",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:57:50.831199Z"
+    }
+  ],
+  "validation_report": {}
+}

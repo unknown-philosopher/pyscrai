@@ -1,0 +1,1113 @@
+{
+  "entities": [
+    {
+      "id": "ent_kremlin_001",
+      "created_at": "2026-01-03T08:56:22.748837Z",
+      "updated_at": "2026-01-03T08:56:22.748839Z",
+      "descriptor": {
+        "name": "Kremlin",
+        "bio": "Russian government leadership and administration",
+        "tags": [
+          "russia",
+          "government"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_ukraine_001",
+      "created_at": "2026-01-03T08:56:22.748872Z",
+      "updated_at": "2026-01-03T08:56:22.748873Z",
+      "descriptor": {
+        "name": "Ukraine",
+        "bio": "Country in Eastern Europe",
+        "tags": [
+          "country"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_russia_001",
+      "created_at": "2026-01-03T08:56:22.748884Z",
+      "updated_at": "2026-01-03T08:56:22.748884Z",
+      "descriptor": {
+        "name": "Russia",
+        "bio": "Country in Eastern Europe and Northern Asia",
+        "tags": [
+          "country"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_putin_001",
+      "created_at": "2026-01-03T08:56:22.748895Z",
+      "updated_at": "2026-01-03T08:56:22.748896Z",
+      "descriptor": {
+        "name": "Vladimir Putin",
+        "bio": "President of Russia",
+        "tags": [
+          "leader",
+          "president"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_peskov_001",
+      "created_at": "2026-01-03T08:56:22.748905Z",
+      "updated_at": "2026-01-03T08:56:22.748905Z",
+      "descriptor": {
+        "name": "Dmitry Peskov",
+        "bio": "Kremlin Spokesperson",
+        "tags": [
+          "spokesperson"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_valdai_001",
+      "created_at": "2026-01-03T08:56:22.748921Z",
+      "updated_at": "2026-01-03T08:56:22.748922Z",
+      "descriptor": {
+        "name": "Valdai",
+        "bio": "Location in Novgorod Oblast",
+        "tags": [
+          "town"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_novgorod_oblast_001",
+      "created_at": "2026-01-03T08:56:22.748934Z",
+      "updated_at": "2026-01-03T08:56:22.748934Z",
+      "descriptor": {
+        "name": "Novgorod Oblast",
+        "bio": "Federal subject of Russia",
+        "tags": [
+          "oblast",
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_mod_001",
+      "created_at": "2026-01-03T08:56:22.748941Z",
+      "updated_at": "2026-01-03T08:56:22.748941Z",
+      "descriptor": {
+        "name": "Russian Ministry of Defense",
+        "bio": "Military department of Russia",
+        "tags": [
+          "military",
+          "government"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_lavrov_001",
+      "created_at": "2026-01-03T08:56:22.748948Z",
+      "updated_at": "2026-01-03T08:56:22.748948Z",
+      "descriptor": {
+        "name": "Sergey Lavrov",
+        "bio": "Russian Foreign Minister",
+        "tags": [
+          "diplomat",
+          "minister"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_bryansk_oblast_001",
+      "created_at": "2026-01-03T08:56:22.748956Z",
+      "updated_at": "2026-01-03T08:56:22.748957Z",
+      "descriptor": {
+        "name": "Bryansk Oblast",
+        "bio": "Federal subject of Russia",
+        "tags": [
+          "oblast",
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_smolensk_oblast_001",
+      "created_at": "2026-01-03T08:56:22.748964Z",
+      "updated_at": "2026-01-03T08:56:22.748964Z",
+      "descriptor": {
+        "name": "Smolensk Oblast",
+        "bio": "Federal subject of Russia",
+        "tags": [
+          "oblast",
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_isw_001",
+      "created_at": "2026-01-03T08:56:22.748973Z",
+      "updated_at": "2026-01-03T08:56:22.748974Z",
+      "descriptor": {
+        "name": "ISW",
+        "bio": "Institute for the Study of War",
+        "tags": [
+          "organization",
+          "think tank"
+        ],
+        "entity_type": "abstract"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_le_monde_001",
+      "created_at": "2026-01-03T08:56:22.748982Z",
+      "updated_at": "2026-01-03T08:56:22.748982Z",
+      "descriptor": {
+        "name": "Le Monde",
+        "bio": "French newspaper",
+        "tags": [
+          "news",
+          "media"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_macron_001",
+      "created_at": "2026-01-03T08:56:22.748989Z",
+      "updated_at": "2026-01-03T08:56:22.748989Z",
+      "descriptor": {
+        "name": "Emmanuel Macron",
+        "bio": "President of France",
+        "tags": [
+          "leader",
+          "president"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_france_001",
+      "created_at": "2026-01-03T08:56:22.748996Z",
+      "updated_at": "2026-01-03T08:56:22.748996Z",
+      "descriptor": {
+        "name": "France",
+        "bio": "Country in Western Europe",
+        "tags": [
+          "country"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_russian_state_duma_001",
+      "created_at": "2026-01-03T08:56:22.749003Z",
+      "updated_at": "2026-01-03T08:56:22.749003Z",
+      "descriptor": {
+        "name": "Russian State Duma",
+        "bio": "Lower house of the Russian parliament",
+        "tags": [
+          "legislature",
+          "government"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_rt_001",
+      "created_at": "2026-01-03T08:56:22.749009Z",
+      "updated_at": "2026-01-03T08:56:22.749010Z",
+      "descriptor": {
+        "name": "Russia Today",
+        "bio": "Russian state media outlet",
+        "tags": [
+          "media",
+          "state media"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_luhansk_001",
+      "created_at": "2026-01-03T08:56:22.749018Z",
+      "updated_at": "2026-01-03T08:56:22.749018Z",
+      "descriptor": {
+        "name": "Luhansk",
+        "bio": "Region in eastern Ukraine",
+        "tags": [
+          "oblast",
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_donetsk_001",
+      "created_at": "2026-01-03T08:56:22.749026Z",
+      "updated_at": "2026-01-03T08:56:22.749026Z",
+      "descriptor": {
+        "name": "Donetsk",
+        "bio": "Region in eastern Ukraine",
+        "tags": [
+          "oblast",
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_zaporizhia_001",
+      "created_at": "2026-01-03T08:56:22.749033Z",
+      "updated_at": "2026-01-03T08:56:22.749033Z",
+      "descriptor": {
+        "name": "Zaporizhia",
+        "bio": "Region in southern Ukraine",
+        "tags": [
+          "oblast",
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_kherson_001",
+      "created_at": "2026-01-03T08:56:22.749041Z",
+      "updated_at": "2026-01-03T08:56:22.749041Z",
+      "descriptor": {
+        "name": "Kherson",
+        "bio": "Region in southern Ukraine",
+        "tags": [
+          "oblast",
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_crimea_001",
+      "created_at": "2026-01-03T08:56:22.749049Z",
+      "updated_at": "2026-01-03T08:56:22.749049Z",
+      "descriptor": {
+        "name": "Crimea",
+        "bio": "Peninsula in the Black Sea",
+        "tags": [
+          "peninsula"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_nato_001",
+      "created_at": "2026-01-03T08:56:22.749056Z",
+      "updated_at": "2026-01-03T08:56:22.749057Z",
+      "descriptor": {
+        "name": "NATO",
+        "bio": "Military alliance",
+        "tags": [
+          "military",
+          "alliance"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_europe_001",
+      "created_at": "2026-01-03T08:56:22.749064Z",
+      "updated_at": "2026-01-03T08:56:22.749064Z",
+      "descriptor": {
+        "name": "Europe",
+        "bio": "Continent",
+        "tags": [
+          "continent"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_us_001",
+      "created_at": "2026-01-03T08:56:22.749070Z",
+      "updated_at": "2026-01-03T08:56:22.749070Z",
+      "descriptor": {
+        "name": "United States",
+        "bio": "Country in North America",
+        "tags": [
+          "country"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_rubikon_center_001",
+      "created_at": "2026-01-03T08:56:22.749076Z",
+      "updated_at": "2026-01-03T08:56:22.749077Z",
+      "descriptor": {
+        "name": "Rubikon Center for Advanced Unmanned Technologies",
+        "bio": "Russian research center for drones",
+        "tags": [
+          "research",
+          "organization"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_bilyky_001",
+      "created_at": "2026-01-03T08:56:22.749084Z",
+      "updated_at": "2026-01-03T08:56:22.749084Z",
+      "descriptor": {
+        "name": "Bilyky",
+        "bio": "Location in Poltava Oblast",
+        "tags": [
+          "town"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_poltava_oblast_001",
+      "created_at": "2026-01-03T08:56:22.749093Z",
+      "updated_at": "2026-01-03T08:56:22.749094Z",
+      "descriptor": {
+        "name": "Poltava Oblast",
+        "bio": "Federal subject of Ukraine",
+        "tags": [
+          "oblast",
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_mykolaiv_001",
+      "created_at": "2026-01-03T08:56:22.749101Z",
+      "updated_at": "2026-01-03T08:56:22.749102Z",
+      "descriptor": {
+        "name": "Mykolaiv",
+        "bio": "City in southern Ukraine",
+        "tags": [
+          "city"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_kinburn_spit_001",
+      "created_at": "2026-01-03T08:56:22.749110Z",
+      "updated_at": "2026-01-03T08:56:22.749110Z",
+      "descriptor": {
+        "name": "Kinburn Spit",
+        "bio": "Peninsula in Mykolaiv Oblast",
+        "tags": [
+          "peninsula"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_serhiy_beskrestnov_001",
+      "created_at": "2026-01-03T08:56:22.749116Z",
+      "updated_at": "2026-01-03T08:56:22.749116Z",
+      "descriptor": {
+        "name": "Serhiy Beskrestnov",
+        "bio": "Ukrainian electronic warfare expert",
+        "tags": [
+          "expert"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_syrskyi_001",
+      "created_at": "2026-01-03T08:56:22.749122Z",
+      "updated_at": "2026-01-03T08:56:22.749124Z",
+      "descriptor": {
+        "name": "Oleksandr Syrskyi",
+        "bio": "Ukrainian Commander-in-Chief",
+        "tags": [
+          "general",
+          "military"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel_001",
+      "source_id": "ent_kremlin_001",
+      "target_id": "ent_peskov_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Dmitry Peskov is the Kremlin Spokesperson",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.018981Z"
+    },
+    {
+      "id": "rel_002",
+      "source_id": "ent_putin_001",
+      "target_id": "ent_russia_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Vladimir Putin is the President of Russia",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.018996Z"
+    },
+    {
+      "id": "rel_003",
+      "source_id": "ent_valdai_001",
+      "target_id": "ent_novgorod_oblast_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Valdai is located in Novgorod Oblast",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019015Z"
+    },
+    {
+      "id": "rel_004",
+      "source_id": "ent_novgorod_oblast_001",
+      "target_id": "ent_russia_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Novgorod Oblast is a federal subject of Russia",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019020Z"
+    },
+    {
+      "id": "rel_005",
+      "source_id": "ent_mod_001",
+      "target_id": "ent_russia_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Russian Ministry of Defense is a military department of Russia",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019022Z"
+    },
+    {
+      "id": "rel_006",
+      "source_id": "ent_lavrov_001",
+      "target_id": "ent_russia_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Sergey Lavrov is the Russian Foreign Minister",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019026Z"
+    },
+    {
+      "id": "rel_007",
+      "source_id": "ent_bryansk_oblast_001",
+      "target_id": "ent_russia_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Bryansk Oblast is a federal subject of Russia",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019030Z"
+    },
+    {
+      "id": "rel_008",
+      "source_id": "ent_smolensk_oblast_001",
+      "target_id": "ent_russia_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Smolensk Oblast is a federal subject of Russia",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019033Z"
+    },
+    {
+      "id": "rel_009",
+      "source_id": "ent_macron_001",
+      "target_id": "ent_france_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Emmanuel Macron is the President of France",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019035Z"
+    },
+    {
+      "id": "rel_010",
+      "source_id": "ent_russian_state_duma_001",
+      "target_id": "ent_russia_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Russian State Duma is the lower house of the Russian parliament",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019037Z"
+    },
+    {
+      "id": "rel_011",
+      "source_id": "ent_rt_001",
+      "target_id": "ent_russia_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Russia Today is a Russian state media outlet",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019040Z"
+    },
+    {
+      "id": "rel_012",
+      "source_id": "ent_luhansk_001",
+      "target_id": "ent_ukraine_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Luhansk is a region in eastern Ukraine",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019046Z"
+    },
+    {
+      "id": "rel_013",
+      "source_id": "ent_donetsk_001",
+      "target_id": "ent_ukraine_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Donetsk is a region in eastern Ukraine",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019049Z"
+    },
+    {
+      "id": "rel_014",
+      "source_id": "ent_zaporizhia_001",
+      "target_id": "ent_ukraine_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Zaporizhia is a region in southern Ukraine",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019052Z"
+    },
+    {
+      "id": "rel_015",
+      "source_id": "ent_kherson_001",
+      "target_id": "ent_ukraine_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Kherson is a region in southern Ukraine",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019055Z"
+    },
+    {
+      "id": "rel_016",
+      "source_id": "ent_crimea_001",
+      "target_id": "ent_ukraine_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Crimea is a peninsula in the Black Sea claimed by Ukraine",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019086Z"
+    },
+    {
+      "id": "rel_017",
+      "source_id": "ent_rubikon_center_001",
+      "target_id": "ent_russia_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Rubikon Center for Advanced Unmanned Technologies is a Russian research center",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019094Z"
+    },
+    {
+      "id": "rel_018",
+      "source_id": "ent_bilyky_001",
+      "target_id": "ent_poltava_oblast_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Bilyky is located in Poltava Oblast",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019098Z"
+    },
+    {
+      "id": "rel_019",
+      "source_id": "ent_poltava_oblast_001",
+      "target_id": "ent_ukraine_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Poltava Oblast is a federal subject of Ukraine",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019103Z"
+    },
+    {
+      "id": "rel_020",
+      "source_id": "ent_mykolaiv_001",
+      "target_id": "ent_ukraine_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Mykolaiv is a city in southern Ukraine",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019107Z"
+    },
+    {
+      "id": "rel_021",
+      "source_id": "ent_kinburn_spit_001",
+      "target_id": "ent_mykolaiv_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Kinburn Spit is a peninsula in Mykolaiv Oblast",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019111Z"
+    },
+    {
+      "id": "rel_022",
+      "source_id": "ent_serhiy_beskrestnov_001",
+      "target_id": "ent_ukraine_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Serhiy Beskrestnov is a Ukrainian electronic warfare expert",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019113Z"
+    },
+    {
+      "id": "rel_023",
+      "source_id": "ent_syrskyi_001",
+      "target_id": "ent_ukraine_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Oleksandr Syrskyi is the Ukrainian Commander-in-Chief",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019116Z"
+    },
+    {
+      "id": "rel_024",
+      "source_id": "ent_kremlin_001",
+      "target_id": "ent_putin_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "The Kremlin is the Russian government leadership led by Vladimir Putin",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019119Z"
+    },
+    {
+      "id": "rel_025",
+      "source_id": "ent_russia_001",
+      "target_id": "ent_ukraine_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Russia is conducting an offensive campaign against Ukraine",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019123Z"
+    },
+    {
+      "id": "rel_026",
+      "source_id": "ent_russia_001",
+      "target_id": "ent_nato_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Russia's demands would amount to destruction of NATO alliance",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019126Z"
+    },
+    {
+      "id": "rel_027",
+      "source_id": "ent_france_001",
+      "target_id": "ent_ukraine_001",
+      "relationship_type": "alliance",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "France is a partner of Ukraine, cross-checking information about Russian claims",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019130Z"
+    },
+    {
+      "id": "rel_028",
+      "source_id": "ent_us_001",
+      "target_id": "ent_ukraine_001",
+      "relationship_type": "alliance",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "United States is in dialogue with Russia and has bilateral talks with Ukraine",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019132Z"
+    },
+    {
+      "id": "rel_029",
+      "source_id": "ent_russia_001",
+      "target_id": "ent_europe_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Russia demands overhaul of Europe's security architecture",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019138Z"
+    },
+    {
+      "id": "rel_030",
+      "source_id": "ent_rubikon_center_001",
+      "target_id": "ent_ukraine_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Rubikon Center conducts drone strikes against Ukrainian targets",
+      "metadata": "{}",
+      "created_at": "2026-01-03T08:56:37.019141Z"
+    }
+  ],
+  "validation_report": {}
+}
