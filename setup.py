@@ -38,6 +38,7 @@ setup(
         # Development dependencies (optional, can be moved to extras_require)
         "pytest>=7.0.0",
         "pytest-asyncio>=0.21.0",
+        "sv-ttk>=2.6.0",
     ],
     entry_points={
         "console_scripts": [
