@@ -46,7 +46,7 @@ class DatabaseExplorerWindow(tk.Toplevel):
         ttk.Button(toolbar, text="SQL Query...", command=self._open_query_dialog).pack(side=tk.LEFT, padx=2)
 
         # Red Reset DB button
-        reset_btn = tk.Button(toolbar, text="Reset DB", bg="#d9534f", fg="white", activebackground="#c9302c", activeforeground="white", command=self._reset_database)
+        reset_btn = ttk.Button(toolbar, text="Reset DB", command=self._reset_database)
         reset_btn.pack(side=tk.LEFT, padx=12)
 
         self.db_label = ttk.Label(toolbar, text="No database loaded", foreground="gray")

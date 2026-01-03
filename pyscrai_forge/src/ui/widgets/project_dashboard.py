@@ -70,22 +70,35 @@ class ProjectDashboardWidget(ttk.Frame):
         action_frame.pack(pady=30)
         
         # Import Data button
-        import_frame = self._create_action_button(
-            action_frame, "📥 Import\nData", self.on_import, "#4CAF50"
+        import_btn = ttk.Button(
+            action_frame,
+            text="📥 Import Data",
+            command=self.on_import,
+            width=20,
+            style="Accent.TButton",
+            cursor="hand2"
         )
-        import_frame.pack(side=tk.LEFT, padx=15)
+        import_btn.pack(side=tk.LEFT, padx=15)
         
         # Edit Components button
-        edit_frame = self._create_action_button(
-            action_frame, "✏️ Edit\nComponents", self.on_edit_components, "#2196F3"
+        edit_btn = ttk.Button(
+            action_frame,
+            text="✏️ Edit Components",
+            command=self.on_edit_components,
+            width=20,
+            cursor="hand2"
         )
-        edit_frame.pack(side=tk.LEFT, padx=15)
+        edit_btn.pack(side=tk.LEFT, padx=15)
         
         # Browse Database button
-        db_frame = self._create_action_button(
-            action_frame, "🗄️ Browse\nDatabase", self.on_browse_db, "#FF9800"
+        browse_btn = ttk.Button(
+            action_frame,
+            text="🗄️ Browse Database",
+            command=self.on_browse_db,
+            width=20,
+            cursor="hand2"
         )
-        db_frame.pack(side=tk.LEFT, padx=15)
+        browse_btn.pack(side=tk.LEFT, padx=15)
         
         # Stats panel
         stats_frame = ttk.LabelFrame(main_container, text="Quick Stats", padding=15)
@@ -107,30 +120,6 @@ class ProjectDashboardWidget(ttk.Frame):
                   command=self.on_settings).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(bottom_frame, text="📂 Browse Files",
                   command=self.on_browse_files).pack(side=tk.LEFT)
-    
-    def _create_action_button(self, parent, text, command, color):
-        """Create a styled action button."""
-        frame = tk.Frame(parent, bg=color, relief=tk.RAISED, borderwidth=2)
-        
-        btn = tk.Button(frame, text=text,
-                       command=command,
-                       width=12, height=4,
-                       font=("Arial", 11),
-                       bg=color, fg="white",
-                       activebackground=self._darken_color(color),
-                       activeforeground="white",
-                       relief=tk.FLAT, cursor="hand2")
-        btn.pack(padx=2, pady=2)
-        
-        return frame
-    
-    def _darken_color(self, hex_color):
-        """Darken a hex color by 20%."""
-        # Simple darkening - multiply RGB values by 0.8
-        hex_color = hex_color.lstrip('#')
-        r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
-        r, g, b = int(r * 0.8), int(g * 0.8), int(b * 0.8)
-        return f'#{r:02x}{g:02x}{b:02x}'
     
     def _load_stats(self, parent):
         """Load and display database statistics."""

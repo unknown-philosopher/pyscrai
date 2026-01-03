@@ -151,11 +151,10 @@ class AppStateManager:
         """Build the component editor state (entity/relationship editing)."""
         # Top: Validation Summary Banner
         if not self.validation_frame:
-            self.validation_frame = tk.Frame(self.root, bg="#f0f0f0", height=40)
-            self.validation_label = tk.Label(
+            self.validation_frame = ttk.Frame(self.root, height=40)
+            self.validation_label = ttk.Label(
                 self.validation_frame,
                 text="No Packet Loaded",
-                bg="#f0f0f0",
                 font=("Arial", 10)
             )
             self.validation_label.pack(side=tk.LEFT, padx=10)
@@ -219,8 +218,8 @@ class AppStateManager:
         self.entities_tree.column("issues", width=200)
 
         # Tag configuration for coloring rows with issues
-        self.entities_tree.tag_configure("error", background="#ffcccc")
-        self.entities_tree.tag_configure("warning", background="#fff4cc")
+        self.entities_tree.tag_configure("error", background="#550000", foreground="white")
+        self.entities_tree.tag_configure("warning", background="#554400", foreground="white")
         
         entities_scroll = ttk.Scrollbar(
             entities_tree_frame,
@@ -280,7 +279,7 @@ class AppStateManager:
         self.relationships_tree.column("type", width=100)
         self.relationships_tree.column("issues", width=150)
 
-        self.relationships_tree.tag_configure("error", background="#ffcccc")
+        self.relationships_tree.tag_configure("error", background="#550000", foreground="white")
         
         rel_scroll = ttk.Scrollbar(
             rel_tree_frame,
@@ -362,16 +361,16 @@ class AppStateManager:
         crit = len(validation_report.get("critical_errors", []))
         warn = len(validation_report.get("warnings", []))
         
-        color = "#ccffcc"  # Green
+        # In dark mode/themed mode, we change text color instead of background
         msg = "Validation Passed"
         
-        if warn > 0:
-            color = "#fff4cc"  # Yellow
-            msg = f"Validation: {warn} Warnings"
         if crit > 0:
-            color = "#ffcccc"  # Red
-            msg = f"Validation: {crit} Critical Errors"
-        
-        self.validation_frame.config(bg=color)
-        self.validation_label.config(text=msg, bg=color)
+            # Error state
+            self.validation_label.config(text=f"Validation: {crit} Critical Errors", foreground="#ff5555") # Bright Red text
+        elif warn > 0:
+            # Warning state
+            self.validation_label.config(text=f"Validation: {warn} Warnings", foreground="#ffaa00") # Gold text
+        else:
+            # Valid state
+            self.validation_label.config(text="Validation Passed", foreground="#55ff55") # Bright Green text
 
