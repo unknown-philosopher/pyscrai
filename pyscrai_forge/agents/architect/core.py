@@ -1,13 +1,10 @@
 """The Architect Agent: Interactive Project Forge & Simulation Host.
 
-This module implements the "Sorcerer" loop:
-1. Architect Mode: Conversational project design and tool use.
-2. Possession Mode: Direct roleplay/simulation of a specific entity.
+Refined for V1.0.0 prototype with improved path handling and tool-use feedback.
 """
 
 import json
 import asyncio
-import uuid
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
@@ -16,14 +13,15 @@ from rich.panel import Panel
 from rich.markdown import Markdown
 
 from pyscrai_core import (
-    ProjectController, ProjectManifest, 
+    ProjectController as CoreController, 
+    ProjectManifest, 
     Entity, Actor, Polity, Location, 
-    DescriptorComponent, StateComponent, CognitiveComponent,
+    DescriptorComponent, StateComponent,
     EntityType
 )
-from pyscrai_core.llm_interface import LLMProvider, ChatMessage, MessageRole
+from pyscrai_core.llm_interface import LLMProvider
 from pyscrai_forge.src import storage
-from pyscrai_forge.src.prompts.architect_prompts import (
+from pyscrai_forge.prompts.architect_prompts import (
     ARCHITECT_SYSTEM_PROMPT, 
     build_possession_system_prompt
 )
@@ -35,31 +33,47 @@ class ArchitectAgent:
 
     def __init__(self, provider: LLMProvider, project_path: Optional[Path] = None):
         self.provider = provider
-        self.project_path = project_path
         
-        # Initialize Controller if path exists
-        self.controller = None
-        if project_path:
-            try:
-                self.controller = ProjectController(project_path)
-                if (project_path / "project.json").exists():
-                    self.controller.load_project()
-            except Exception as e:
-                console.print(f"[yellow]Warning: Could not load existing project: {e}[/yellow]")
-
+        # Robust path resolution
+        self.project_path = Path(project_path).resolve() if project_path else None
+        
         # State
+        self.controller: Optional[CoreController] = None
         self.conversation_history: List[dict] = []
         self.possession_target: Optional[Entity] = None
         self.possession_history: List[dict] = []
         
-        # Bootup
+        # Load project immediately if path provided
+        if self.project_path:
+            self._attempt_load_project(self.project_path)
+        
         self._init_history()
+
+    def _attempt_load_project(self, path: Path):
+        """Helper to initialize the controller and manifest."""
+        try:
+            # Note: We use the core controller for data-level project management
+            self.controller = CoreController(path)
+            if (path / "project.json").exists():
+                self.controller.load_project()
+                console.print(f"[green]Architect connected to project: {self.controller.manifest.name}[/green]")
+            else:
+                console.print(f"[yellow]Path exists but no project.json found at: {path}[/yellow]")
+        except Exception as e:
+            console.print(f"[red]Failed to load project at {path}: {e}[/red]")
+            self.controller = None
 
     def _init_history(self):
         """Set the initial system prompt."""
         self.conversation_history = [
             {"role": "system", "content": ARCHITECT_SYSTEM_PROMPT}
         ]
+        # If project is already loaded, tell the Architect in the context
+        if self.controller and self.controller.manifest:
+            self.conversation_history.append({
+                "role": "system", 
+                "content": f"CONTEXT: You are currently working on project '{self.controller.manifest.name}' located at {self.project_path}."
+            })
 
     async def chat_loop(self):
         """Main interactive loop."""
@@ -68,10 +82,11 @@ class ArchitectAgent:
         while True:
             try:
                 user_input = console.input("[bold green]User > [/bold green]")
+                if not user_input.strip():
+                    continue
                 if user_input.lower() in ["exit", "quit"]:
                     break
                 
-                # Check for client-side commands
                 if user_input.lower() == "stop possession" and self.possession_target:
                     self._exit_possession()
                     continue
@@ -90,27 +105,23 @@ class ArchitectAgent:
         """Handle interaction in Project Design mode."""
         self.conversation_history.append({"role": "user", "content": user_input})
         
-        # Call LLM
         response = await self.provider.complete(
             messages=self.conversation_history,
             model=self.provider.default_model
         )
         
         content = response["choices"][0]["message"]["content"]
-        
-        # Check for Tool Call (Naive JSON detection)
-        # In a production version, we would use strict function calling APIs if available.
         tool_call = self._extract_json(content)
         
         if tool_call:
-            console.print(f"[dim]Architect is using tool: {tool_call.get('tool')}[/dim]")
+            console.print(f"[dim]Executing {tool_call.get('tool')}...[/dim]")
             result_msg = await self._execute_tool(tool_call)
             
-            # Feed tool result back to LLM
+            # Feed tool result back
             self.conversation_history.append({"role": "assistant", "content": content})
             self.conversation_history.append({"role": "system", "content": f"Tool Result: {result_msg}"})
             
-            # Get final response after tool use
+            # Get narrative follow-up
             response_2 = await self.provider.complete(
                 messages=self.conversation_history,
                 model=self.provider.default_model
@@ -118,39 +129,29 @@ class ArchitectAgent:
             final_content = response_2["choices"][0]["message"]["content"]
             self.conversation_history.append({"role": "assistant", "content": final_content})
             console.print(Markdown(final_content))
-            
         else:
-            # Just conversation
             self.conversation_history.append({"role": "assistant", "content": content})
             console.print(Markdown(content))
 
     async def _handle_possession(self, user_input: str):
-        """Handle interaction in Possession/Simulation mode."""
+        """Handle interaction in Possession mode."""
         self.possession_history.append({"role": "user", "content": user_input})
-        
         response = await self.provider.complete(
             messages=self.possession_history,
             model=self.provider.default_model,
-            temperature=0.7 # Higher temp for creativity in roleplay
+            temperature=0.8
         )
-        
         content = response["choices"][0]["message"]["content"]
         self.possession_history.append({"role": "assistant", "content": content})
-        
-        name = self.possession_target.descriptor.name
-        console.print(Panel(Markdown(content), title=f"Possessing: {name}", style="purple"))
+        console.print(Panel(Markdown(content), title=f"{self.possession_target.descriptor.name}", style="purple"))
 
     def _extract_json(self, text: str) -> Optional[dict]:
-        """Attempt to extract a JSON object from text."""
         try:
-            # Try finding the first { and last }
             start = text.find("{")
             end = text.rfind("}")
             if start != -1 and end != -1:
-                json_str = text[start:end+1]
-                return json.loads(json_str)
-        except:
-            pass
+                return json.loads(text[start:end+1])
+        except: pass
         return None
 
     # =========================================================================
@@ -158,147 +159,95 @@ class ArchitectAgent:
     # =========================================================================
 
     async def _execute_tool(self, tool_call: dict) -> str:
-        """Dispatcher for tool calls."""
         tool = tool_call.get("tool")
         params = tool_call.get("params", {})
         
         try:
-            if tool == "create_project":
-                return self._tool_create_project(params)
-            elif tool == "define_schema":
-                return self._tool_define_schema(params)
-            elif tool == "create_entity":
-                return self._tool_create_entity(params)
-            elif tool == "list_entities":
-                return self._tool_list_entities()
-            elif tool == "possess_entity":
-                return self._tool_possess_entity(params)
-            else:
-                return f"Unknown tool: {tool}"
+            if tool == "create_project": return self._tool_create_project(params)
+            if tool == "define_schema": return self._tool_define_schema(params)
+            if tool == "create_entity": return self._tool_create_entity(params)
+            if tool == "list_entities": return self._tool_list_entities(params)
+            if tool == "possess_entity": return self._tool_possess_entity(params)
+            return f"Unknown tool: {tool}"
         except Exception as e:
-            return f"Tool Execution Error: {str(e)}"
+            return f"Technical Error: {str(e)}"
 
     def _tool_create_project(self, params: dict) -> str:
         name = params.get("name", "New Project")
         desc = params.get("description", "")
+        path = Path.cwd() / name.replace(" ", "_")
         
-        # If no path set, create one in current dir
-        if not self.project_path:
-            self.project_path = Path.cwd() / name.replace(" ", "_")
-            
-        self.controller = ProjectController(self.project_path)
+        self.controller = CoreController(path)
         manifest = ProjectManifest(name=name, description=desc)
-        
         try:
             self.controller.create_project(manifest)
-            return f"Project '{name}' created successfully at {self.project_path}. Database initialized."
+            self.project_path = path
+            return f"Success: Project created at {path}."
         except FileExistsError:
             self.controller.load_project()
-            return f"Project '{name}' already exists. Loaded successfully."
+            self.project_path = path
+            return f"Loaded existing project at {path}."
 
     def _tool_define_schema(self, params: dict) -> str:
-        if not self.controller or not self.controller.manifest:
-            return "Error: No project loaded."
-            
+        if not self.controller or not self.controller.manifest: return "Error: No project loaded."
         e_type = params.get("entity_type")
         fields = params.get("fields", {})
-        
         if e_type not in self.controller.manifest.entity_schemas:
             self.controller.manifest.entity_schemas[e_type] = {}
-            
         self.controller.manifest.entity_schemas[e_type].update(fields)
         self.controller.save_manifest()
-        
-        return f"Schema updated for '{e_type}': {fields}"
+        return f"Schema updated for {e_type}."
 
     def _tool_create_entity(self, params: dict) -> str:
-        if not self.controller:
-            return "Error: No project loaded."
-            
-        name = params.get("name", "Unknown")
+        if not self.controller: return "Error: No project loaded."
+        name = params.get("name")
         e_type_str = params.get("entity_type", "actor").lower()
-        stats = params.get("stats", {})
-        bio = params.get("bio", "")
         
-        # Factory logic
         try:
             e_type = EntityType(e_type_str)
-        except ValueError:
+        except:
             e_type = EntityType.ABSTRACT
             
-        desc = DescriptorComponent(name=name, entity_type=e_type, bio=bio)
-        state = StateComponent(resources_json=json.dumps(stats))
+        desc = DescriptorComponent(name=name, entity_type=e_type, bio=params.get("bio", ""))
+        state = StateComponent(resources_json=json.dumps(params.get("stats", {})))
         
-        # Create instance based on type
-        if e_type == EntityType.ACTOR:
-            ent = Actor(descriptor=desc, state=state)
-        elif e_type == EntityType.POLITY:
-            ent = Polity(descriptor=desc, state=state)
-        elif e_type == EntityType.LOCATION:
-            ent = Location(descriptor=desc, state=state)
-        else:
-            ent = Entity(descriptor=desc, state=state)
-            
+        ent = Actor(descriptor=desc, state=state) if e_type == EntityType.ACTOR else Entity(descriptor=desc, state=state)
         storage.save_entity(self.controller.database_path, ent)
-        
-        return f"Entity Created: {name} (ID: {ent.id})"
+        return f"Created entity {name} (ID: {ent.id})"
 
-    def _tool_list_entities(self) -> str:
-        if not self.controller:
-            return "Error: No project loaded."
-            
+    def _tool_list_entities(self, params: dict) -> str:
+        if not self.controller or not self.controller.database_path.exists():
+            return "Error: No project or database file found."
+        
         entities = storage.load_all_entities(self.controller.database_path)
-        if not entities:
-            return "No entities found in database."
+        if not entities: 
+            return "The database is currently empty."
             
-        summary = "\n".join([
-            f"- {e.descriptor.name} ({e.descriptor.entity_type.value}) [ID: {e.id}]" 
-            for e in entities
-        ])
-        return f"Entities in Database:\n{summary}"
+        # Optional type filtering
+        filter_type = params.get("entity_type")
+        if filter_type:
+            entities = [e for e in entities if e.descriptor.entity_type.value.lower() == filter_type.lower()]
+            if not entities: 
+                return f"No entities of type '{filter_type}' found in the database."
+
+        # Return name, type, and ID to ensure the Architect knows exactly what it's seeing
+        return "\n".join([f"- {e.descriptor.name} ({e.descriptor.entity_type.value}) [ID: {e.id}]" for e in entities])
 
     def _tool_possess_entity(self, params: dict) -> str:
-        if not self.controller:
-            return "Error: No project loaded."
-            
-        ent_id = params.get("entity_id")
-        
-        # Try to find by ID, then by Name
+        if not self.controller: return "Error: No project loaded."
+        target_id = params.get("entity_id")
         entities = storage.load_all_entities(self.controller.database_path)
-        target = next((e for e in entities if e.id == ent_id), None)
+        target = next((e for e in entities if e.id == target_id or e.descriptor.name.lower() == target_id.lower()), None)
         
-        if not target:
-            # Fuzzy match name
-            target = next((e for e in entities if e.descriptor.name.lower() == ent_id.lower()), None)
-            
-        if not target:
-            return f"Entity not found: {ent_id}"
-            
-        self._enter_possession(target)
-        return f"ENTERING POSSESSION MODE: {target.descriptor.name}. All further user input will be directed to the entity."
-
-    def _enter_possession(self, entity: Entity):
-        """Switch context to possession."""
-        self.possession_target = entity
+        if not target: return f"Could not find entity: {target_id}"
         
-        # Build the Persona System Prompt
-        entity_data = json.loads(entity.model_dump_json())
-        sys_prompt = build_possession_system_prompt(entity_data, context_summary="The user is interacting with you.")
-        
-        self.possession_history = [
-            {"role": "system", "content": sys_prompt}
-        ]
-        
-        console.print(Panel(
-            f"You are now interacting directly with {entity.descriptor.name}.\n"
-            f"Bio: {entity.descriptor.bio}\n"
-            f"Type: 'stop possession' to return to Architect.",
-            title="SIMULATION START", style="bold purple"
-        ))
+        self.possession_target = target
+        entity_data = json.loads(target.model_dump_json())
+        sys_prompt = build_possession_system_prompt(entity_data)
+        self.possession_history = [{"role": "system", "content": sys_prompt}]
+        return f"POSSESSION_STARTED:{target.descriptor.name}"
 
     def _exit_possession(self):
-        """Return to Architect mode."""
-        console.print(Panel("Leaving Simulation. Returning to Architect.", style="bold blue"))
         self.possession_target = None
         self.possession_history = []
-        # Optional: Summarize what happened and add to Architect context?
+        console.print("[blue]Returned to Architect mode.[/blue]")

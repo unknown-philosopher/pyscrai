@@ -1,0 +1,1121 @@
+{
+  "entities": [
+    {
+      "id": "ent_us_jsoc_001",
+      "created_at": "2026-01-03T16:45:48.402409Z",
+      "updated_at": "2026-01-03T16:45:48.402412Z",
+      "descriptor": {
+        "name": "U.S. Joint Special Operations Command",
+        "bio": "American special operations forces unit responsible for the capture of Nicol\u00e1s Maduro",
+        "tags": [
+          "usa",
+          "military",
+          "special_operations"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_cartel_suns_001",
+      "created_at": "2026-01-03T16:45:48.402430Z",
+      "updated_at": "2026-01-03T16:45:48.402430Z",
+      "descriptor": {
+        "name": "Cartel of the Suns",
+        "bio": "Venezuelan narco-terrorist organization designated as FTO",
+        "tags": [
+          "terrorist",
+          "narcotics",
+          "cartel"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_usa_001",
+      "created_at": "2026-01-03T16:45:48.402441Z",
+      "updated_at": "2026-01-03T16:45:48.402442Z",
+      "descriptor": {
+        "name": "United States",
+        "bio": "Nation conducting kinetic decapitation strike in Venezuela",
+        "tags": [
+          "nation",
+          "superpower"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_trump_001",
+      "created_at": "2026-01-03T16:45:48.402453Z",
+      "updated_at": "2026-01-03T16:45:48.402453Z",
+      "descriptor": {
+        "name": "Donald J. Trump",
+        "bio": "President of the United States",
+        "tags": [
+          "leader",
+          "president"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_rubio_001",
+      "created_at": "2026-01-03T16:45:48.402464Z",
+      "updated_at": "2026-01-03T16:45:48.402468Z",
+      "descriptor": {
+        "name": "Marco Rubio",
+        "bio": "Secretary of State of the United States",
+        "tags": [
+          "secretary_of_state",
+          "diplomat"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_bondi_001",
+      "created_at": "2026-01-03T16:45:48.402477Z",
+      "updated_at": "2026-01-03T16:45:48.402477Z",
+      "descriptor": {
+        "name": "Pam Bondi",
+        "bio": "Attorney General of the United States",
+        "tags": [
+          "attorney_general",
+          "law_enforcement"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_landau_001",
+      "created_at": "2026-01-03T16:45:48.402486Z",
+      "updated_at": "2026-01-03T16:45:48.402486Z",
+      "descriptor": {
+        "name": "Christopher Landau",
+        "bio": "Deputy Secretary of State and envoy lead",
+        "tags": [
+          "deputy_secretary",
+          "diplomat"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_maduro_001",
+      "created_at": "2026-01-03T16:45:48.402495Z",
+      "updated_at": "2026-01-03T16:45:48.402495Z",
+      "descriptor": {
+        "name": "Nicol\u00e1s Maduro",
+        "bio": "Captured Venezuelan leader",
+        "tags": [
+          "leader",
+          "captured"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_flores_001",
+      "created_at": "2026-01-03T16:45:48.402503Z",
+      "updated_at": "2026-01-03T16:45:48.402503Z",
+      "descriptor": {
+        "name": "Cilia Flores",
+        "bio": "Captured Venezuelan figure",
+        "tags": [
+          "captured"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_padrino_001",
+      "created_at": "2026-01-03T16:45:48.402511Z",
+      "updated_at": "2026-01-03T16:45:48.402512Z",
+      "descriptor": {
+        "name": "Vladimir Padrino L\u00f3pez",
+        "bio": "Venezuelan Minister of Defense and FANB Commander",
+        "tags": [
+          "military",
+          "defense_minister",
+          "kingmaker"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_rodriguez_001",
+      "created_at": "2026-01-03T16:45:48.402520Z",
+      "updated_at": "2026-01-03T16:45:48.402521Z",
+      "descriptor": {
+        "name": "Delcy Rodr\u00edguez",
+        "bio": "Venezuelan Vice President claiming constitutional succession",
+        "tags": [
+          "vice_president",
+          "diplomat"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_cabello_001",
+      "created_at": "2026-01-03T16:45:48.402529Z",
+      "updated_at": "2026-01-03T16:45:48.402529Z",
+      "descriptor": {
+        "name": "Diosdado Cabello",
+        "bio": "Venezuelan PSUV paramilitary leader with critical threat level",
+        "tags": [
+          "threat",
+          "politician",
+          "paramilitary"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_machado_001",
+      "created_at": "2026-01-03T16:45:48.402538Z",
+      "updated_at": "2026-01-03T16:45:48.402538Z",
+      "descriptor": {
+        "name": "Mar\u00eda Corina Machado",
+        "bio": "Venezuelan opposition political leader",
+        "tags": [
+          "leader",
+          "opposition"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_gonzalez_001",
+      "created_at": "2026-01-03T16:45:48.402546Z",
+      "updated_at": "2026-01-03T16:45:48.402546Z",
+      "descriptor": {
+        "name": "Edmundo Gonz\u00e1lez",
+        "bio": "Venezuelan opposition political leader",
+        "tags": [
+          "leader",
+          "opposition"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_venezuela_001",
+      "created_at": "2026-01-03T16:45:48.402562Z",
+      "updated_at": "2026-01-03T16:45:48.402562Z",
+      "descriptor": {
+        "name": "Venezuela",
+        "bio": "Operational theater for decapitation strike",
+        "tags": [
+          "south_america",
+          "country"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_caribbean_001",
+      "created_at": "2026-01-03T16:45:48.402574Z",
+      "updated_at": "2026-01-03T16:45:48.402574Z",
+      "descriptor": {
+        "name": "Caribbean",
+        "bio": "Operational theater region",
+        "tags": [
+          "region",
+          "sea"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_fuerte_tiuna_001",
+      "created_at": "2026-01-03T16:45:48.402584Z",
+      "updated_at": "2026-01-03T16:45:48.402585Z",
+      "descriptor": {
+        "name": "Fuerte Tiuna",
+        "bio": "Fortified emergency command center in Caracas",
+        "tags": [
+          "command_center",
+          "military_base"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_la_carlota_001",
+      "created_at": "2026-01-03T16:45:48.402594Z",
+      "updated_at": "2026-01-03T16:45:48.402594Z",
+      "descriptor": {
+        "name": "La Carlota Airbase",
+        "bio": "Disabled Venezuelan airbase",
+        "tags": [
+          "airbase",
+          "military"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_miraflores_001",
+      "created_at": "2026-01-03T16:45:48.402603Z",
+      "updated_at": "2026-01-03T16:45:48.402604Z",
+      "descriptor": {
+        "name": "Miraflores Palace",
+        "bio": "Venezuelan presidential palace",
+        "tags": [
+          "palace",
+          "government_building"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_iwo_jima_001",
+      "created_at": "2026-01-03T16:45:48.402614Z",
+      "updated_at": "2026-01-03T16:45:48.402614Z",
+      "descriptor": {
+        "name": "USS Iwo Jima",
+        "bio": "U.S. naval vessel serving as mobile high-security prison",
+        "tags": [
+          "prison",
+          "naval",
+          "ship"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_ford_001",
+      "created_at": "2026-01-03T16:45:48.402623Z",
+      "updated_at": "2026-01-03T16:45:48.402623Z",
+      "descriptor": {
+        "name": "USS Gerald R. Ford",
+        "bio": "U.S. aircraft carrier strike group",
+        "tags": [
+          "carrier",
+          "naval",
+          "ship"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_fanb_001",
+      "created_at": "2026-01-03T16:45:48.402632Z",
+      "updated_at": "2026-01-03T16:45:48.402632Z",
+      "descriptor": {
+        "name": "FANB",
+        "bio": "Venezuelan National Bolivarian Armed Forces",
+        "tags": [
+          "military",
+          "armed_forces"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_psuv_001",
+      "created_at": "2026-01-03T16:45:48.402641Z",
+      "updated_at": "2026-01-03T16:45:48.402641Z",
+      "descriptor": {
+        "name": "PSUV",
+        "bio": "United Socialist Party of Venezuela",
+        "tags": [
+          "socialist",
+          "political_party"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_colectivos_001",
+      "created_at": "2026-01-03T16:45:48.402650Z",
+      "updated_at": "2026-01-03T16:45:48.402651Z",
+      "descriptor": {
+        "name": "Colectivos",
+        "bio": "Venezuelan paramilitary groups",
+        "tags": [
+          "militia",
+          "paramilitary"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_cuba_001",
+      "created_at": "2026-01-03T16:45:48.402659Z",
+      "updated_at": "2026-01-03T16:45:48.402659Z",
+      "descriptor": {
+        "name": "Cuba",
+        "bio": "Nation with advisors in Venezuela",
+        "tags": [
+          "ally",
+          "nation"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_un_001",
+      "created_at": "2026-01-03T16:45:48.402667Z",
+      "updated_at": "2026-01-03T16:45:48.402668Z",
+      "descriptor": {
+        "name": "United Nations",
+        "bio": "International organization for diplomatic appeals",
+        "tags": [
+          "international",
+          "diplomatic"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel_001",
+      "source_id": "ent_us_jsoc_001",
+      "target_id": "ent_maduro_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "U.S. JSOC captured Nicol\u00e1s Maduro during a kinetic decapitation strike.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.590967Z"
+    },
+    {
+      "id": "rel_002",
+      "source_id": "ent_us_jsoc_001",
+      "target_id": "ent_flores_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "U.S. JSOC captured Cilia Flores during a kinetic decapitation strike.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591029Z"
+    },
+    {
+      "id": "rel_003",
+      "source_id": "ent_usa_001",
+      "target_id": "ent_cartel_suns_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "United States is conducting military operations to dismantle the Cartel of the Suns.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591067Z"
+    },
+    {
+      "id": "rel_004",
+      "source_id": "ent_usa_001",
+      "target_id": "ent_venezuela_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "United States is conducting a kinetic decapitation strike in Venezuela.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591092Z"
+    },
+    {
+      "id": "rel_005",
+      "source_id": "ent_trump_001",
+      "target_id": "ent_usa_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Donald J. Trump is the President of the United States.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591109Z"
+    },
+    {
+      "id": "rel_006",
+      "source_id": "ent_rubio_001",
+      "target_id": "ent_usa_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Marco Rubio is the Secretary of State of the United States.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591126Z"
+    },
+    {
+      "id": "rel_007",
+      "source_id": "ent_bondi_001",
+      "target_id": "ent_usa_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Pam Bondi is the Attorney General of the United States.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591142Z"
+    },
+    {
+      "id": "rel_008",
+      "source_id": "ent_landau_001",
+      "target_id": "ent_usa_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Christopher Landau is the Deputy Secretary of State of the United States.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591155Z"
+    },
+    {
+      "id": "rel_009",
+      "source_id": "ent_padrino_001",
+      "target_id": "ent_fanb_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Vladimir Padrino L\u00f3pez is the Minister of Defense and FANB Commander.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591169Z"
+    },
+    {
+      "id": "rel_010",
+      "source_id": "ent_rodriguez_001",
+      "target_id": "ent_venezuela_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Delcy Rodr\u00edguez is the Venezuelan Vice President.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591185Z"
+    },
+    {
+      "id": "rel_011",
+      "source_id": "ent_cabello_001",
+      "target_id": "ent_psuv_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Diosdado Cabello is a leader within the United Socialist Party of Venezuela (PSUV).",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591199Z"
+    },
+    {
+      "id": "rel_012",
+      "source_id": "ent_cabello_001",
+      "target_id": "ent_colectivos_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Diosdado Cabello commands the Colectivos paramilitary groups.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591263Z"
+    },
+    {
+      "id": "rel_013",
+      "source_id": "ent_machado_001",
+      "target_id": "ent_venezuela_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Mar\u00eda Corina Machado is a Venezuelan opposition political leader.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591281Z"
+    },
+    {
+      "id": "rel_014",
+      "source_id": "ent_gonzalez_001",
+      "target_id": "ent_venezuela_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Edmundo Gonz\u00e1lez is a Venezuelan opposition political leader.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591298Z"
+    },
+    {
+      "id": "rel_015",
+      "source_id": "ent_maduro_001",
+      "target_id": "ent_venezuela_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Nicol\u00e1s Maduro is the captured Venezuelan leader.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591312Z"
+    },
+    {
+      "id": "rel_016",
+      "source_id": "ent_flores_001",
+      "target_id": "ent_venezuela_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Cilia Flores is a captured Venezuelan figure.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591326Z"
+    },
+    {
+      "id": "rel_017",
+      "source_id": "ent_padrino_001",
+      "target_id": "ent_fuerte_tiuna_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Vladimir Padrino L\u00f3pez is located at Fuerte Tiuna emergency command center.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591356Z"
+    },
+    {
+      "id": "rel_018",
+      "source_id": "ent_maduro_001",
+      "target_id": "ent_iwo_jima_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Nicol\u00e1s Maduro is held on USS Iwo Jima.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591382Z"
+    },
+    {
+      "id": "rel_019",
+      "source_id": "ent_flores_001",
+      "target_id": "ent_iwo_jima_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Cilia Flores is held on USS Iwo Jima.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591406Z"
+    },
+    {
+      "id": "rel_020",
+      "source_id": "ent_us_jsoc_001",
+      "target_id": "ent_usa_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "U.S. Joint Special Operations Command is a unit of the United States.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591421Z"
+    },
+    {
+      "id": "rel_021",
+      "source_id": "ent_cartel_suns_001",
+      "target_id": "ent_venezuela_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Cartel of the Suns is a Venezuelan narco-terrorist organization.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591435Z"
+    },
+    {
+      "id": "rel_022",
+      "source_id": "ent_fanb_001",
+      "target_id": "ent_venezuela_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "FANB is the Venezuelan National Bolivarian Armed Forces.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591449Z"
+    },
+    {
+      "id": "rel_023",
+      "source_id": "ent_psuv_001",
+      "target_id": "ent_venezuela_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "PSUV is the United Socialist Party of Venezuela.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591462Z"
+    },
+    {
+      "id": "rel_024",
+      "source_id": "ent_colectivos_001",
+      "target_id": "ent_venezuela_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Colectivos are Venezuelan paramilitary groups.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591477Z"
+    },
+    {
+      "id": "rel_025",
+      "source_id": "ent_cuba_001",
+      "target_id": "ent_venezuela_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Cuba has advisors present in Venezuela.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591501Z"
+    },
+    {
+      "id": "rel_026",
+      "source_id": "ent_rodriguez_001",
+      "target_id": "ent_un_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Delcy Rodr\u00edguez is making diplomatic appeals to the United Nations.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591515Z"
+    },
+    {
+      "id": "rel_027",
+      "source_id": "ent_padrino_001",
+      "target_id": "ent_rodriguez_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.5,
+      "description": "Delcy Rodr\u00edguez claims constitutional succession while Padrino L\u00f3pez commands military resistance.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591541Z"
+    },
+    {
+      "id": "rel_028",
+      "source_id": "ent_padrino_001",
+      "target_id": "ent_cabello_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.5,
+      "description": "Diosdado Cabello acts as a militant wildcard under the regime remnant structure led by Padrino L\u00f3pez.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591563Z"
+    },
+    {
+      "id": "rel_029",
+      "source_id": "ent_usa_001",
+      "target_id": "ent_gonzalez_001",
+      "relationship_type": "alliance",
+      "visibility": "public",
+      "strength": 0.9,
+      "description": "United States strategic objective is to transition to a recognized Edmundo Gonz\u00e1lez government.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591579Z"
+    },
+    {
+      "id": "rel_030",
+      "source_id": "ent_usa_001",
+      "target_id": "ent_machado_001",
+      "relationship_type": "alliance",
+      "visibility": "public",
+      "strength": 0.9,
+      "description": "United States strategic objective is to transition to a recognized Mar\u00eda Corina Machado government.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591593Z"
+    },
+    {
+      "id": "rel_031",
+      "source_id": "ent_gonzalez_001",
+      "target_id": "ent_machado_001",
+      "relationship_type": "alliance",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Edmundo Gonz\u00e1lez and Mar\u00eda Corina Machado are coordinating transition protocols.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591607Z"
+    },
+    {
+      "id": "rel_032",
+      "source_id": "ent_padrino_001",
+      "target_id": "ent_usa_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Vladimir Padrino L\u00f3pez has declared resistance against the U.S. intervention.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591633Z"
+    },
+    {
+      "id": "rel_033",
+      "source_id": "ent_cabello_001",
+      "target_id": "ent_usa_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Diosdado Cabello poses a critical threat level to U.S. operations via asymmetric response.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591658Z"
+    },
+    {
+      "id": "rel_034",
+      "source_id": "ent_cabello_001",
+      "target_id": "ent_machado_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Diosdado Cabello opposes the opposition leadership of Mar\u00eda Corina Machado.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591681Z"
+    },
+    {
+      "id": "rel_035",
+      "source_id": "ent_cabello_001",
+      "target_id": "ent_gonzalez_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Diosdado Cabello opposes the opposition leadership of Edmundo Gonz\u00e1lez.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591703Z"
+    },
+    {
+      "id": "rel_036",
+      "source_id": "ent_padrino_001",
+      "target_id": "ent_machado_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Vladimir Padrino L\u00f3pez opposes the entry of Mar\u00eda Corina Machado into power.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591726Z"
+    },
+    {
+      "id": "rel_037",
+      "source_id": "ent_padrino_001",
+      "target_id": "ent_gonzalez_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Vladimir Padrino L\u00f3pez opposes the entry of Edmundo Gonz\u00e1lez into power.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591750Z"
+    },
+    {
+      "id": "rel_038",
+      "source_id": "ent_usa_001",
+      "target_id": "ent_ford_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "USS Gerald R. Ford is part of U.S. military assets in the region.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591766Z"
+    },
+    {
+      "id": "rel_039",
+      "source_id": "ent_usa_001",
+      "target_id": "ent_iwo_jima_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "USS Iwo Jima is part of U.S. military assets in the region.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591781Z"
+    },
+    {
+      "id": "rel_040",
+      "source_id": "ent_venezuela_001",
+      "target_id": "ent_caribbean_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Venezuela is the operational theater within the Caribbean region.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591805Z"
+    },
+    {
+      "id": "rel_041",
+      "source_id": "ent_fuerte_tiuna_001",
+      "target_id": "ent_venezuela_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Fuerte Tiuna is located in Venezuela.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591829Z"
+    },
+    {
+      "id": "rel_042",
+      "source_id": "ent_la_carlota_001",
+      "target_id": "ent_venezuela_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "La Carlota Airbase is located in Venezuela.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591850Z"
+    },
+    {
+      "id": "rel_043",
+      "source_id": "ent_miraflores_001",
+      "target_id": "ent_venezuela_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Miraflores Palace is located in Venezuela.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591872Z"
+    },
+    {
+      "id": "rel_044",
+      "source_id": "ent_iwo_jima_001",
+      "target_id": "ent_caribbean_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "USS Iwo Jima is operating in the Caribbean.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591895Z"
+    },
+    {
+      "id": "rel_045",
+      "source_id": "ent_ford_001",
+      "target_id": "ent_caribbean_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "USS Gerald R. Ford is operating in the Caribbean.",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:46:09.591917Z"
+    }
+  ],
+  "validation_report": {}
+}

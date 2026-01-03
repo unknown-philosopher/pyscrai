@@ -8,7 +8,7 @@ from pyscrai_core import (
     StateComponent, DescriptorComponent, SpatialComponent, 
     LocationLayer, EntityType
 )
-from pyscrai_forge.src.prompts.harvester_prompts import get_analyst_prompt
+from pyscrai_forge.prompts.harvester_prompts import get_analyst_prompt
 from .models import EntityStub
 
 if TYPE_CHECKING:

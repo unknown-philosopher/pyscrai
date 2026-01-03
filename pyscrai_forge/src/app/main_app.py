@@ -264,7 +264,7 @@ class ReviewerApp:
             # Use the real Harvester Orchestrator to extract entities
             import asyncio
             from pyscrai_forge.agents.harvester.manager import HarvesterOrchestrator
-            from pyscrai_forge.src.prompts.harvester_prompts import Genre
+            from pyscrai_forge.prompts.harvester_prompts import Genre
             from pyscrai_core.llm_interface.provider_factory import create_provider_from_env
             from pyscrai_core import ProjectManifest
             

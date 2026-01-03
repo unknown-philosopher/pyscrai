@@ -1,0 +1,875 @@
+{
+  "entities": [
+    {
+      "id": "ent_padrino_lopez_001",
+      "created_at": "2026-01-03T16:44:57.364985Z",
+      "updated_at": "2026-01-03T16:44:57.364990Z",
+      "descriptor": {
+        "name": "Padrino L\u00f3pez",
+        "bio": "Venezuelan Defense Minister, critical variable in the crisis",
+        "tags": [
+          "leader",
+          "military"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_delcy_rodriguez_001",
+      "created_at": "2026-01-03T16:44:57.365020Z",
+      "updated_at": "2026-01-03T16:44:57.365021Z",
+      "descriptor": {
+        "name": "Delcy Rodr\u00edguez",
+        "bio": "Acting President of Venezuela, claim is militarily hollow",
+        "tags": [
+          "politician"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_maduro_001",
+      "created_at": "2026-01-03T16:44:57.365043Z",
+      "updated_at": "2026-01-03T16:44:57.365044Z",
+      "descriptor": {
+        "name": "Nicol\u00e1s Maduro",
+        "bio": "Venezuelan President, being flown to New York for arraignment",
+        "tags": [
+          "leader"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_christopher_landau_001",
+      "created_at": "2026-01-03T16:44:57.365068Z",
+      "updated_at": "2026-01-03T16:44:57.365069Z",
+      "descriptor": {
+        "name": "Christopher Landau",
+        "bio": "U.S. Deputy Secretary of State, potential negotiator",
+        "tags": [
+          "diplomat"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_tareck_el_aissami_001",
+      "created_at": "2026-01-03T16:44:57.365088Z",
+      "updated_at": "2026-01-03T16:44:57.365088Z",
+      "descriptor": {
+        "name": "Tareck El Aissami",
+        "bio": "Purged Venezuelan official, imprisoned in SEBIN facility",
+        "tags": [
+          "prisoner"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_diosdado_cabello_001",
+      "created_at": "2026-01-03T16:44:57.365107Z",
+      "updated_at": "2026-01-03T16:44:57.365107Z",
+      "descriptor": {
+        "name": "Diosdado Cabello",
+        "bio": "Venezuelan political figure, wildcard with $10M bounty",
+        "tags": [
+          "bounty"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_marco_rubio_001",
+      "created_at": "2026-01-03T16:44:57.365125Z",
+      "updated_at": "2026-01-03T16:44:57.365126Z",
+      "descriptor": {
+        "name": "Marco Rubio",
+        "bio": "U.S. Secretary of State",
+        "tags": [
+          "diplomat"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_pam_bondi_001",
+      "created_at": "2026-01-03T16:44:57.365145Z",
+      "updated_at": "2026-01-03T16:44:57.365146Z",
+      "descriptor": {
+        "name": "Pam Bondi",
+        "bio": "U.S. Attorney General",
+        "tags": [
+          "official"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_maria_corina_machado_001",
+      "created_at": "2026-01-03T16:44:57.365163Z",
+      "updated_at": "2026-01-03T16:44:57.365163Z",
+      "descriptor": {
+        "name": "Mar\u00eda Corina Machado",
+        "bio": "Venezuelan opposition leader, moral leader",
+        "tags": [
+          "opposition"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_fanb_001",
+      "created_at": "2026-01-03T16:44:57.365184Z",
+      "updated_at": "2026-01-03T16:44:57.365185Z",
+      "descriptor": {
+        "name": "FANB",
+        "bio": "Venezuelan military leadership",
+        "tags": [
+          "military"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_colectivos_001",
+      "created_at": "2026-01-03T16:44:57.365203Z",
+      "updated_at": "2026-01-03T16:44:57.365204Z",
+      "descriptor": {
+        "name": "colectivos",
+        "bio": "Pro-government armed groups in Venezuela",
+        "tags": [
+          "paramilitary"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_usa_001",
+      "created_at": "2026-01-03T16:44:57.365221Z",
+      "updated_at": "2026-01-03T16:44:57.365222Z",
+      "descriptor": {
+        "name": "United States",
+        "bio": "Nation conducting military operations in Venezuela",
+        "tags": [
+          "nation"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_russia_001",
+      "created_at": "2026-01-03T16:44:57.365238Z",
+      "updated_at": "2026-01-03T16:44:57.365239Z",
+      "descriptor": {
+        "name": "Russia",
+        "bio": "Nation requesting emergency UN Security Council session",
+        "tags": [
+          "nation"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_cuba_001",
+      "created_at": "2026-01-03T16:44:57.365255Z",
+      "updated_at": "2026-01-03T16:44:57.365256Z",
+      "descriptor": {
+        "name": "Cuba",
+        "bio": "Nation on high alert, fearing regional domino effect",
+        "tags": [
+          "nation"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_un_security_council_001",
+      "created_at": "2026-01-03T16:44:57.365273Z",
+      "updated_at": "2026-01-03T16:44:57.365273Z",
+      "descriptor": {
+        "name": "UN Security Council",
+        "bio": "International diplomatic body",
+        "tags": [
+          "international"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_pyscrai_001",
+      "created_at": "2026-01-03T16:44:57.365292Z",
+      "updated_at": "2026-01-03T16:44:57.365293Z",
+      "descriptor": {
+        "name": "PyScrAI",
+        "bio": "Simulation engine for information warfare",
+        "tags": [
+          "technology"
+        ],
+        "entity_type": "abstract"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_operation_southern_spear_001",
+      "created_at": "2026-01-03T16:44:57.365312Z",
+      "updated_at": "2026-01-03T16:44:57.365313Z",
+      "descriptor": {
+        "name": "Operation Southern Spear",
+        "bio": "Active military operation",
+        "tags": [
+          "operation"
+        ],
+        "entity_type": "abstract"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_plan_zamora_001",
+      "created_at": "2026-01-03T16:44:57.365438Z",
+      "updated_at": "2026-01-03T16:44:57.365444Z",
+      "descriptor": {
+        "name": "Plan Zamora",
+        "bio": "Total civilian-military mobilization plan",
+        "tags": [
+          "plan"
+        ],
+        "entity_type": "abstract"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_fuerte_tiuna_001",
+      "created_at": "2026-01-03T16:44:57.365631Z",
+      "updated_at": "2026-01-03T16:44:57.365639Z",
+      "descriptor": {
+        "name": "Fuerte Tiuna",
+        "bio": "Military fortress in Caracas, held by Padrino L\u00f3pez",
+        "tags": [
+          "military_base"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_caracas_001",
+      "created_at": "2026-01-03T16:44:57.365878Z",
+      "updated_at": "2026-01-03T16:44:57.365880Z",
+      "descriptor": {
+        "name": "Caracas",
+        "bio": "Capital city of Venezuela",
+        "tags": [
+          "capital"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_sebin_helicoide_001",
+      "created_at": "2026-01-03T16:44:57.365935Z",
+      "updated_at": "2026-01-03T16:44:57.365937Z",
+      "descriptor": {
+        "name": "SEBIN Helicoide",
+        "bio": "Venezuelan prison and intelligence headquarters",
+        "tags": [
+          "prison"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_cuba_location_001",
+      "created_at": "2026-01-03T16:44:57.365987Z",
+      "updated_at": "2026-01-03T16:44:57.365989Z",
+      "descriptor": {
+        "name": "Cuba",
+        "bio": "Island nation, potential escape destination",
+        "tags": [
+          "island"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_new_york_stewart_001",
+      "created_at": "2026-01-03T16:44:57.366037Z",
+      "updated_at": "2026-01-03T16:44:57.366039Z",
+      "descriptor": {
+        "name": "New York Stewart International Airport",
+        "bio": "Airport in New York, destination for Maduro",
+        "tags": [
+          "airport"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_southern_district_ny_001",
+      "created_at": "2026-01-03T16:44:57.366086Z",
+      "updated_at": "2026-01-03T16:44:57.366087Z",
+      "descriptor": {
+        "name": "Southern District of New York",
+        "bio": "Federal judicial district for arraignment",
+        "tags": [
+          "court"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_la_carlota_001",
+      "created_at": "2026-01-03T16:44:57.366135Z",
+      "updated_at": "2026-01-03T16:44:57.366137Z",
+      "descriptor": {
+        "name": "La Carlota Airbase",
+        "bio": "Disabled Venezuelan airbase",
+        "tags": [
+          "airbase"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_miraflores_palace_001",
+      "created_at": "2026-01-03T16:44:57.366184Z",
+      "updated_at": "2026-01-03T16:44:57.366186Z",
+      "descriptor": {
+        "name": "Miraflores Palace",
+        "bio": "Presidential palace in Caracas",
+        "tags": [
+          "palace"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_simon_bolivar_intl_001",
+      "created_at": "2026-01-03T16:44:57.366234Z",
+      "updated_at": "2026-01-03T16:44:57.366235Z",
+      "descriptor": {
+        "name": "Sim\u00f3n Bol\u00edvar Int'l",
+        "bio": "Venezuelan international airport, grounded",
+        "tags": [
+          "airport"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_caribbean_001",
+      "created_at": "2026-01-03T16:44:57.366282Z",
+      "updated_at": "2026-01-03T16:44:57.366284Z",
+      "descriptor": {
+        "name": "The Caribbean",
+        "bio": "Region under US naval dominance",
+        "tags": [
+          "region"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_uss_gerald_r_ford_001",
+      "created_at": "2026-01-03T16:44:57.366332Z",
+      "updated_at": "2026-01-03T16:44:57.366334Z",
+      "descriptor": {
+        "name": "USS Gerald R. Ford",
+        "bio": "US aircraft carrier maintaining blockade",
+        "tags": [
+          "naval"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_uss_iwo_jima_001",
+      "created_at": "2026-01-03T16:44:57.366382Z",
+      "updated_at": "2026-01-03T16:44:57.366384Z",
+      "descriptor": {
+        "name": "USS Iwo Jima",
+        "bio": "US amphibious assault ship maintaining blockade",
+        "tags": [
+          "naval"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel_001",
+      "source_id": "ent_padrino_lopez_001",
+      "target_id": "ent_fanb_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 0.9,
+      "description": "Padrino L\u00f3pez is the Defense Minister and leader of the FANB",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:45:08.334059Z"
+    },
+    {
+      "id": "rel_002",
+      "source_id": "ent_padrino_lopez_001",
+      "target_id": "ent_fuerte_tiuna_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Padrino L\u00f3pez is currently hunkered down in Fuerte Tiuna",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:45:08.334074Z"
+    },
+    {
+      "id": "rel_003",
+      "source_id": "ent_delcy_rodriguez_001",
+      "target_id": "ent_caracas_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Delcy Rodr\u00edguez is currently the most visible figure in Caracas",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:45:08.334093Z"
+    },
+    {
+      "id": "rel_004",
+      "source_id": "ent_delcy_rodriguez_001",
+      "target_id": "ent_miraflores_palace_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Delcy Rodr\u00edguez is present at Miraflores Palace",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:45:08.334101Z"
+    },
+    {
+      "id": "rel_005",
+      "source_id": "ent_tareck_el_aissami_001",
+      "target_id": "ent_sebin_helicoide_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.7,
+      "description": "El Aissami is likely still in a Venezuelan prison, possibly SEBIN Helicoide",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:45:08.334108Z"
+    },
+    {
+      "id": "rel_006",
+      "source_id": "ent_diosdado_cabello_001",
+      "target_id": "ent_colectivos_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Cabello can activate the colectivos to create chaos",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:45:08.334114Z"
+    },
+    {
+      "id": "rel_007",
+      "source_id": "ent_diosdado_cabello_001",
+      "target_id": "ent_cuba_location_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.6,
+      "description": "Cabello's most likely move is to negotiate escape to Cuba",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:45:08.334119Z"
+    },
+    {
+      "id": "rel_008",
+      "source_id": "ent_maduro_001",
+      "target_id": "ent_new_york_stewart_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Maduro is being flown to New York Stewart International Airport",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:45:08.334125Z"
+    },
+    {
+      "id": "rel_009",
+      "source_id": "ent_maduro_001",
+      "target_id": "ent_southern_district_ny_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Maduro is to be arraigned in the Southern District of New York",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:45:08.334129Z"
+    },
+    {
+      "id": "rel_010",
+      "source_id": "ent_russia_001",
+      "target_id": "ent_un_security_council_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.9,
+      "description": "Russia has requested an emergency UN Security Council session",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:45:08.334134Z"
+    },
+    {
+      "id": "rel_011",
+      "source_id": "ent_cuba_001",
+      "target_id": "ent_cuba_location_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Cuba is the nation located on the island",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:45:08.334139Z"
+    },
+    {
+      "id": "rel_012",
+      "source_id": "ent_usa_001",
+      "target_id": "ent_caribbean_001",
+      "relationship_type": "occupies",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "The Caribbean is under US naval dominance",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:45:08.334143Z"
+    },
+    {
+      "id": "rel_013",
+      "source_id": "ent_uss_gerald_r_ford_001",
+      "target_id": "ent_caribbean_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "USS Gerald R. Ford is maintaining a blockade in the Caribbean",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:45:08.334150Z"
+    },
+    {
+      "id": "rel_014",
+      "source_id": "ent_uss_iwo_jima_001",
+      "target_id": "ent_caribbean_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "USS Iwo Jima is maintaining a blockade in the Caribbean",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:45:08.334156Z"
+    },
+    {
+      "id": "rel_015",
+      "source_id": "ent_pyscrai_001",
+      "target_id": "ent_operation_southern_spear_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "PyScrAI engine is simulating the Operation Southern Spear crisis",
+      "metadata": "{}",
+      "created_at": "2026-01-03T16:45:08.334161Z"
+    }
+  ],
+  "validation_report": {}
+}

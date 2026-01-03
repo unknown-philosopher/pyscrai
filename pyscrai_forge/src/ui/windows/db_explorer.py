@@ -345,7 +345,7 @@ class DatabaseExplorerWindow(tk.Toplevel):
 
         # Open editor
         data = entity.model_dump()
-        TabbedEntityEditor(self, data, callback=lambda: self._on_entity_edited(entity_id))
+        TabbedEntityEditor(self, data, on_save=lambda: self._on_entity_edited(entity_id))
 
     def _on_entity_edited(self, entity_id: str):
         """Callback after entity is edited."""

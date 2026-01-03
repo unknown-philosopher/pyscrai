@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, List
 
-from pyscrai_forge.src.prompts.harvester_prompts import Genre
+from pyscrai_forge.prompts.harvester_prompts import Genre
 
 # Optional imports for file handling
 try:

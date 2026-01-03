@@ -11,26 +11,11 @@ Prompt Engineering Principles:
 4. Strict instruction to output ONLY valid JSON
 """
 
-from dataclasses import dataclass
-from enum import Enum
+from .core import Genre
 import json
 
 
-class Genre(str, Enum):
-    """Document genre for context-appropriate extraction."""
-    HISTORICAL = "historical"
-    FANTASY = "fantasy"
-    SCIFI = "scifi"
-    MODERN = "modern"
-    GENERIC = "generic"
 
-@dataclass
-class PromptTemplate:
-    """Container for extraction prompt configuration."""
-    system_prompt: str
-    user_prompt_template: str
-    genre: Genre
-    target_entities: list[str]
 
 # =============================================================================
 # SYSTEM PROMPTS - SCOUT (ENTITY DISCOVERY)
