@@ -24,9 +24,7 @@ from .narrative import (
     build_possession_prompt,
 )
 
-# Legacy exports for backward compatibility during transition
-from . import harvester_prompts
-from . import architect_prompts
+
 
 __all__ = [
     # Core
@@ -45,7 +43,4 @@ __all__ = [
     "build_possession_system_prompt",
     "build_scenario_prompt",
     "build_possession_prompt",
-    # Legacy (for transition)
-    "harvester_prompts",
-    "architect_prompts",
 ]

@@ -4,7 +4,8 @@ import json
 import re
 from typing import TYPE_CHECKING
 from pyscrai_core import EntityType
-from pyscrai_forge.prompts.harvester_prompts import Genre, get_scout_prompt
+from pyscrai_forge.prompts.core import Genre
+from pyscrai_forge.prompts.narrative import get_scout_prompt
 from pyscrai_forge.agents.models import EntityStub
 
 if TYPE_CHECKING:

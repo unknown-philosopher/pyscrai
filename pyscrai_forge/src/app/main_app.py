@@ -260,9 +260,10 @@ class ReviewerApp:
         
         from pyscrai_forge.src.ui.import_dialog import ImportDialog
         
-        def on_import(text, metadata, file_path):
+        def on_import(text, metadata, file_path, interactive=False):
             # Use ForgeManager to extract entities
             import asyncio
+            import threading
             from pyscrai_forge.agents.manager import ForgeManager
             from pyscrai_forge.prompts.core import Genre
             from pyscrai_core.llm_interface.provider_factory import create_provider_from_env
@@ -281,10 +282,15 @@ class ReviewerApp:
             progress_status = tk.Label(progress_win, text="", fg="gray")
             progress_status.pack()
             
+            result_container = {"entities": None, "relationships": None, "report": None, "error": None}
+            
             def update_progress(msg, status=""):
-                progress_label.config(text=msg)
-                progress_status.config(text=status)
-                progress_win.update()
+                try:
+                    progress_label.config(text=msg)
+                    progress_status.config(text=status)
+                    progress_win.update()
+                except:
+                    pass
             
             async def run_extraction():
                 try:
@@ -297,7 +303,14 @@ class ReviewerApp:
                         project_path = self.project_controller.current_project
                     
                     async with provider:
-                        manager = ForgeManager(provider, project_path=project_path)
+                        # Create HIL callback if interactive mode is enabled
+                        hil_callback = None
+                        if interactive:
+                            from pyscrai_forge.src.app.hil_modal import TkinterHIL
+                            hil = TkinterHIL(self.root)
+                            hil_callback = hil.callback
+                        
+                        manager = ForgeManager(provider, project_path=project_path, hil_callback=hil_callback)
                         
                         # Run extraction pipeline (creates review packet)
                         update_progress("Running extraction pipeline...", f"Model: {model or 'default'}")
@@ -309,7 +322,8 @@ class ReviewerApp:
                             packet_path = await manager.run_extraction_pipeline(
                                 text=text,
                                 genre=Genre.GENERIC,
-                                output_path=tmp_path
+                                output_path=tmp_path,
+                                interactive=interactive
                             )
                             
                             # Load the packet to get entities and relationships
@@ -343,11 +357,38 @@ class ReviewerApp:
                 except Exception as e:
                     raise Exception(f"LLM connection or extraction failed: {str(e)}")
             
-            try:
-                # Run async extraction
-                entities, relationships, report = asyncio.run(run_extraction())
+            def run_async_in_thread():
+                """Run the async extraction in a separate thread with its own event loop."""
+                try:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    try:
+                        entities, relationships, report = loop.run_until_complete(run_extraction())
+                        result_container["entities"] = entities
+                        result_container["relationships"] = relationships
+                        result_container["report"] = report
+                    finally:
+                        loop.close()
+                except Exception as e:
+                    result_container["error"] = str(e)
                 
-                progress_win.destroy()
+                # Schedule cleanup in main thread
+                self.root.after(0, finish_extraction)
+            
+            def finish_extraction():
+                """Handle extraction results in main thread."""
+                try:
+                    progress_win.destroy()
+                except:
+                    pass
+                
+                if result_container["error"]:
+                    messagebox.showerror("Extraction Error", result_container["error"], parent=self.root)
+                    return
+                
+                entities = result_container["entities"]
+                relationships = result_container["relationships"]
+                report = result_container["report"]
                 
                 # Load into data manager
                 self.data_manager.entities = entities
@@ -360,28 +401,6 @@ class ReviewerApp:
                 # Update UI references and refresh after transition (treeviews are now created)
                 self._refresh_component_editor_ui()
                 
-                # Automatic backup to /data directory
-                if self.project_controller.current_project:
-                    import datetime
-                    import re
-                    data_dir = self.project_controller.current_project / "data"
-                    data_dir.mkdir(exist_ok=True)
-                    src_name = Path(file_path).stem if file_path else "imported"
-                    timestamp = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
-                    safe_src = re.sub(r'[^a-zA-Z0-9_\-]', '_', src_name)
-                    out_name = f"entity_components_{timestamp}_{safe_src}.json"
-                    out_path = data_dir / out_name
-                    backup_data = {
-                        "entities": [json.loads(e.model_dump_json()) for e in entities],
-                        "relationships": [json.loads(r.model_dump_json()) for r in relationships],
-                        "validation_report": report.model_dump() if hasattr(report, 'model_dump') else {}
-                    }
-                    try:
-                        with open(out_path, "w", encoding="utf-8") as f:
-                            json.dump(backup_data, f, indent=2)
-                    except Exception as e:
-                        print(f"[WARN] Failed to save backup JSON: {e}")
-                
                 if len(entities) == 0:
                     messagebox.showwarning(
                         "No Entities Found",
@@ -392,27 +411,38 @@ class ReviewerApp:
                         "• Model may need different prompting"
                     )
                 else:
+                    out_path = None
+                    if self.project_controller.current_project:
+                        import datetime
+                        import re
+                        data_dir = self.project_controller.current_project / "data"
+                        data_dir.mkdir(exist_ok=True)
+                        src_name = Path(file_path).stem if file_path else "imported"
+                        timestamp = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
+                        safe_src = re.sub(r'[^a-zA-Z0-9_\-]', '_', src_name)
+                        out_name = f"entity_components_{timestamp}_{safe_src}.json"
+                        out_path = data_dir / out_name
+                        backup_data = {
+                            "entities": [json.loads(e.model_dump_json()) for e in entities],
+                            "relationships": [json.loads(r.model_dump_json()) for r in relationships],
+                            "validation_report": report.model_dump() if hasattr(report, 'model_dump') else {}
+                        }
+                        try:
+                            with open(out_path, "w", encoding="utf-8") as f:
+                                json.dump(backup_data, f, indent=2)
+                        except Exception as e:
+                            print(f"[WARN] Failed to save backup JSON: {e}")
+                    
                     messagebox.showinfo(
                         "Import Complete",
                         f"Extracted {len(entities)} entities and {len(relationships)} relationships from {file_path}.\n\n"
                         f"Validation: {'✓ Passed' if report.is_valid else f'✗ {len(report.critical_errors)} errors'}\n\n"
-                        f"Backup saved to: {out_path if self.project_controller.current_project else '[no project loaded]'}"
+                        f"Backup saved to: {out_path if out_path else '[no project loaded]'}"
                     )
-            except Exception as e:
-                progress_win.destroy()
-                error_msg = str(e)
-                if "All connection attempts failed" in error_msg or "LLM connection" in error_msg:
-                    messagebox.showerror(
-                        "LLM Connection Failed",
-                        "Failed to connect to LLM provider.\n\n"
-                        "Please ensure:\n"
-                        "• Your .env file has valid API credentials\n"
-                        "• OPENROUTER_API_KEY or other provider key is set\n"
-                        "• You have internet connectivity\n\n"
-                        f"Technical details:\n{error_msg}"
-                    )
-                else:
-                    messagebox.showerror("Extraction Failed", f"Error during entity extraction:\n\n{error_msg}")
+            
+            # Start extraction in background thread
+            thread = threading.Thread(target=run_async_in_thread, daemon=True)
+            thread.start()
         
         ImportDialog(self.root, on_import=on_import)
     

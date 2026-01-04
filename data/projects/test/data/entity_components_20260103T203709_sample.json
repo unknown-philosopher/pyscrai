@@ -1,0 +1,205 @@
+{
+  "entities": [
+    {
+      "id": "ent_sector4_001",
+      "created_at": "2026-01-04T01:36:25.904136Z",
+      "updated_at": "2026-01-04T01:36:25.904141Z",
+      "descriptor": {
+        "name": "Sector 4",
+        "bio": "Geographic or operational sector",
+        "tags": [
+          "sector"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_smith_alpha_001",
+      "created_at": "2026-01-04T01:36:25.904181Z",
+      "updated_at": "2026-01-04T01:36:25.904182Z",
+      "descriptor": {
+        "name": "Operative Smith",
+        "bio": "Operative in Unit Alpha, transferred credits",
+        "tags": [
+          "alpha",
+          "operative"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_unit_alpha_001",
+      "created_at": "2026-01-04T01:36:25.904216Z",
+      "updated_at": "2026-01-04T01:36:25.904217Z",
+      "descriptor": {
+        "name": "Unit Alpha",
+        "bio": "Operative unit",
+        "tags": [
+          "military",
+          "unit"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_smith_beta_001",
+      "created_at": "2026-01-04T01:36:25.904233Z",
+      "updated_at": "2026-01-04T01:36:25.904234Z",
+      "descriptor": {
+        "name": "Commander J. Smith",
+        "bio": "Commander in Unit Beta, received package",
+        "tags": [
+          "commander",
+          "beta"
+        ],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_unit_beta_001",
+      "created_at": "2026-01-04T01:36:25.904247Z",
+      "updated_at": "2026-01-04T01:36:25.904247Z",
+      "descriptor": {
+        "name": "Unit Beta",
+        "bio": "Operative unit",
+        "tags": [
+          "military",
+          "unit"
+        ],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ent_safehouse_gamma_001",
+      "created_at": "2026-01-04T01:36:25.904262Z",
+      "updated_at": "2026-01-04T01:36:25.904262Z",
+      "descriptor": {
+        "name": "Safehouse Gamma",
+        "bio": "Compromised safehouse location",
+        "tags": [
+          "compromised",
+          "safehouse"
+        ],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel_001",
+      "source_id": "ent_smith_alpha_001",
+      "target_id": "ent_unit_alpha_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Operative Smith is a member of Unit Alpha",
+      "metadata": "{}",
+      "created_at": "2026-01-04T01:36:52.513224Z"
+    },
+    {
+      "id": "rel_002",
+      "source_id": "ent_smith_beta_001",
+      "target_id": "ent_unit_beta_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Commander J. Smith is a member of Unit Beta",
+      "metadata": "{}",
+      "created_at": "2026-01-04T01:36:52.513234Z"
+    },
+    {
+      "id": "rel_003",
+      "source_id": "ent_smith_alpha_001",
+      "target_id": "ent_safehouse_gamma_001",
+      "relationship_type": "trade",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Operative Smith transferred credits to the safehouse",
+      "metadata": "{}",
+      "created_at": "2026-01-04T01:36:52.513238Z"
+    },
+    {
+      "id": "rel_004",
+      "source_id": "ent_smith_beta_001",
+      "target_id": "ent_safehouse_gamma_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Commander J. Smith received a package from the safehouse",
+      "metadata": "{}",
+      "created_at": "2026-01-04T01:36:52.513240Z"
+    },
+    {
+      "id": "rel_005",
+      "source_id": "ent_safehouse_gamma_001",
+      "target_id": "ent_sector4_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Safehouse Gamma is located in Sector 4",
+      "metadata": "{}",
+      "created_at": "2026-01-04T01:36:52.513250Z"
+    }
+  ],
+  "validation_report": {}
+}

@@ -1,0 +1,16 @@
+INTERCEPT: SECTOR 4
+DATE: 2025-10-12
+
+Subject: Resource Transfer
+
+Operative Smith (Unit Alpha) has transferred 500 Credits to the safehouse.
+The package was received by Commander J. Smith (Unit Beta).
+Current status of Safehouse Gamma is compromised.
+
+Entities of interest:
+
+Smith (Alpha) - Rank: Sergeant
+
+Smith (Beta) - Rank: 4
+
+Safehouse Gamma - Status: Red

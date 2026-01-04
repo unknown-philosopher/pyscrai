@@ -27,8 +27,10 @@ from pyscrai_forge.agents.analyst import AnalystAgent
 from pyscrai_forge.agents.narrator import NarratorAgent
 from pyscrai_forge.agents.scout import ScoutAgent
 from pyscrai_forge.agents.models import EntityStub
-from pyscrai_forge.prompts.architect_prompts import ARCHITECT_SYSTEM_PROMPT, build_possession_system_prompt
-from pyscrai_forge.prompts.harvester_prompts import Genre, get_relationship_prompt
+from pyscrai_forge.agents.hil_protocol import HILManager, HILCallback, HILContext, HILResponse, HILAction
+from pyscrai_forge.prompts.core import Genre
+from pyscrai_forge.prompts.narrative import ARCHITECT_SYSTEM_PROMPT, build_possession_system_prompt, get_scout_prompt
+from pyscrai_forge.prompts.analysis import get_relationship_prompt
 from pyscrai_core import Relationship, RelationshipType
 
 console = Console()
@@ -44,7 +46,7 @@ class ForgeManager:
     - Tool execution (project management, entity creation, etc.)
     """
 
-    def __init__(self, provider: LLMProvider, project_path: Optional[Path] = None):
+    def __init__(self, provider: LLMProvider, project_path: Optional[Path] = None, hil_callback: Optional[HILCallback] = None):
         self.provider = provider
         
         # Robust path resolution
@@ -54,6 +56,9 @@ class ForgeManager:
         self.analyst = AnalystAgent(provider)
         self.narrator = NarratorAgent(provider)
         self.scout = ScoutAgent(provider)
+        
+        # HIL Manager
+        self.hil = HILManager(callback=hil_callback, interactive=hil_callback is not None)
         
         # State
         self.controller: Optional[CoreController] = None
@@ -179,7 +184,8 @@ class ForgeManager:
         self,
         text: str,
         genre: Genre = Genre.GENERIC,
-        output_path: Optional[Path] = None
+        output_path: Optional[Path] = None,
+        interactive: bool = None
     ) -> str:
         """Run the full extraction pipeline: Scout → Analyst → Relationships → Save.
         
@@ -187,6 +193,7 @@ class ForgeManager:
             text: Raw text to extract entities from
             genre: Document genre for context
             output_path: Optional path to save review packet JSON
+            interactive: Override HIL interactive mode (uses hil_callback presence if None)
             
         Returns:
             Path to the generated review packet JSON file
@@ -194,21 +201,125 @@ class ForgeManager:
         if not self.controller:
             raise ValueError("No project loaded. Cannot run extraction pipeline.")
         
+        # Override interactive mode if specified
+        if interactive is not None:
+            old_interactive = self.hil.interactive
+            self.hil.interactive = interactive
+        else:
+            old_interactive = None
+        
+        try:
+            return await self._run_extraction_pipeline_with_hil(text, genre, output_path)
+        finally:
+            # Restore interactive mode
+            if old_interactive is not None:
+                self.hil.interactive = old_interactive
+    
+    async def _run_extraction_pipeline_with_hil(
+        self,
+        text: str,
+        genre: Genre,
+        output_path: Optional[Path]
+    ) -> str:
+        """Internal extraction pipeline with HIL pause points."""
         import asyncio
         import json
         from datetime import datetime
         
         manifest = self.controller.manifest
         
-        console.print(f"[dim]--- [Phase 1] Scouting ({len(text)} chars) ---[/dim]")
-        stubs = await self.scout.discover_entities(text, genre)
-        
-        if not stubs:
-            error_msg = "Scout phase failed: No entities discovered. This may indicate an API error or insufficient text content."
-            console.print(f"[red]{error_msg}[/red]")
-            raise ValueError(error_msg)
-        
-        console.print(f"Found {len(stubs)} potential entities.")
+        # Retry loop to handle RETRY actions without recursion
+        retry_requested = True
+        while retry_requested:
+            retry_requested = False
+            
+            # =================================================================
+            # PHASE 1: SCOUT (Entity Discovery)
+            # =================================================================
+            console.print(f"[dim]--- [Phase 1] Scouting ({len(text)} chars) ---[/dim]")
+            
+            # Pre-execution pause: Allow user to edit scout prompt
+            system_prompt, user_prompt = get_scout_prompt(text, genre)
+            pre_context = HILContext(
+                phase="scout",
+                agent_name="ScoutAgent",
+                is_pre_execution=True,
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                metadata={"text_length": len(text), "genre": genre.value}
+            )
+            
+            pre_response = await self.hil.pause(pre_context)
+            
+            if pre_response.action == HILAction.ABORT:
+                raise ValueError("Pipeline aborted by user at Scout phase")
+            elif pre_response.action == HILAction.SKIP:
+                console.print("[yellow]Scout phase skipped by user[/yellow]")
+                stubs = []
+            elif pre_response.action == HILAction.RETRY:
+                # PRE-execution retry: just restart the phase
+                console.print("[yellow]Retrying Scout phase...[/yellow]")
+                retry_requested = True
+                continue
+            else:
+                # Use edited prompts if provided
+                if pre_response.edited_system_prompt:
+                    system_prompt = pre_response.edited_system_prompt
+                if pre_response.edited_user_prompt:
+                    user_prompt = pre_response.edited_user_prompt
+                
+                # Run scout (note: would need to modify scout to accept custom prompts)
+                stubs = await self.scout.discover_entities(text, genre)
+            
+            if not stubs:
+                error_msg = "Scout phase failed: No entities discovered"
+                console.print(f"[red]{error_msg}[/red]")
+                # Post-execution pause: allow retry
+                post_context = HILContext(
+                    phase="scout",
+                    agent_name="ScoutAgent",
+                    is_pre_execution=False,
+                    system_prompt=system_prompt,
+                    user_prompt=user_prompt,
+                    results=[],
+                    metadata={"error": error_msg}
+                )
+                post_response = await self.hil.pause(post_context)
+                
+                if post_response.action == HILAction.RETRY:
+                    # Retry with potentially edited prompt
+                    retry_requested = True
+                    continue
+                elif post_response.action != HILAction.ABORT:
+                    # Continue with empty results if user approves
+                    pass
+                else:
+                    raise ValueError(error_msg)
+            
+            if not retry_requested:
+                console.print(f"Found {len(stubs)} potential entities.")
+                
+                # Post-execution pause: Show discovered entities, allow editing
+                post_context = HILContext(
+                    phase="scout",
+                    agent_name="ScoutAgent",
+                    is_pre_execution=False,
+                    system_prompt=system_prompt,
+                    user_prompt=user_prompt,
+                    results=stubs,
+                    metadata={"entity_count": len(stubs)}
+                )
+                post_response = await self.hil.pause(post_context)
+                
+                if post_response.action == HILAction.ABORT:
+                    raise ValueError("Pipeline aborted by user after Scout phase")
+                elif post_response.action == HILAction.RETRY:
+                    # On POST-execution retry, go back to pre-execution to allow prompt editing
+                    console.print("[yellow]Retrying Scout phase from pre-execution...[/yellow]")
+                    retry_requested = True
+                    continue
+                elif post_response.action == HILAction.EDIT and post_response.edited_results:
+                    stubs = post_response.edited_results
 
         # Dedup stubs (simple by ID)
         seen_ids = set()
@@ -218,18 +329,125 @@ class ForgeManager:
                 unique_stubs.append(stub)
                 seen_ids.add(stub.id)
         
+        # =================================================================
+        # PHASE 2: ANALYST (Entity Extraction & Refinement)
+        # =================================================================
         console.print(f"[dim]--- [Phase 2] Analyzing {len(unique_stubs)} entities ---[/dim]")
-        # Parallel analysis
-        tasks = []
-        for stub in unique_stubs:
-            schema = manifest.entity_schemas.get(stub.entity_type.value, {})
-            tasks.append(self.analyst.extract_from_text(stub, text, schema))
         
-        enriched_entities = await asyncio.gather(*tasks)
+        # Pre-execution pause: Allow user to edit analyst prompt
+        analyst_system_prompt = self.analyst.get_system_prompt() if hasattr(self.analyst, "get_system_prompt") else "You are the Analyst, tasked with extracting and refining entity details."
+        analyst_user_prompt = f"Analyze the following entities and extract details. Entities: {[stub.name for stub in unique_stubs]}"
+        analyst_pre_context = HILContext(
+            phase="analyst",
+            agent_name="AnalystAgent",
+            is_pre_execution=True,
+            system_prompt=analyst_system_prompt,
+            user_prompt=analyst_user_prompt,
+            metadata={"entity_count": len(unique_stubs)}
+        )
+        analyst_pre_response = await self.hil.pause(analyst_pre_context)
+        
+        if analyst_pre_response.action == HILAction.ABORT:
+            raise ValueError("Pipeline aborted by user at Analyst phase")
+        elif analyst_pre_response.action == HILAction.SKIP:
+            console.print("[yellow]Analyst phase skipped by user[/yellow]")
+            enriched_entities = unique_stubs
+        else:
+            # Use edited prompts if provided (future: wire to agent)
+            # Run analyst
+            tasks = []
+            for stub in unique_stubs:
+                schema = manifest.entity_schemas.get(stub.entity_type.value, {})
+                tasks.append(self.analyst.extract_from_text(stub, text, schema))
+            enriched_entities = await asyncio.gather(*tasks)
+
+            # Post-execution pause: Show analyzed entities, allow editing
+            analyst_post_context = HILContext(
+                phase="analyst",
+                agent_name="AnalystAgent",
+                is_pre_execution=False,
+                system_prompt=analyst_system_prompt,
+                user_prompt=analyst_user_prompt,
+                results=enriched_entities,
+                metadata={"entity_count": len(enriched_entities)}
+            )
+            analyst_post_response = await self.hil.pause(analyst_post_context)
+            
+            if analyst_post_response.action == HILAction.ABORT:
+                raise ValueError("Pipeline aborted by user after Analyst phase")
+            elif analyst_post_response.action == HILAction.RETRY:
+                # Retry not supported for Analyst phase in current implementation
+                console.print("[yellow]Retry not yet supported for Analyst phase. Continuing...[/yellow]")
+            elif analyst_post_response.action == HILAction.EDIT and analyst_post_response.edited_results:
+                enriched_entities = analyst_post_response.edited_results
+
         console.print("Analysis complete.")
 
+        # =================================================================
+        # PHASE 3: RELATIONSHIPS (Mapping connections between entities)
+        # =================================================================
         console.print("[dim]--- [Phase 3] Mapping Relationships ---[/dim]")
-        relationships = await self._extract_relationships(text, enriched_entities, genre)
+        
+        # Pre-execution pause: Allow user to edit relationship prompt
+        from pyscrai_forge.prompts.analysis import get_relationship_prompt
+        ent_dicts = [
+            {
+                "id": e.id,
+                "name": e.descriptor.name,
+                "entity_type": e.descriptor.entity_type.value,
+                "description": e.descriptor.bio
+            }
+            for e in enriched_entities
+        ]
+        rel_system_prompt, rel_user_prompt = get_relationship_prompt(text, ent_dicts, genre)
+        rel_pre_context = HILContext(
+            phase="relationships",
+            agent_name="RelationshipExtractor",
+            is_pre_execution=True,
+            system_prompt=rel_system_prompt,
+            user_prompt=rel_user_prompt,
+            metadata={"entity_count": len(enriched_entities)}
+        )
+        rel_pre_response = await self.hil.pause(rel_pre_context)
+        
+        if rel_pre_response.action == HILAction.ABORT:
+            raise ValueError("Pipeline aborted by user at Relationships phase")
+        elif rel_pre_response.action == HILAction.SKIP:
+            console.print("[yellow]Relationships phase skipped by user[/yellow]")
+            relationships = []
+        else:
+            # Use edited prompts if provided
+            if rel_pre_response.edited_system_prompt:
+                rel_system_prompt = rel_pre_response.edited_system_prompt
+            if rel_pre_response.edited_user_prompt:
+                rel_user_prompt = rel_pre_response.edited_user_prompt
+            
+            # Extract relationships (using internal helper method)
+            relationships = await self._extract_relationships_with_prompts(
+                rel_system_prompt,
+                rel_user_prompt
+            )
+            
+            # Post-execution pause: Show relationships, allow editing
+            rel_post_context = HILContext(
+                phase="relationships",
+                agent_name="RelationshipExtractor",
+                is_pre_execution=False,
+                system_prompt=rel_system_prompt,
+                user_prompt=rel_user_prompt,
+                results=relationships,
+                metadata={"relationship_count": len(relationships)}
+            )
+            rel_post_response = await self.hil.pause(rel_post_context)
+            
+            if rel_post_response.action == HILAction.ABORT:
+                raise ValueError("Pipeline aborted by user after Relationships phase")
+            elif rel_post_response.action == HILAction.RETRY:
+                # Retry not supported for Relationships phase in current implementation
+                console.print("[yellow]Retry not yet supported for Relationships phase. Continuing...[/yellow]")
+            elif rel_post_response.action == HILAction.EDIT and rel_post_response.edited_results:
+                relationships = rel_post_response.edited_results
+        
         console.print(f"Found {len(relationships)} relationships.")
 
         # Validate
@@ -277,7 +495,10 @@ class ForgeManager:
             })
             
         system_prompt, user_prompt = get_relationship_prompt(text, ent_dicts, genre)
-        
+        return await self._extract_relationships_with_prompts(system_prompt, user_prompt)
+    
+    async def _extract_relationships_with_prompts(self, system_prompt: str, user_prompt: str) -> List[Relationship]:
+        """Helper to extract relationships using custom prompts."""
         try:
             response = await self.provider.complete_simple(
                 prompt=user_prompt,

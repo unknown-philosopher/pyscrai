@@ -78,6 +78,7 @@ async def _process_file(
     model: str,
     output: Path | None,
     project_path: Path | None = None,
+    interactive: bool = False,
 ) -> str:
     """Internal async function for processing a single file."""
     provider, env_model = create_provider_from_env()
@@ -122,12 +123,21 @@ async def _process_file(
             temp_controller.create_project(manifest)
     
     async with provider:
-        manager = ForgeManager(provider, project_path=temp_project_path)
+        # Set up HIL callback if interactive
+        hil_callback = None
+        if interactive:
+            from pyscrai_forge.agents.terminal_hil import TerminalHIL
+            hil = TerminalHIL()
+            hil_callback = hil.callback
+            console.print("[cyan]Interactive mode enabled - you will be prompted at each phase[/cyan]\n")
+        
+        manager = ForgeManager(provider, project_path=temp_project_path, hil_callback=hil_callback)
         console.print(f"Starting extraction pipeline on {file_path.name}...")
         result_path = await manager.run_extraction_pipeline(
             text=text,
             genre=genre,
-            output_path=output
+            output_path=output,
+            interactive=interactive
         )
         
         return result_path
@@ -140,6 +150,7 @@ def process_file(
     model: Annotated[str | None, typer.Option("--model", "-m", help="LLM model to use")] = DEFAULT_MODEL or None,
     output: Annotated[Path | None, typer.Option("--output", "-o", help="Output JSON file")] = None,
     project: Annotated[Path | None, typer.Option("--project", "-p", help="Path to Project (for schema)")] = None,
+    interactive: Annotated[bool, typer.Option("--interactive", "-i", help="Enable Human-in-the-Loop interaction")] = False,
 ) -> None:
     """Process a single text file and extract entities."""
     if not file.exists():
@@ -149,12 +160,13 @@ def process_file(
     console.print(Panel(
         f"[bold]File:[/bold] {file}\n"
         f"[bold]Genre:[/bold] {genre.value}\n"
-        f"[bold]Model:[/bold] {model or 'auto'}",
+        f"[bold]Model:[/bold] {model or 'auto'}\n"
+        f"[bold]Interactive:[/bold] {'Yes (HIL enabled)' if interactive else 'No'}",
         title="Agentic Harvester",
         border_style="blue",
     ))
     
-    out_path = asyncio.run(_process_file(file, genre, model, output, project))
+    out_path = asyncio.run(_process_file(file, genre, model, output, project, interactive))
     
     console.print(Panel(
         f"Review Packet ready at:\n[bold]{out_path}[/bold]\n\n"
@@ -163,6 +175,120 @@ def process_file(
         title="Extraction Complete",
         border_style="green",
     ))
+
+
+# --- ENGINE Commands ---
+@app.command("run")
+def run_simulation(
+    project: Annotated[Path, typer.Argument(help="Path to project directory")],
+    max_turns: Annotated[int, typer.Option("--turns", "-t", help="Maximum turns to run")] = 100,
+):
+    """Run a simulation on a Forge project."""
+    from pyscrai_engine import SimulationEngine
+    
+    if not project.exists():
+        console.print(f"[red]Error:[/red] Project not found: {project}")
+        raise typer.Exit(1)
+        
+    console.print(Panel(
+        f"[bold]Project:[/bold] {project}\n"
+        f"[bold]Max Turns:[/bold] {max_turns}",
+        title="PyScrAI Engine - Simulation Run",
+        border_style="cyan",
+    ))
+    
+    try:
+        engine = SimulationEngine(project)
+        engine.initialize()
+        engine.run(max_turns=max_turns)
+        
+        console.print(Panel(
+            f"[green]Simulation completed successfully![/green]\n"
+            f"Total turns: {engine.current_turn}\n"
+            f"Events processed: {len(engine.turn_history)}",
+            title="Simulation Complete",
+            border_style="green",
+        ))
+        
+    except Exception as e:
+        console.print(f"[red]Simulation error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command("step")
+def step_simulation(
+    project: Annotated[Path, typer.Argument(help="Path to project directory")],
+):
+    """Execute a single turn in a simulation."""
+    from pyscrai_engine import SimulationEngine
+    
+    if not project.exists():
+        console.print(f"[red]Error:[/red] Project not found: {project}")
+        raise typer.Exit(1)
+        
+    try:
+        engine = SimulationEngine(project)
+        engine.initialize()
+        
+        console.print(f"[cyan]Executing turn {engine.current_turn + 1}...[/cyan]")
+        turn_result = engine.step()
+        
+        console.print(Panel(
+            f"[green]Turn {turn_result.turn_number} completed[/green]\n"
+            f"Events: {len(turn_result.events)}\n"
+            f"Narrative entries: {len(turn_result.narrative)}",
+            title="Turn Complete",
+            border_style="green",
+        ))
+        
+        # Display narrative
+        if turn_result.narrative:
+            console.print("\n[bold]Turn Narrative:[/bold]")
+            for entry in turn_result.narrative:
+                console.print(f"  • {entry.text}")
+        
+    except Exception as e:
+        console.print(f"[red]Simulation error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command("status")
+def show_status(
+    project: Annotated[Path, typer.Argument(help="Path to project directory")],
+):
+    """Show current simulation status."""
+    from pyscrai_engine import SimulationEngine
+    
+    if not project.exists():
+        console.print(f"[red]Error:[/red] Project not found: {project}")
+        raise typer.Exit(1)
+        
+    try:
+        engine = SimulationEngine(project)
+        engine.initialize()
+        
+        # Count entities by type
+        from pyscrai_core import EntityType
+        actors = engine.get_entities_by_type(EntityType.ACTOR)
+        polities = engine.get_entities_by_type(EntityType.POLITY)
+        locations = engine.get_entities_by_type(EntityType.LOCATION)
+        
+        console.print(Panel(
+            f"[bold]Project:[/bold] {engine.manifest.name}\n"
+            f"[bold]Current Turn:[/bold] {engine.current_turn}\n\n"
+            f"[bold]Entities:[/bold]\n"
+            f"  • Actors: {len(actors)}\n"
+            f"  • Polities: {len(polities)}\n"
+            f"  • Locations: {len(locations)}\n"
+            f"  • Total: {len(engine.entities)}\n\n"
+            f"[bold]Relationships:[/bold] {len(engine.relationships)}",
+            title="Simulation Status",
+            border_style="cyan",
+        ))
+        
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
 
 
 # Module entry point
