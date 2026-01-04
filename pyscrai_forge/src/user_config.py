@@ -6,7 +6,9 @@ from typing import Optional
 from pydantic import BaseModel, Field
 import json
 import os
+import logging
 
+from pyscrai_forge.src.logging_config import get_logger
 
 class RecentProject(BaseModel):
     """Recent project entry."""
@@ -52,24 +54,32 @@ class UserConfig(BaseModel):
     @classmethod
     def load(cls) -> 'UserConfig':
         """Load user config from disk."""
+        logger = get_logger("UserConfig")
         path = cls.get_config_path()
         if path.exists():
             try:
-                return cls.model_validate_json(path.read_text(encoding='utf-8'))
+                config = cls.model_validate_json(path.read_text(encoding='utf-8'))
+                logger.info(f"User config loaded from: {path}")
+                return config
             except Exception as e:
-                print(f"Failed to load user config: {e}. Using defaults.")
+                logger.error(f"Failed to load user config: {e}. Using defaults.")
+        else:
+            logger.info("No user config found, using defaults.")
         return cls()
 
     def save(self) -> None:
         """Save user config to disk."""
+        logger = get_logger("UserConfig")
         try:
             path = self.get_config_path()
             path.write_text(self.model_dump_json(indent=2), encoding='utf-8')
+            logger.info(f"User config saved to: {path}")
         except Exception as e:
-            print(f"Failed to save user config: {e}")
+            logger.error(f"Failed to save user config: {e}")
 
     def add_recent_project(self, project_path: Path, project_name: str) -> None:
         """Add project to recent list."""
+        get_logger("UserConfig").info(f"Adding recent project: {project_name} ({project_path})")
         # Remove if already exists
         self.recent_projects = [
             p for p in self.recent_projects if p.path != str(project_path)
