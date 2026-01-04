@@ -188,6 +188,11 @@ class AppStateManager:
             text="Delete Selected",
             command=self.callbacks.get("delete_selected_entity")
         ).pack(side=tk.LEFT, padx=2)
+        ttk.Button(
+            entities_toolbar,
+            text="Refine Components",
+            command=self.callbacks.get("refine_components")
+        ).pack(side=tk.LEFT, padx=2)
         
         # Back to Dashboard button (if project loaded)
         if self.project_path:

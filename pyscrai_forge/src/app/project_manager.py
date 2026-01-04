@@ -12,6 +12,8 @@ from pathlib import Path
 from tkinter import messagebox
 from typing import TYPE_CHECKING, Callable, Optional
 
+from pyscrai_forge.src.logging_config import get_logger
+
 if TYPE_CHECKING:
     from pyscrai_core import ProjectManifest
     from pyscrai_forge.src.user_config import UserConfig
@@ -33,6 +35,7 @@ class ProjectController:
             on_project_loaded: Callback when project is loaded
             on_project_closed: Callback when project is closed
         """
+        self.logger = get_logger(__name__)
         self.user_config = user_config
         self.on_project_loaded = on_project_loaded
         self.on_project_closed = on_project_closed
@@ -51,7 +54,10 @@ class ProjectController:
         Returns:
             True if project loaded successfully, False otherwise
         """
+        self.logger.info(f"Attempting to load project from: {project_path}")
+        
         if not project_path.exists():
+            self.logger.error(f"Project directory not found: {project_path}")
             if parent_window:
                 messagebox.showerror("Error", f"Project directory not found: {project_path}", parent=parent_window)
             return False
@@ -59,6 +65,7 @@ class ProjectController:
         # Check for project.json
         manifest_path = project_path / "project.json"
         if not manifest_path.exists():
+            self.logger.warning(f"No project.json found in {project_path}")
             if parent_window:
                 from tkinter import messagebox
                 if not messagebox.askyesno(
@@ -69,10 +76,13 @@ class ProjectController:
                 ):
                     return False
                 # Create a basic manifest
+                self.logger.info(f"Creating new project at: {project_path}")
                 from pyscrai_core.project import ProjectController as CoreProjectController
                 try:
                     CoreProjectController.create_project(project_path, name=project_path.name)
+                    self.logger.info("Project created successfully")
                 except Exception as e:
+                    self.logger.error(f"Failed to create project: {e}")
                     messagebox.showerror("Error", f"Failed to create project: {e}", parent=parent_window)
                     return False
             else:
@@ -84,6 +94,7 @@ class ProjectController:
         
         # Add to recent projects
         if self.manifest:
+            self.logger.info(f"Project loaded: {self.manifest.name} ({self.manifest.version})")
             self.user_config.add_recent_project(project_path, self.manifest.name)
             # Note: add_recent_project() already calls save() internally
         
@@ -95,6 +106,9 @@ class ProjectController:
     
     def close_project(self) -> None:
         """Close the current project."""
+        if self.current_project:
+            self.logger.info(f"Closing project: {self.current_project}")
+        
         self.current_project = None
         self.db_path = None
         self.manifest = None
@@ -116,7 +130,7 @@ class ProjectController:
                     manifest_data = json.load(f)
                     self.manifest = ProjectManifest.model_validate(manifest_data)
             except Exception as e:
-                print(f"Failed to load manifest: {e}")
+                self.logger.error(f"Failed to load manifest: {e}")
     
     def open_project_dialog(self, parent_window) -> Optional[Path]:
         """Open project directory dialog.

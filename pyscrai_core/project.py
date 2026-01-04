@@ -99,6 +99,11 @@ class ProjectManifest(BaseModel):
         default_factory=dict, description="Mod dependencies: {mod_name: version}"
     )
 
+    # Template assignment
+    template: Optional[str] = Field(
+        default=None, description="Template directory name (e.g., 'default', 'espionage', 'historical')"
+    )
+
     # Custom settings (escape hatch for scenario-specific config)
     custom_settings: str = Field(
         default="{}",

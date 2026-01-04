@@ -7,6 +7,7 @@ from tkinter import ttk, messagebox, filedialog
 from pathlib import Path
 from typing import Optional
 from pyscrai_core import ProjectManifest
+from pyscrai_forge.src.logging_config import get_logger
 from ..widgets.schema_builder import SchemaBuilderWidget
 from ..widgets.dependency_manager import DependencyManagerWidget
 
@@ -23,6 +24,9 @@ class ProjectManagerWindow(tk.Toplevel):
             project_path: Path to project directory (optional, for editing existing project)
         """
         super().__init__(parent)
+        self.logger = get_logger("ProjectManagerWindow")
+        self.logger.info("Opening Project Manager Window")
+        
         self.title("Project Manager")
         self.geometry("900x700")
         self.transient(parent)
@@ -128,6 +132,7 @@ class ProjectManagerWindow(tk.Toplevel):
         # Provider
         ttk.Label(tab, text="LLM Provider:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.llm_provider_var = tk.StringVar()
+        self.llm_provider_var.trace_add("write", lambda *args: self.logger.info(f"Setting changed: LLM Provider -> {self.llm_provider_var.get()}"))
         providers = ["openrouter", "lmstudio", "ollama", "anthropic", "openai"]
         ttk.Combobox(
             tab,
@@ -150,6 +155,7 @@ class ProjectManagerWindow(tk.Toplevel):
         # Memory Backend
         ttk.Label(tab, text="Memory Backend:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.memory_backend_var = tk.StringVar()
+        self.memory_backend_var.trace_add("write", lambda *args: self.logger.info(f"Setting changed: Memory Backend -> {self.memory_backend_var.get()}"))
         ttk.Combobox(
             tab,
             textvariable=self.memory_backend_var,
@@ -175,6 +181,7 @@ class ProjectManagerWindow(tk.Toplevel):
         self.systems_vars = {}
         for system in ["events", "memory", "relationships", "economy", "combat", "diplomacy"]:
             var = tk.BooleanVar()
+            var.trace_add("write", lambda *args, s=system, v=var: self.logger.info(f"Setting changed: System '{s}' enabled -> {v.get()}"))
             self.systems_vars[system] = var
             ttk.Checkbutton(tab, text=system.capitalize(), variable=var).pack(anchor=tk.W, pady=2)
 
@@ -203,25 +210,31 @@ class ProjectManagerWindow(tk.Toplevel):
 
         ttk.Label(sim_frame, text="Snapshot Interval (turns):").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.snapshot_interval_var = tk.IntVar()
+        self.snapshot_interval_var.trace_add("write", lambda *args: self.logger.info(f"Setting changed: Snapshot Interval -> {self.snapshot_interval_var.get()}"))
         ttk.Spinbox(sim_frame, from_=1, to=1000, textvariable=self.snapshot_interval_var, width=10).grid(row=0, column=1, sticky=tk.W, pady=5)
 
         ttk.Label(sim_frame, text="Tick Duration (seconds):").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.tick_duration_var = tk.DoubleVar()
+        self.tick_duration_var.trace_add("write", lambda *args: self.logger.info(f"Setting changed: Tick Duration -> {self.tick_duration_var.get()}"))
         ttk.Spinbox(sim_frame, from_=0.1, to=60.0, increment=0.1, textvariable=self.tick_duration_var, width=10).grid(row=1, column=1, sticky=tk.W, pady=5)
 
         ttk.Label(sim_frame, text="Max Concurrent Agents:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.max_concurrent_agents_var = tk.IntVar()
+        self.max_concurrent_agents_var.trace_add("write", lambda *args: self.logger.info(f"Setting changed: Max Concurrent Agents -> {self.max_concurrent_agents_var.get()}"))
         ttk.Spinbox(sim_frame, from_=1, to=100, textvariable=self.max_concurrent_agents_var, width=10).grid(row=2, column=1, sticky=tk.W, pady=5)
 
     def _load_project(self):
         """Load project manifest from disk."""
+        self.logger.info("Loading project manifest...")
         if not self.project_path:
             # Create new manifest with defaults
             self.manifest = ProjectManifest(name="New Project")
             self.status_label.config(text="New Project (not saved)")
+            self.logger.info("Initialized new project manifest (in-memory)")
         else:
             manifest_path = self.project_path / "project.json"
             if not manifest_path.exists():
+                self.logger.error(f"project.json not found in {self.project_path}")
                 messagebox.showerror("Error", f"project.json not found in {self.project_path}", parent=self)
                 return
 
@@ -230,7 +243,9 @@ class ProjectManagerWindow(tk.Toplevel):
                     data = json.load(f)
                 self.manifest = ProjectManifest(**data)
                 self.status_label.config(text=f"Loaded: {manifest_path}")
+                self.logger.info(f"Loaded manifest from {manifest_path}")
             except Exception as e:
+                self.logger.error(f"Failed to load project.json: {e}")
                 messagebox.showerror("Error", f"Failed to load project.json:\n\n{str(e)}", parent=self)
                 return
 
@@ -281,6 +296,7 @@ class ProjectManagerWindow(tk.Toplevel):
 
     def _save_manifest(self):
         """Save the manifest to disk."""
+        self.logger.info("User requested Save.")
         if not self.project_path:
             self._save_as()
             return
@@ -289,8 +305,10 @@ class ProjectManagerWindow(tk.Toplevel):
 
     def _save_as(self):
         """Save manifest to a new location."""
+        self.logger.info("User requested Save As...")
         directory = filedialog.askdirectory(title="Select Project Directory", parent=self)
         if not directory:
+            self.logger.info("Save As cancelled.")
             return
 
         self.project_path = Path(directory)
@@ -303,8 +321,11 @@ class ProjectManagerWindow(tk.Toplevel):
             from datetime import datetime, UTC
 
             enabled_systems = [system for system, var in self.systems_vars.items() if var.get()]
+            
+            # Log what we are saving
+            self.logger.info(f"Saving project manifest to: {path}")
 
-            self.manifest = ProjectManifest(
+            new_manifest = ProjectManifest(
                 name=self.name_var.get(),
                 description=self.description_text.get("1.0", tk.END).strip(),
                 author=self.author_var.get(),
@@ -324,6 +345,27 @@ class ProjectManagerWindow(tk.Toplevel):
                 max_concurrent_agents=self.max_concurrent_agents_var.get(),
                 dependencies=self.dependency_manager.get_dependencies()
             )
+            
+            # Calculate and log differences if previous manifest exists
+            if self.manifest:
+                changes = []
+                old_dump = self.manifest.model_dump()
+                new_dump = new_manifest.model_dump()
+                
+                # Compare fields
+                for key, val in new_dump.items():
+                    if key == "last_modified_at": continue
+                    if key not in old_dump:
+                        changes.append(f"Added {key}: {val}")
+                    elif old_dump[key] != val:
+                        changes.append(f"Changed {key}: {old_dump[key]} -> {val}")
+                
+                if changes:
+                    self.logger.info("Project Settings Changed:\n  " + "\n  ".join(changes))
+                else:
+                    self.logger.info("Project saved (no changes detected in settings).")
+            
+            self.manifest = new_manifest
 
             # Save to file
             manifest_path = path / "project.json"
@@ -332,7 +374,9 @@ class ProjectManagerWindow(tk.Toplevel):
 
             self.modified = False
             self.status_label.config(text=f"Saved: {manifest_path}", foreground="green")
+            self.logger.info(f"Successfully saved manifest to {manifest_path}")
             messagebox.showinfo("Success", f"Project saved to:\n{manifest_path}", parent=self)
 
         except Exception as e:
+            self.logger.error(f"Failed to save project: {e}")
             messagebox.showerror("Save Error", f"Failed to save project:\n\n{str(e)}", parent=self)

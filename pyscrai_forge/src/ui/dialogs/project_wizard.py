@@ -125,6 +125,19 @@ class ProjectWizardDialog(tk.Toplevel):
         self.author_var = tk.StringVar(value=self.project_data.get("author", ""))
         ttk.Entry(self.content_frame, textvariable=self.author_var, width=50).pack(anchor=tk.W, pady=(0, 10))
 
+        # Template Selection
+        ttk.Label(self.content_frame, text="Template:").pack(anchor=tk.W, pady=5)
+        self.template_var = tk.StringVar(value=self.project_data.get("template", ""))
+        templates = self._get_available_templates()
+        self.template_dropdown = ttk.Combobox(
+            self.content_frame,
+            textvariable=self.template_var,
+            values=templates,
+            state="readonly",
+            width=50
+        )
+        self.template_dropdown.pack(anchor=tk.W, pady=(0, 10))
+
         # Project Location
         ttk.Label(self.content_frame, text="Project Location:").pack(anchor=tk.W, pady=5)
 
@@ -134,6 +147,20 @@ class ProjectWizardDialog(tk.Toplevel):
         self.location_var = tk.StringVar(value=self.project_data.get("location", ""))
         ttk.Entry(location_frame, textvariable=self.location_var, width=40).pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(location_frame, text="Browse...", command=self._browse_location).pack(side=tk.LEFT)
+
+    def _get_available_templates(self):
+        """Return a list of available template directory names from the templates directory."""
+        import os
+        # Find project root (assume this file is always 4 levels below root)
+        current = os.path.abspath(os.path.dirname(__file__))
+        for _ in range(4):
+            current = os.path.dirname(current)
+        templates_dir = os.path.join(current, 'pyscrai_forge', 'prompts', 'templates')
+        try:
+            templates = [d for d in os.listdir(templates_dir) if os.path.isdir(os.path.join(templates_dir, d))]
+            return sorted(templates)
+        except Exception:
+            return []
 
     def _browse_location(self):
         """Browse for project location."""
@@ -236,6 +263,7 @@ The wizard will create:
             self.project_data["description"] = self.description_text.get("1.0", tk.END).strip()
             self.project_data["author"] = self.author_var.get().strip()
             self.project_data["location"] = self.location_var.get().strip()
+            self.project_data["template"] = self.template_var.get() if self.template_var.get() else None
         elif self.current_step == 1:
             self.project_data["schemas"] = self.schema_builder.get_schemas()
         elif self.current_step == 2:
@@ -313,6 +341,7 @@ The wizard will create:
                 entity_schemas=self.project_data.get("schemas", {}),
                 llm_provider=self.project_data.get("llm_provider", "openrouter"),
                 llm_default_model=self.project_data.get("llm_default_model", ""),
+                template=self.project_data.get("template"),
                 created_at=datetime.now(UTC),
                 last_modified_at=datetime.now(UTC)
             )

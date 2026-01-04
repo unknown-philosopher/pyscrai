@@ -46,27 +46,6 @@ def launch_gui():
     from pyscrai_forge.src.forge import main as reviewer_main
     reviewer_main()
 
-# --- ARCHITECT Command ---
-@app.command("architect")
-def launch_architect(
-    project: Annotated[Path | None, typer.Option("--project", "-p", help="Path to existing project")] = None,
-):
-    """Launch the ForgeManager (Interactive Sorcerer Mode)."""
-    console.print(Panel("Initializing ForgeManager...", style="cyan"))
-    
-    # Setup Provider
-    provider, model = create_provider_from_env()
-    
-    # Start Loop
-    manager = ForgeManager(provider, project_path=project)
-    
-    try:
-        asyncio.run(manager.interactive_chat())
-    except KeyboardInterrupt:
-        console.print("\n[yellow]ForgeManager session terminated.[/yellow]")
-    except Exception as e:
-        console.print(f"[red]Fatal Error: {e}[/red]")
-
 console = Console()
 DEFAULT_PROVIDER = get_default_provider_name()
 DEFAULT_MODEL = get_default_model_from_env() or ""
@@ -78,7 +57,6 @@ async def _process_file(
     model: str,
     output: Path | None,
     project_path: Path | None = None,
-    interactive: bool = False,
 ) -> str:
     """Internal async function for processing a single file."""
     provider, env_model = create_provider_from_env()
@@ -123,21 +101,12 @@ async def _process_file(
             temp_controller.create_project(manifest)
     
     async with provider:
-        # Set up HIL callback if interactive
-        hil_callback = None
-        if interactive:
-            from pyscrai_forge.agents.terminal_hil import TerminalHIL
-            hil = TerminalHIL()
-            hil_callback = hil.callback
-            console.print("[cyan]Interactive mode enabled - you will be prompted at each phase[/cyan]\n")
-        
-        manager = ForgeManager(provider, project_path=temp_project_path, hil_callback=hil_callback)
+        manager = ForgeManager(provider, project_path=temp_project_path)
         console.print(f"Starting extraction pipeline on {file_path.name}...")
         result_path = await manager.run_extraction_pipeline(
             text=text,
             genre=genre,
-            output_path=output,
-            interactive=interactive
+            output_path=output
         )
         
         return result_path
@@ -150,9 +119,8 @@ def process_file(
     model: Annotated[str | None, typer.Option("--model", "-m", help="LLM model to use")] = DEFAULT_MODEL or None,
     output: Annotated[Path | None, typer.Option("--output", "-o", help="Output JSON file")] = None,
     project: Annotated[Path | None, typer.Option("--project", "-p", help="Path to Project (for schema)")] = None,
-    interactive: Annotated[bool, typer.Option("--interactive", "-i", help="Enable Human-in-the-Loop interaction")] = False,
 ) -> None:
-    """Process a single text file and extract entities."""
+    """Process a single text file and extract entities (automated)."""
     if not file.exists():
         console.print(f"[red]Error:[/red] File not found: {file}")
         raise typer.Exit(1)
@@ -160,18 +128,17 @@ def process_file(
     console.print(Panel(
         f"[bold]File:[/bold] {file}\n"
         f"[bold]Genre:[/bold] {genre.value}\n"
-        f"[bold]Model:[/bold] {model or 'auto'}\n"
-        f"[bold]Interactive:[/bold] {'Yes (HIL enabled)' if interactive else 'No'}",
-        title="Agentic Harvester",
+        f"[bold]Model:[/bold] {model or 'auto'}",
+        title="Entity Extraction",
         border_style="blue",
     ))
     
-    out_path = asyncio.run(_process_file(file, genre, model, output, project, interactive))
+    out_path = asyncio.run(_process_file(file, genre, model, output, project))
     
     console.print(Panel(
         f"Review Packet ready at:\n[bold]{out_path}[/bold]\n\n"
-        f"Run forge UI to validate:\n"
-        f"python -m pyscrai_forge.src.forge {out_path}",
+        f"Run forge UI to review and refine:\n"
+        f"forge gui",
         title="Extraction Complete",
         border_style="green",
     ))

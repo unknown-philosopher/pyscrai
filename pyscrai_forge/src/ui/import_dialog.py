@@ -17,7 +17,6 @@ class ImportDialog(tk.Toplevel):
 
         self.extracted_result = None
         self.current_file_path = None
-        self.interactive_mode = False
 
         self._create_ui()
 
@@ -41,18 +40,6 @@ class ImportDialog(tk.Toplevel):
         scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self.preview_text.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.preview_text.config(yscrollcommand=scrollbar.set)
-
-        # Options frame: Interactive mode checkbox
-        options_frame = ttk.Frame(self, padding=10)
-        options_frame.pack(fill=tk.X)
-        
-        self.interactive_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(
-            options_frame,
-            text="Interactive Mode (HIL pause points at each phase)",
-            variable=self.interactive_var,
-            command=self._on_interactive_toggle
-        ).pack(anchor=tk.W)
 
         # Bottom bar: Actions
         action_frame = ttk.Frame(self, padding=10)
@@ -125,8 +112,7 @@ class ImportDialog(tk.Toplevel):
             return
 
         if self.on_import:
-            # Pass the text, metadata, file path, and interactive flag back to the caller
-            # The caller (ReviewerApp) handles triggering the harvester process
-            self.on_import(self.extracted_result.text, self.extracted_result.metadata, self.current_file_path, self.interactive_mode)
+            # Pass text, metadata, and file path back to caller
+            self.on_import(self.extracted_result.text, self.extracted_result.metadata, self.current_file_path)
 
         self.destroy()

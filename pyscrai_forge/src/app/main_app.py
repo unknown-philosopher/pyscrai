@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Optional
 
 import sv_ttk
 
+from pyscrai_forge.src.logging_config import setup_logging, get_logger
 from .data_manager import DataManager
 from .menu_manager import MenuManager
 from .project_manager import ProjectController
@@ -33,11 +34,17 @@ class ReviewerApp:
             packet_path: Optional path to review packet file
             project_path: Optional path to project directory
         """
+        # Initialize logging
+        setup_logging()
+        self.logger = get_logger(__name__)
+        self.logger.info("Initializing PyScrAI|Forge application...")
+        
         self.root = tk.Tk()
         self.root.title("PyScrAI|Forge - Tyler Hamilton v0.9.0")
         self.root.geometry("1400x900")
         
         # Load user config via ConfigManager
+        self.logger.info("Loading user configuration...")
         from pyscrai_forge.src.config_manager import ConfigManager
         self.config_manager = ConfigManager.get_instance()
         self.user_config = self.config_manager.get_config()
@@ -83,21 +90,25 @@ class ReviewerApp:
         
         # Load initial project if provided
         if project_path:
+            self.logger.info(f"Loading initial project: {project_path}")
             if self.project_controller.load_project(project_path, self.root):
                 self.state_manager.transition_to(AppState.DASHBOARD)
             else:
+                self.logger.warning(f"Failed to load initial project: {project_path}")
                 self.state_manager.transition_to(AppState.LANDING)
         else:
             self.state_manager.transition_to(AppState.LANDING)
         
         # Load packet if provided
         if packet_path and packet_path.exists():
+            self.logger.info(f"Loading packet: {packet_path}")
             if self.data_manager.load_from_packet(packet_path):
                 self.state_manager.transition_to(AppState.COMPONENT_EDITOR)
     
     def _save_user_config(self) -> None:
         """Save user configuration to disk via ConfigManager."""
         # Update the config manager's reference
+        self.logger.info("Saving user configuration...")
         self.config_manager._config = self.user_config
         self.config_manager.save_config()
     
@@ -167,6 +178,7 @@ class ReviewerApp:
     
     def _on_new_project(self) -> None:
         """Handle new project action."""
+        self.logger.info("User initiated new project creation.")
         result = self.project_controller.new_project_wizard(self.root)
         if result:
             self._update_ui_for_project()
@@ -176,6 +188,7 @@ class ReviewerApp:
     
     def _on_open_project(self) -> None:
         """Handle open project action."""
+        self.logger.info("User initiated open project dialog.")
         result = self.project_controller.open_project_dialog(self.root)
         if result:
             self._update_ui_for_project()
@@ -185,6 +198,7 @@ class ReviewerApp:
     
     def _on_open_recent(self, project_path: Path) -> None:
         """Handle open recent project action."""
+        self.logger.info(f"User requested to open recent project: {project_path}")
         if self.project_controller.open_recent_project(project_path, self.root):
             self._update_ui_for_project()
             self.menu_manager.refresh_recent_projects()
@@ -195,16 +209,19 @@ class ReviewerApp:
         """Handle close project action."""
         if self.project_controller.current_project:
             if messagebox.askyesno("Close Project", "Close the current project?", parent=self.root):
+                self.logger.info(f"Closing project: {self.project_controller.current_project}")
                 self.project_controller.close_project()
     
     def _on_clear_recent(self) -> None:
         """Handle clear recent projects action."""
+        self.logger.info("Clearing recent projects list.")
         self.user_config.clear_recent_projects()
         self._save_user_config()
         self.menu_manager.refresh_recent_projects()
     
     def _on_project_settings(self) -> None:
         """Handle project settings action."""
+        self.logger.info("Opening project settings.")
         self.project_controller.open_project_manager(self.root)
     
     def _on_browse_files(self) -> None:
