@@ -78,9 +78,9 @@ class SchemaBuilderWidget(ttk.Frame):
 
             # Add field nodes
             for field_name, field_spec in sorted(fields.items()):
-                field_type = field_spec.get("type", "string")
-                required = "✓" if field_spec.get("required", False) else ""
-                default = field_spec.get("default", "")
+                field_type = field_spec("type", "string")
+                required = "✓" if field_spec("required", False) else ""
+                default = field_spec("default", "")
 
                 self.tree.insert(
                     entity_node,

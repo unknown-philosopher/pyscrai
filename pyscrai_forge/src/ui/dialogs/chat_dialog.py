@@ -159,7 +159,8 @@ class ChatDialog(tk.Toplevel):
                 finally:
                     loop.close()
             except Exception as e:
-                self.after(0, lambda: self._handle_error(str(e)))
+                error_msg = str(e)
+                self.after(0, lambda msg=error_msg: self._handle_error(msg))
         
         thread = threading.Thread(target=process_async, daemon=True)
         thread.start()

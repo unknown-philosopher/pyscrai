@@ -5,17 +5,33 @@
   "version": "0.1.0",
   "schema_version": 1,
   "created_at": "2026-01-04T01:12:04.996741Z",
-  "last_modified_at": "2026-01-04T03:59:06.219375Z",
-  "entity_schemas": {},
-  "enabled_systems": [
-    "events",
-    "memory",
-    "relationships"
-  ],
-  "llm_provider": "openrouter",
-  "llm_default_model": "xiaomi/mimo-v2-flash:free",
+  "last_modified_at": "2026-01-04T08:41:26.505012Z",
+  "entity_schemas": {
+    "actor": {
+      "rank": "string",
+      "status": "string",
+      "unit": "string",
+      "role": "string"
+    },
+    "location": {
+      "type": "string",
+      "status": "string",
+      "capacity": "string",
+      "security_level": "string"
+    },
+    "abstract": {
+      "type": "string",
+      "commander": "string",
+      "members": "string",
+      "status": "string"
+    },
+    "polity": {}
+  },
+  "enabled_systems": [],
+  "llm_provider": "",
+  "llm_default_model": "",
   "llm_fallback_model": null,
-  "memory_backend": "chromadb_local",
+  "memory_backend": "",
   "memory_collection_id": "",
   "snapshot_interval": 100,
   "tick_duration_seconds": 1.0,

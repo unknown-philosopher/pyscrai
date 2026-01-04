@@ -151,6 +151,7 @@ class ReviewerApp:
             
             # State transitions
             "edit_components": self._on_edit_components,
+            "refine_components": self._on_refine_components,
             "transition_to_dashboard": lambda: self.state_manager.transition_to(AppState.DASHBOARD),
             
             # Tools
@@ -329,6 +330,11 @@ class ReviewerApp:
                         
                         manager = ForgeManager(provider, project_path=project_path, hil_callback=hil_callback)
                         
+                        # Get the template from the project manifest if available
+                        template_name = None
+                        if manager.controller and manager.controller.manifest:
+                            template_name = manager.controller.manifest.template
+                        
                         # Run extraction pipeline (creates review packet)
                         update_progress("Running extraction pipeline...", f"Model: {model or 'default'}")
                         import tempfile
@@ -340,6 +346,7 @@ class ReviewerApp:
                                 text=text,
                                 genre=Genre.GENERIC,
                                 output_path=tmp_path,
+                                template_name=template_name,
                                 interactive=interactive
                             )
                             
@@ -508,6 +515,51 @@ class ReviewerApp:
             messagebox.showwarning("No Project", "Please load a project first.", parent=self.root)
             return
         self.state_manager.transition_to(AppState.COMPONENT_EDITOR)
+    
+    def _on_refine_components(self) -> None:
+        """Handle refine components action - opens chat dialog for entity refinement."""
+        if not self.project_controller.current_project:
+            messagebox.showwarning("No Project", "Please load a project first.", parent=self.root)
+            return
+        
+        # Get current entities and relationships from data manager
+        entities = self.data_manager.entities
+        relationships = self.data_manager.relationships
+        
+        if not entities:
+            messagebox.showinfo("No Entities", "No entities to refine. Import or create some first.", parent=self.root)
+            return
+        
+        # Open chat dialog for refinement
+        from pyscrai_forge.src.ui.dialogs.chat_dialog import ChatDialog
+        
+        # Try to create a UserProxyAgent with LLM provider
+        user_proxy = None
+        try:
+            from pyscrai_forge.agents.user_proxy import UserProxyAgent
+            from pyscrai_core.llm_interface.provider_factory import create_provider_from_env
+            
+            provider, model = create_provider_from_env()
+            user_proxy = UserProxyAgent(provider, model)
+        except Exception as e:
+            self.logger.warning(f"Could not create UserProxyAgent: {e}. Chat will be limited.")
+        
+        # For now, use a simple callback that updates the data manager
+        def on_operation_executed(updated_entities, updated_relationships):
+            self.data_manager.entities = updated_entities
+            self.data_manager.relationships = updated_relationships
+            self.data_manager.refresh_ui()
+            self.logger.info(f"Refined entities: {len(updated_entities)} entities, {len(updated_relationships)} relationships")
+        
+        # Create and show chat dialog
+        chat_dialog = ChatDialog(
+            self.root,
+            entities=entities,
+            relationships=relationships,
+            user_proxy=user_proxy,
+            on_operation_executed=on_operation_executed
+        )
+    
     
     def _on_browse_db(self) -> None:
         """Handle browse database action."""

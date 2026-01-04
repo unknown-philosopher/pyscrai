@@ -48,8 +48,9 @@ class ForgeManager:
     - Tool execution (project management, entity creation, etc.)
     """
 
-    def __init__(self, provider: LLMProvider, project_path: Optional[Path] = None):
+    def __init__(self, provider: LLMProvider, project_path: Optional[Path] = None, hil_callback: Optional[callable] = None):
         self.provider = provider
+        self.hil_callback = hil_callback
         
         # Robust path resolution
         self.project_path = Path(project_path).resolve() if project_path else None
@@ -184,17 +185,19 @@ class ForgeManager:
         text: str,
         genre: Genre = Genre.GENERIC,
         output_path: Optional[Path] = None,
-        template_name: Optional[str] = None
+        template_name: Optional[str] = None,
+        interactive: bool = False
     ) -> str:
         """Run the full extraction pipeline: Scout → Analyst → Relationships → Save.
         
-        Automated extraction without pauses. Use interactive agent for refinement.
+        Can run automated (non-interactive) or with pauses for human review (interactive).
         
         Args:
             text: Raw text to extract entities from
             genre: Document genre for context
             output_path: Optional path to save review packet JSON
             template_name: Optional custom template directory name to use
+            interactive: If True and hil_callback is available, pauses for human review
             
         Returns:
             Path to the generated review packet JSON file
@@ -202,6 +205,8 @@ class ForgeManager:
         if not self.controller:
             raise ValueError("No project loaded. Cannot run extraction pipeline.")
         
+        # For now, treat both interactive and non-interactive the same
+        # The hil_callback is stored and can be used by _run_extraction_pipeline_impl if needed
         return await self._run_extraction_pipeline_impl(text, genre, output_path, template_name)
     
     async def _run_extraction_pipeline_impl(

@@ -94,19 +94,31 @@ class ProjectManagerWindow(tk.Toplevel):
         self.version_var = tk.StringVar()
         ttk.Entry(tab, textvariable=self.version_var, width=20).grid(row=3, column=1, sticky=tk.W, pady=5)
 
+        # Template
+        ttk.Label(tab, text="Template:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        self.template_var = tk.StringVar()
+        templates = self._get_available_templates()
+        ttk.Combobox(
+            tab,
+            textvariable=self.template_var,
+            values=templates,
+            state="readonly",
+            width=48
+        ).grid(row=4, column=1, sticky=tk.EW, pady=5)
+
         # Schema Version (read-only)
-        ttk.Label(tab, text="Schema Version:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(tab, text="Schema Version:").grid(row=5, column=0, sticky=tk.W, pady=5)
         self.schema_version_var = tk.StringVar()
-        ttk.Label(tab, textvariable=self.schema_version_var, foreground="gray").grid(row=4, column=1, sticky=tk.W, pady=5)
+        ttk.Label(tab, textvariable=self.schema_version_var, foreground="gray").grid(row=5, column=1, sticky=tk.W, pady=5)
 
         # Timestamps (read-only)
-        ttk.Label(tab, text="Created:").grid(row=5, column=0, sticky=tk.W, pady=5)
+        ttk.Label(tab, text="Created:").grid(row=6, column=0, sticky=tk.W, pady=5)
         self.created_at_var = tk.StringVar()
-        ttk.Label(tab, textvariable=self.created_at_var, foreground="gray").grid(row=5, column=1, sticky=tk.W, pady=5)
+        ttk.Label(tab, textvariable=self.created_at_var, foreground="gray").grid(row=6, column=1, sticky=tk.W, pady=5)
 
-        ttk.Label(tab, text="Last Modified:").grid(row=6, column=0, sticky=tk.W, pady=5)
+        ttk.Label(tab, text="Last Modified:").grid(row=7, column=0, sticky=tk.W, pady=5)
         self.last_modified_var = tk.StringVar()
-        ttk.Label(tab, textvariable=self.last_modified_var, foreground="gray").grid(row=6, column=1, sticky=tk.W, pady=5)
+        ttk.Label(tab, textvariable=self.last_modified_var, foreground="gray").grid(row=7, column=1, sticky=tk.W, pady=5)
 
         tab.columnconfigure(1, weight=1)
 
@@ -209,19 +221,33 @@ class ProjectManagerWindow(tk.Toplevel):
         sim_frame.pack(fill=tk.X, pady=(0, 10))
 
         ttk.Label(sim_frame, text="Snapshot Interval (turns):").grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.snapshot_interval_var = tk.IntVar()
+        self.snapshot_interval_var = tk.IntVar(value=100)
         self.snapshot_interval_var.trace_add("write", lambda *args: self.logger.info(f"Setting changed: Snapshot Interval -> {self.snapshot_interval_var.get()}"))
         ttk.Spinbox(sim_frame, from_=1, to=1000, textvariable=self.snapshot_interval_var, width=10).grid(row=0, column=1, sticky=tk.W, pady=5)
 
         ttk.Label(sim_frame, text="Tick Duration (seconds):").grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.tick_duration_var = tk.DoubleVar()
+        self.tick_duration_var = tk.DoubleVar(value=1.0)
         self.tick_duration_var.trace_add("write", lambda *args: self.logger.info(f"Setting changed: Tick Duration -> {self.tick_duration_var.get()}"))
         ttk.Spinbox(sim_frame, from_=0.1, to=60.0, increment=0.1, textvariable=self.tick_duration_var, width=10).grid(row=1, column=1, sticky=tk.W, pady=5)
 
         ttk.Label(sim_frame, text="Max Concurrent Agents:").grid(row=2, column=0, sticky=tk.W, pady=5)
-        self.max_concurrent_agents_var = tk.IntVar()
+        self.max_concurrent_agents_var = tk.IntVar(value=10)
         self.max_concurrent_agents_var.trace_add("write", lambda *args: self.logger.info(f"Setting changed: Max Concurrent Agents -> {self.max_concurrent_agents_var.get()}"))
         ttk.Spinbox(sim_frame, from_=1, to=100, textvariable=self.max_concurrent_agents_var, width=10).grid(row=2, column=1, sticky=tk.W, pady=5)
+
+    def _get_available_templates(self):
+        """Return a list of available template directory names from the templates directory."""
+        import os
+        # Find project root (assume this file is always 4 levels below root)
+        current = os.path.abspath(os.path.dirname(__file__))
+        for _ in range(4):
+            current = os.path.dirname(current)
+        templates_dir = os.path.join(current, 'pyscrai_forge', 'prompts', 'templates')
+        try:
+            templates = [d for d in os.listdir(templates_dir) if os.path.isdir(os.path.join(templates_dir, d))]
+            return sorted(templates)
+        except Exception:
+            return []
 
     def _load_project(self):
         """Load project manifest from disk."""
@@ -263,6 +289,7 @@ class ProjectManagerWindow(tk.Toplevel):
         self.description_text.insert("1.0", self.manifest.description)
         self.author_var.set(self.manifest.author)
         self.version_var.set(self.manifest.version)
+        self.template_var.set(self.manifest.template or "")
         self.schema_version_var.set(str(self.manifest.schema_version))
         self.created_at_var.set(str(self.manifest.created_at))
         self.last_modified_var.set(str(self.manifest.last_modified_at))
@@ -343,6 +370,7 @@ class ProjectManagerWindow(tk.Toplevel):
                 snapshot_interval=self.snapshot_interval_var.get(),
                 tick_duration_seconds=self.tick_duration_var.get(),
                 max_concurrent_agents=self.max_concurrent_agents_var.get(),
+                template=self.template_var.get() or None,
                 dependencies=self.dependency_manager.get_dependencies()
             )
             
