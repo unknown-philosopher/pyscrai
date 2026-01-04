@@ -12,6 +12,8 @@ Specifically, `ResourceTransferEvent` and `StateChangeEvent` target keys within 
 `resources_json` container, allowing them to work for 'gold', 'credits', 'mana', etc.
 """
 
+from __future__ import annotations
+
 import json
 import uuid
 from datetime import UTC, datetime
@@ -181,6 +183,7 @@ class Turn(BaseModel):
     tick: int = Field(description="Turn/tick number")
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     applied_events: list[Event] = Field(default_factory=list)
+    narrative: list["NarrativeLogEntry"] = Field(default_factory=list)
     is_resolved: bool = Field(default=False)
     region_versions: str = Field(default="{}")
 
@@ -194,6 +197,15 @@ class Turn(BaseModel):
 
     def resolve(self) -> None:
         self.is_resolved = True
+
+    # Backwards compatibility: engine expects `.events`
+    @property
+    def events(self) -> list[Event]:
+        return self.applied_events
+
+    @property
+    def narrative_entries(self) -> list["NarrativeLogEntry"]:
+        return self.narrative
 
     @property
     def region_version_snapshot(self) -> dict[str, int]:

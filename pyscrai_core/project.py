@@ -7,12 +7,24 @@ Updated to support Project-Defined Entity Schemas.
 import json
 import os
 import shutil
+import sqlite3
 import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Optional
 
 from pydantic import BaseModel, Field
+
+from .models import (
+    Actor,
+    Entity,
+    EntityType,
+    Location,
+    Polity,
+    Relationship,
+    RelationshipType,
+    RelationshipVisibility,
+)
 
 
 # ============================================================================
@@ -237,6 +249,209 @@ class ProjectController:
 
         self._manifest = manifest
         return manifest
+
+    def get_all_entities(self) -> list[Entity]:
+        """Load every entity from the world database."""
+        if not self.database_path.exists():
+            raise FileNotFoundError(f"Database not found: {self.database_path}")
+
+        conn = sqlite3.connect(self.database_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT data_json FROM entities ORDER BY created_at")
+        rows = cursor.fetchall()
+        conn.close()
+
+        entities: list[Entity] = []
+        for row in rows:
+            try:
+                data = json.loads(row[0])
+                entity_type_str = data.get("descriptor", {}).get("entity_type", "ABSTRACT")
+                try:
+                    entity_type = EntityType(entity_type_str)
+                except ValueError:
+                    entity_type = EntityType.ABSTRACT
+
+                if entity_type == EntityType.ACTOR:
+                    entities.append(Actor.model_validate(data))
+                elif entity_type == EntityType.POLITY:
+                    entities.append(Polity.model_validate(data))
+                elif entity_type == EntityType.LOCATION:
+                    entities.append(Location.model_validate(data))
+                else:
+                    entities.append(Entity.model_validate(data))
+            except Exception:
+                continue
+
+        return entities
+
+    def get_all_relationships(self) -> list[Relationship]:
+        """Load every relationship from the world database."""
+        if not self.database_path.exists():
+            raise FileNotFoundError(f"Database not found: {self.database_path}")
+
+        conn = sqlite3.connect(self.database_path)
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT source_id, target_id, relationship_type, strength, description, data_json
+            FROM relationships
+            ORDER BY created_at
+            """
+        )
+        rows = cursor.fetchall()
+        conn.close()
+
+        relationships: list[Relationship] = []
+        for row in rows:
+            try:
+                source_id, target_id, rel_type_str, strength, description, data_json = row
+                data = json.loads(data_json) if data_json else {}
+
+                try:
+                    rel_type = RelationshipType(rel_type_str)
+                except ValueError:
+                    rel_type = RelationshipType.CUSTOM
+
+                visibility_str = data.get("visibility", "public").lower()
+                try:
+                    visibility = RelationshipVisibility(visibility_str)
+                except ValueError:
+                    visibility = RelationshipVisibility.PUBLIC
+
+                metadata_raw = data.get("metadata", "{}")
+                metadata_json = json.dumps(metadata_raw) if isinstance(metadata_raw, dict) else str(metadata_raw)
+
+                relationships.append(
+                    Relationship(
+                        id=f"rel_{source_id[:8]}_{target_id[:8]}_{rel_type.value}",
+                        source_id=source_id,
+                        target_id=target_id,
+                        relationship_type=rel_type,
+                        visibility=visibility,
+                        strength=strength,
+                        description=description or "",
+                        metadata=metadata_json,
+                    )
+                )
+            except Exception:
+                continue
+
+        return relationships
+
+    # ------------------------------------------------------------------
+    # Persistence helpers (engine writes)
+    # ------------------------------------------------------------------
+    def _ensure_entity_tables(self) -> None:
+        """Ensure entities/relationships tables exist (idempotent)."""
+        conn = sqlite3.connect(self.database_path)
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS entities (
+                id TEXT PRIMARY KEY,
+                entity_type TEXT NOT NULL,
+                data_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS relationships (
+                id TEXT PRIMARY KEY,
+                source_id TEXT NOT NULL,
+                target_id TEXT NOT NULL,
+                relationship_type TEXT NOT NULL,
+                strength REAL NOT NULL,
+                description TEXT,
+                data_json TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (source_id) REFERENCES entities(id),
+                FOREIGN KEY (target_id) REFERENCES entities(id)
+            )
+            """
+        )
+
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_entities_type ON entities(entity_type)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_relationships_source ON relationships(source_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_relationships_target ON relationships(target_id)")
+
+        conn.commit()
+        conn.close()
+
+    def update_entity(self, entity: Entity) -> None:
+        """Insert or update an entity in the database."""
+        if not self.database_path.exists():
+            raise FileNotFoundError(f"Database not found: {self.database_path}")
+
+        self._ensure_entity_tables()
+
+        conn = sqlite3.connect(self.database_path)
+        cursor = conn.cursor()
+
+        now = datetime.now(UTC).isoformat()
+        data_json = entity.model_dump_json()
+        entity_type = entity.descriptor.entity_type.value if entity.descriptor else "UNKNOWN"
+
+        cursor.execute(
+            """
+            INSERT OR REPLACE INTO entities (id, entity_type, data_json, created_at, updated_at)
+            VALUES (?, ?, ?,
+                COALESCE((SELECT created_at FROM entities WHERE id = ?), ?),
+                ?)
+            """,
+            (entity.id, entity_type, data_json, entity.id, now, now),
+        )
+
+        conn.commit()
+        conn.close()
+
+    def update_relationship(self, relationship: Relationship) -> None:
+        """Insert or update a relationship in the database."""
+        if not self.database_path.exists():
+            raise FileNotFoundError(f"Database not found: {self.database_path}")
+
+        self._ensure_entity_tables()
+
+        conn = sqlite3.connect(self.database_path)
+        cursor = conn.cursor()
+
+        now = datetime.now(UTC).isoformat()
+        data_json = json.dumps(
+            {
+                "visibility": relationship.visibility.value if hasattr(relationship, "visibility") else "public",
+                "metadata": relationship.metadata_dict if hasattr(relationship, "metadata_dict") else relationship.metadata,
+            }
+        )
+
+        cursor.execute(
+            """
+            INSERT OR REPLACE INTO relationships
+            (id, source_id, target_id, relationship_type, strength, description, data_json, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?,
+                COALESCE((SELECT created_at FROM relationships WHERE id = ?), ?),
+                ?)
+            """,
+            (
+                relationship.id,
+                relationship.source_id,
+                relationship.target_id,
+                relationship.relationship_type.value,
+                relationship.strength,
+                relationship.description,
+                data_json,
+                relationship.id,
+                now,
+                now,
+            ),
+        )
+
+        conn.commit()
+        conn.close()
 
     def save_manifest(self) -> None:
         """Save current manifest to project.json."""

@@ -121,9 +121,9 @@ class TurnProcessor:
         
         # Create Turn object
         turn = Turn(
-            turn_number=turn_number,
-            events=events,
-            narrative=narrative_entries
+            tick=turn_number,
+            applied_events=events,
+            narrative=narrative_entries,
         )
         
         return turn
@@ -244,8 +244,7 @@ class TurnProcessor:
                 
             # Update all relationships
             for relationship in self.engine.relationships:
-                # TODO: Add update_relationship method to ProjectController
-                pass
+                self.engine.controller.update_relationship(relationship)
                 
             print("[TurnProcessor] Changes committed to database")
             

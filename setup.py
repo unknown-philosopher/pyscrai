@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="pyscrai-forge",
-    version="0.9.5",
+    version="0.9.8",
     description="PyScrAI|Forge - Worldbuilding and entity extraction toolkit",
     author="Your Name",
     packages=find_packages(),
@@ -44,6 +44,7 @@ setup(
     entry_points={
         "console_scripts": [
             "forge = pyscrai_forge.src.cli:main",
+            "pyscrai-engine = pyscrai_engine.__main__:main",
         ],
     },
     python_requires=">=3.8",

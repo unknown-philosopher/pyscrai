@@ -86,7 +86,7 @@ class SimulationEngine:
         
         # Load project
         self.controller = ProjectController(self.project_path)
-        self.manifest = self.controller.manifest
+        self.manifest = self.controller.load_project()
         
         print(f"[Engine] Loaded project: {self.manifest.name}")
         print(f"[Engine] Schema version: {self.manifest.schema_version}")
@@ -109,7 +109,8 @@ class SimulationEngine:
         """Load entities and relationships from database."""
         # Load all entities
         all_entities = self.controller.get_all_entities()
-        self.entities = {e.descriptor.id: e for e in all_entities}
+        # Index by entity ID (DescriptorComponent has no id field)
+        self.entities = {e.id: e for e in all_entities}
         
         # Load all relationships
         self.relationships = self.controller.get_all_relationships()

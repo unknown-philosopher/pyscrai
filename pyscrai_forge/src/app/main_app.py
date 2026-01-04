@@ -324,7 +324,7 @@ class ReviewerApp:
                         # Create HIL callback if interactive mode is enabled
                         hil_callback = None
                         if interactive:
-                            from pyscrai_forge.src.app.hil_modal import TkinterHIL
+                            from pyscrai_forge.src.app import TkinterHIL
                             hil = TkinterHIL(self.root)
                             hil_callback = hil.callback
                         
@@ -616,7 +616,7 @@ class ReviewerApp:
         """Handle show about action."""
         about_text = "PyScrAI|Forge\n\n"
         about_text += "Worldbuilding & Entity Management Toolkit\n"
-        about_text += "Version 0.9.5\n\n"
+        about_text += "Version 0.9.8\n\n"
         about_text += "By Tyler Hamilton"
         messagebox.showinfo("About PyScrAI|Forge", about_text, parent=self.root)
     
