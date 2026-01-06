@@ -4,7 +4,7 @@
 
 - **`pyscrai_core`**: High-performance Entity-Component-System (ECS) model with project management, events, intentions, and memory systems.
 - **`pyscrai_forge`**: Creation tools including multi-agent Harvester pipeline, modern GUI, and CLI for worldbuilding workflows.
-- **`pyscrai_engine`**: Not implemented yet, this will be the Engine which will be seeded with the final output of the Forge; turning static data into a fully interactive simulation. 
+- **`pyscrai_engine`**: Currently only a shell, his will be the Engine which will be seeded with the final output of the Forge; turning static data into a fully interactive simulation. 
 
 ## Key Features
 
@@ -17,10 +17,10 @@
 
 ## Documentation
 
-- [**Forge User & Developer Guide**](pyscrai_forge/docs/forge_user_guide.md): Comprehensive guide to using and extending PyScrAI|Forge.
-- [**Project Structure Reference**](pyscrai_forge/docs/project_structure.md): Complete file-by-file guide to the PyScrAI|Forge codebase structure and organization.
-- [**Harvester Agents Guide**](pyscrai_forge/docs/harvester_agents.md): Details on Scout, Analyst, Validator, Reviewer, and Manager agents.
-- [**Current Dev Blueprint**](pyscrai_forge/docs/dev_plans/phase_1-3.md): The authoritative roadmap for ongoing and future development phases.
+-*** OUTDATED [**Forge User & Developer Guide**](pyscrai_forge/docs/forge_user_guide.md): Comprehensive guide to using and extending PyScrAI|Forge.
+-*** OUTDATED [**Project Structure Reference**](pyscrai_forge/docs/project_structure.md): Complete file-by-file guide to the PyScrAI|Forge codebase structure and organization.
+- *** OUTDATED [**Harvester Agents Guide**](pyscrai_forge/docs/harvester_agents.md): Details on Scout, Analyst, Validator, Reviewer, and Manager agents.
+- *** OUTDATED [**Current Dev Blueprint**](pyscrai_forge/docs/dev_plans/phase_1-3.md): The authoritative roadmap for ongoing and future development phases.
 - [**Completed Dev Plans**](pyscrai_forge/docs/dev_plans/completed/): Detailed retrospectives on completed development phases.
 - [**Tkinter Development Guides**](pyscrai_forge/docs/dev_plans/tkinter_dev/): Practical guides and tips for GUI development with Tkinter.
 

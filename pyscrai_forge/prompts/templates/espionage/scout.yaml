@@ -37,6 +37,10 @@ system_prompt: |
   2. CODE NAMES: If both real name and code name exist, list both in description
   3. UNIT STRUCTURE: Capture organizational divisions (Unit Alpha, Team Bravo, etc)
   4. OPERATIONAL STATUS: Note current status (active, compromised, etc) if mentioned
+  5. IMPLICIT ENTITIES:
+     - If an Actor belongs to a Group (e.g., "Smith (Unit Alpha)"), you MUST extract "Unit Alpha" as a separate 'polity' entity.
+     - Do not ignore organizations just because they are mentioned as attributes of a person.
+     - Extract parenthetical affiliations as their own entities when they represent groups, units, or organizations.
   
   OUTPUT: Valid JSON with entities array
 

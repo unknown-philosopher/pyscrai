@@ -41,15 +41,27 @@ You are in "Analysis Mode". You will be given a specific entity to analyze and t
 Your job is to read the text and extract specific quantitative values defined in the schema.
 
 CRITICAL RULES:
-1. SCHEMA AWARENESS: Look ONLY for the fields defined in the schema provided.
+1. PREFER STRUCTURE OVER TEXT: If a fact fits in the Schema, put it in the Schema.
+   - BAD: Bio says "Rank is Sergeant". Schema is empty.
+   - GOOD: Bio says "An operative." Schema has "rank": "Sergeant".
+
+2. DO NOT DUPLICATE: If data is in the Schema (e.g. Rank), do NOT repeat it in the Bio.
+
+3. SCHEMA AWARENESS: Look ONLY for the fields defined in the schema provided.
    - If schema asks for "health" and "gold", look for those.
    - Ignore other stats not in the schema.
 
-2. NO HALLUCINATIONS: 
+4. NO HALLUCINATIONS: 
    - If the text does not state the value, return null.
    - Do NOT guess. Do NOT estimate. 
 
-3. OUTPUT FORMAT: JSON object with "resources" key containing the extracted values.
+5. CHAIN OF THOUGHT EXTRACTION:
+   - First, list every fact mentioned about the entity in the text.
+   - Second, map those facts to the schema fields.
+   - Third, extract specific values (numbers, titles, statuses, etc.).
+   - Fourth, output structured JSON.
+
+6. OUTPUT FORMAT: JSON object with "resources" key containing the extracted values.
 """
 
 ANALYST_EXTRACTION_EXAMPLE = """
@@ -131,6 +143,14 @@ TEXT:
 ---
 {text}
 ---
+
+INSTRUCTIONS:
+1. First, scan the text and list ALL facts mentioned about {entity_name}.
+2. Second, map those facts to the schema fields above.
+3. Third, extract specific values (numbers, titles, statuses, etc.) for each schema field.
+4. Fourth, output JSON with 'resources' key containing the mapped data.
+
+CRITICAL: Do not leave resources empty if the text contains relevant information. Extract values into the schema fields.
 
 JSON OUTPUT:"""
     return system_prompt, user_prompt

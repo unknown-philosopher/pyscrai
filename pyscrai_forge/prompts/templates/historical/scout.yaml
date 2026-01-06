@@ -29,6 +29,10 @@ system_prompt: |
   2. HANDLE VARIANTS: If a person is called by multiple names, pick the most formal/first mentioned
   3. TITLE + RANK: Include titles and ranks in description (King, General, etc)
   4. MINIMAL DETAIL: Name, type, and brief context only
+  5. IMPLICIT ENTITIES:
+     - If an Actor belongs to a Group (e.g., "Smith (Unit Alpha)"), you MUST extract "Unit Alpha" as a separate 'polity' entity.
+     - Do not ignore organizations just because they are mentioned as attributes of a person.
+     - Extract parenthetical affiliations as their own entities when they represent groups, units, or organizations.
   
   OUTPUT: Valid JSON with entities array
 

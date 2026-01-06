@@ -78,10 +78,22 @@ class SchemaBuilderWidget(ttk.Frame):
 
             # Add field nodes
             for field_name, field_spec in sorted(fields.items()):
-                # field_spec is a string representing the field type (e.g., "string", "float")
-                field_type = field_spec if isinstance(field_spec, str) else "string"
-                required = ""  # Not used for simple schemas
-                default = ""   # Not used for simple schemas
+                # Handle both string (legacy) and dict (rich) field specs
+                if isinstance(field_spec, str):
+                    # Legacy format: just a type string
+                    field_type = field_spec
+                    required = ""
+                    default = ""
+                elif isinstance(field_spec, dict):
+                    # Rich format: dict with type, required, default, etc.
+                    field_type = field_spec.get("type", "string")
+                    required = "Yes" if field_spec.get("required", False) else ""
+                    default = str(field_spec.get("default", "")) if field_spec.get("default") else ""
+                else:
+                    # Fallback
+                    field_type = "string"
+                    required = ""
+                    default = ""
 
                 self.tree.insert(
                     entity_node,
@@ -203,14 +215,38 @@ class SchemaBuilderWidget(ttk.Frame):
 
         # Load existing field data
         field_spec = self.schemas[entity_type][field_name]
-        field_data = {
-            "name": field_name,
-            "type": field_spec.get("type", "string"),
-            "required": field_spec.get("required", False),
-            "description": field_spec.get("description", ""),
-            "default": field_spec.get("default", ""),
-            "options": field_spec.get("options", [])
-        }
+        
+        # Handle both string (legacy) and dict (rich) field specs
+        if isinstance(field_spec, str):
+            # Legacy format: just a type string
+            field_data = {
+                "name": field_name,
+                "type": field_spec,
+                "required": False,
+                "description": "",
+                "default": "",
+                "options": []
+            }
+        elif isinstance(field_spec, dict):
+            # Rich format: dict with type, required, default, etc.
+            field_data = {
+                "name": field_name,
+                "type": field_spec.get("type", "string"),
+                "required": field_spec.get("required", False),
+                "description": field_spec.get("description", ""),
+                "default": field_spec.get("default", ""),
+                "options": field_spec.get("options", [])
+            }
+        else:
+            # Fallback
+            field_data = {
+                "name": field_name,
+                "type": "string",
+                "required": False,
+                "description": "",
+                "default": "",
+                "options": []
+            }
 
         def on_save(updated_data):
             new_name = updated_data["name"]

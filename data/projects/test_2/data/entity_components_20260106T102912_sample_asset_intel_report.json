@@ -1,0 +1,164 @@
+{
+  "entities": [
+    {
+      "id": "ENTITY_001",
+      "created_at": "2026-01-06T15:29:01.343655Z",
+      "updated_at": "2026-01-06T15:29:01.343667Z",
+      "descriptor": {
+        "name": "Unit Alpha",
+        "bio": "A military or organizational unit to which Operative Smith belongs.",
+        "tags": [],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_002",
+      "created_at": "2026-01-06T15:29:01.343781Z",
+      "updated_at": "2026-01-06T15:29:01.343784Z",
+      "descriptor": {
+        "name": "Smith",
+        "bio": "An operative who transferred 500 Credits to a safehouse.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_003",
+      "created_at": "2026-01-06T15:29:01.343837Z",
+      "updated_at": "2026-01-06T15:29:01.343839Z",
+      "descriptor": {
+        "name": "Unit Beta",
+        "bio": "A military or organizational unit to which Commander J. Smith belongs.",
+        "tags": [],
+        "entity_type": "polity"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_004",
+      "created_at": "2026-01-06T15:29:01.343879Z",
+      "updated_at": "2026-01-06T15:29:01.343881Z",
+      "descriptor": {
+        "name": "J. Smith",
+        "bio": "A Commander who received a package at the safehouse.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_005",
+      "created_at": "2026-01-06T15:29:01.343944Z",
+      "updated_at": "2026-01-06T15:29:01.343947Z",
+      "descriptor": {
+        "name": "Safehouse Gamma",
+        "bio": "A safehouse location that is currently compromised.",
+        "tags": [],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "current_location_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel_001",
+      "source_id": "ENTITY_002",
+      "target_id": "ENTITY_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Operative Smith is a member of Unit Alpha",
+      "metadata": "{}",
+      "created_at": "2026-01-06T15:29:12.681080Z"
+    },
+    {
+      "id": "rel_002",
+      "source_id": "ENTITY_004",
+      "target_id": "ENTITY_003",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Commander J. Smith is a member of Unit Beta",
+      "metadata": "{}",
+      "created_at": "2026-01-06T15:29:12.681105Z"
+    },
+    {
+      "id": "rel_003",
+      "source_id": "ENTITY_002",
+      "target_id": "ENTITY_005",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Smith transferred 500 Credits to Safehouse Gamma",
+      "metadata": "{}",
+      "created_at": "2026-01-06T15:29:12.681114Z"
+    },
+    {
+      "id": "rel_004",
+      "source_id": "ENTITY_004",
+      "target_id": "ENTITY_005",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "J. Smith received a package at Safehouse Gamma",
+      "metadata": "{}",
+      "created_at": "2026-01-06T15:29:12.681120Z"
+    },
+    {
+      "id": "rel_005",
+      "source_id": "ENTITY_005",
+      "target_id": "ENTITY_005",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Safehouse Gamma is compromised",
+      "metadata": "{}",
+      "created_at": "2026-01-06T15:29:12.681125Z"
+    }
+  ],
+  "validation_report": {}
+}

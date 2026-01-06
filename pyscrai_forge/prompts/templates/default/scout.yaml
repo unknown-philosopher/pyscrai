@@ -48,6 +48,11 @@ system_prompt: |
      - Do NOT create separate entities for aliases (e.g., "Smith" and "Smith (Alpha)" are the same person).
      - Consolidate mentions into the single most representative name.
 
+  7. IMPLICIT ENTITIES:
+     - If an Actor belongs to a Group (e.g., "Smith (Unit Alpha)"), you MUST extract "Unit Alpha" as a separate 'polity' entity.
+     - Do not ignore organizations just because they are mentioned as attributes of a person.
+     - Extract parenthetical affiliations as their own entities when they represent groups, units, or organizations.
+
 user_prompt_template: |
   Identify all potential entities in this text.
   Output ONLY valid JSON with the entities array.

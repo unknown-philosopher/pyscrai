@@ -65,18 +65,51 @@ class AnalystAgent:
             stub.description
         )
 
-        try:
-            response = await self.provider.complete_simple(
-                prompt=user_prompt,
-                model=self.model or self.provider.default_model,
-                system_prompt=system_prompt,
-                temperature=0.1
-            )
-            resources = self._parse_response(response)
-            return self._build_entity(stub, resources)
-        except Exception as e:
-            print(f"Analyst extraction failed for {stub.name}: {e}")
-            return self._build_entity(stub, {})
+        attempts = 0
+        max_attempts = 2
+        
+        while attempts < max_attempts:
+            try:
+                response = await self.provider.complete_simple(
+                    prompt=user_prompt,
+                    model=self.model or self.provider.default_model,
+                    system_prompt=system_prompt,
+                    temperature=0.1
+                )
+                resources = self._parse_response(response)
+                
+                # --- LAZINESS CHECK ---
+                # If schema has keys but resources is empty, and text is long enough, likely failure.
+                if schema and not resources and len(text) > 20:
+                    attempts += 1
+                    if attempts < max_attempts:
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.warning(
+                            f"Analyst returned empty resources for {stub.name}. "
+                            f"Retrying with strict instruction (attempt {attempts + 1}/{max_attempts})."
+                        )
+                        user_prompt += (
+                            "\n\nCRITICAL: You returned empty JSON. "
+                            "You MUST extract attributes like Rank, Unit, Status, Wealth, or other schema fields "
+                            "if they are present in the text. Do not leave the resources object empty if the text "
+                            "contains relevant information."
+                        )
+                        continue
+                
+                return self._build_entity(stub, resources)
+            except Exception as e:
+                attempts += 1
+                if attempts >= max_attempts:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Analyst extraction failed for {stub.name} after {max_attempts} attempts: {e}")
+                    return self._build_entity(stub, {})
+                # Retry on exception
+                continue
+        
+        # Fallback if loop exits without return
+        return self._build_entity(stub, {})
 
     async def refine_data(
         self,
