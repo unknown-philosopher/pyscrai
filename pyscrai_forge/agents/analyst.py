@@ -7,6 +7,7 @@ unified agent responsible for data processing.
 
 import json
 import re
+import logging
 from typing import TYPE_CHECKING, Dict, Any
 
 from pyscrai_core import (
@@ -23,6 +24,8 @@ from pyscrai_forge.agents.models import EntityStub
 
 if TYPE_CHECKING:
     from pyscrai_core.llm_interface import LLMProvider
+
+logger = logging.getLogger(__name__)
 
 
 class AnalystAgent:
@@ -65,6 +68,19 @@ class AnalystAgent:
             stub.description
         )
 
+        # Verbose logging: Show prompts
+        logger.debug("=" * 80)
+        logger.debug(f"ANALYST AGENT - Extracting data for: {stub.name} ({stub.entity_type.value})")
+        logger.debug("=" * 80)
+        logger.debug(f"Model: {self.model or self.provider.default_model}")
+        logger.debug(f"Temperature: 0.1")
+        logger.debug(f"Schema fields: {list(schema.keys()) if schema else 'None'}")
+        logger.debug("\n--- SYSTEM PROMPT ---")
+        logger.debug(system_prompt)
+        logger.debug("\n--- USER PROMPT ---")
+        logger.debug(user_prompt)
+        logger.debug("\n--- Sending request to LLM ---")
+
         attempts = 0
         max_attempts = 2
         
@@ -76,19 +92,26 @@ class AnalystAgent:
                     system_prompt=system_prompt,
                     temperature=0.1
                 )
+                
+                # Verbose logging: Show response
+                logger.debug(f"\n--- LLM RESPONSE (Attempt {attempts + 1}) ---")
+                logger.debug(response)
+                
                 resources = self._parse_response(response)
+                
+                logger.debug(f"--- Parsed Resources ---")
+                logger.debug(json.dumps(resources, indent=2))
                 
                 # --- LAZINESS CHECK ---
                 # If schema has keys but resources is empty, and text is long enough, likely failure.
                 if schema and not resources and len(text) > 20:
                     attempts += 1
                     if attempts < max_attempts:
-                        import logging
-                        logger = logging.getLogger(__name__)
                         logger.warning(
                             f"Analyst returned empty resources for {stub.name}. "
                             f"Retrying with strict instruction (attempt {attempts + 1}/{max_attempts})."
                         )
+                        logger.debug("--- Adding retry instruction to prompt ---")
                         user_prompt += (
                             "\n\nCRITICAL: You returned empty JSON. "
                             "You MUST extract attributes like Rank, Unit, Status, Wealth, or other schema fields "
@@ -97,13 +120,15 @@ class AnalystAgent:
                         )
                         continue
                 
+                logger.debug("=" * 80)
                 return self._build_entity(stub, resources)
             except Exception as e:
                 attempts += 1
+                logger.debug(f"--- Exception occurred (Attempt {attempts}) ---")
+                logger.debug(f"Error: {e}")
                 if attempts >= max_attempts:
-                    import logging
-                    logger = logging.getLogger(__name__)
                     logger.error(f"Analyst extraction failed for {stub.name} after {max_attempts} attempts: {e}")
+                    logger.debug("=" * 80)
                     return self._build_entity(stub, {})
                 # Retry on exception
                 continue

@@ -3,6 +3,8 @@ _workspace
 .cursor
 .env
 world.db
+/data/projects
+user_config.json
 
 *.pdf
 # Byte-compiled / optimized / DLL files

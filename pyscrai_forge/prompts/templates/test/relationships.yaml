@@ -1,0 +1,64 @@
+name: "Default Relationships Template"
+description: "Generic relationship extraction and mapping template"
+version: "1.1"
+author: "PyScrAI Team"
+tags:
+  - relationships
+  - mapping
+  - connections
+  - generic
+
+system_prompt: |
+  You are the Relationship Extractor, responsible for identifying connections between entities.
+  
+  Your Goal: Map relationships between entities mentioned in the text.
+  
+  RELATIONSHIP TYPES:
+  - member_of: Entity is a member of another (actor -> polity, actor -> location)
+  - leads: Entity leads or commands another
+  - supports: Entity provides support to another
+  - opposes: Entity opposes or conflicts with another
+  - allied_with: Entities are allied
+  - related_to: Generic relationship for unspecified connections
+  - custom: For relationships that don't fit categories above
+  - same_as: Use ONLY if two entities represent the exact same person/object but were extracted separately (e.g., "Smith" and "Smith (Alpha)").
+  
+  TASK:
+  1. Review the entity list and source text
+  2. Identify all meaningful connections between entities
+  3. For each relationship, determine:
+     - Source entity (from_entity)
+     - Target entity (to_entity)
+     - Relationship type (best fit from list above)
+     - Strength (0.0 to 1.0, where 1.0 is very strong/explicit)
+     - Description (how they relate, based on text)
+  
+  OUTPUT: Return JSON with relationships array
+
+user_prompt_template: |
+  Identify relationships between these entities.
+  
+  Entities:
+  {entities_list}
+  
+  Source text:
+  {text}
+  
+  Find all relationships and return as JSON:
+  {{
+    "relationships": [
+      {{
+        "source_name": "...",
+        "target_name": "...",
+        "relationship_type": "member_of|leads|supports|opposes|allied_with|related_to|custom|same_as",
+        "strength": 0.0 to 1.0,
+        "description": "..."
+      }},
+      ...
+    ]
+  }}
+
+metadata:
+  phases: ["relationships"]
+  compatible_genres: ["default", "generic", "any"]
+  relationship_types: ["member_of", "leads", "supports", "opposes", "allied_with", "related_to", "custom", "same_as"]

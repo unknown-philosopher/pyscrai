@@ -44,7 +44,7 @@ class SchemaBuilderWidget(ttk.Frame):
 
         self.tree = ttk.Treeview(
             tree_frame,
-            columns=("type", "required", "default"),
+            columns=("type", "required", "default", "description"),
             show="tree headings",
             selectmode=tk.BROWSE
         )
@@ -52,11 +52,14 @@ class SchemaBuilderWidget(ttk.Frame):
         self.tree.heading("type", text="Type")
         self.tree.heading("required", text="Required")
         self.tree.heading("default", text="Default")
+        self.tree.heading("description", text="Description")
 
-        self.tree.column("#0", width=200)
-        self.tree.column("type", width=100)
-        self.tree.column("required", width=80)
-        self.tree.column("default", width=150)
+        # Make the grid ~30% wider for readability
+        self.tree.column("#0", width=240)
+        self.tree.column("type", width=130)
+        self.tree.column("required", width=90)
+        self.tree.column("default", width=170)
+        self.tree.column("description", width=260)
 
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.config(yscrollcommand=scrollbar.set)
@@ -80,26 +83,30 @@ class SchemaBuilderWidget(ttk.Frame):
             for field_name, field_spec in sorted(fields.items()):
                 # Handle both string (legacy) and dict (rich) field specs
                 if isinstance(field_spec, str):
-                    # Legacy format: just a type string
-                    field_type = field_spec
+                    # Legacy format: treat string as description, assume string type
+                    field_type = "string"
                     required = ""
                     default = ""
+                    description = field_spec
                 elif isinstance(field_spec, dict):
                     # Rich format: dict with type, required, default, etc.
                     field_type = field_spec.get("type", "string")
                     required = "Yes" if field_spec.get("required", False) else ""
-                    default = str(field_spec.get("default", "")) if field_spec.get("default") else ""
+                    default_val = field_spec.get("default", field_spec.get("default_value", ""))
+                    default = str(default_val) if default_val not in (None, "") else ""
+                    description = field_spec.get("description", "")
                 else:
                     # Fallback
                     field_type = "string"
                     required = ""
                     default = ""
+                    description = ""
 
                 self.tree.insert(
                     entity_node,
                     tk.END,
                     text=field_name,
-                    values=(field_type, required, default),
+                    values=(field_type, required, default, description),
                     tags=("field",)
                 )
 
@@ -184,7 +191,7 @@ class SchemaBuilderWidget(ttk.Frame):
             if "description" in field_data and field_data["description"]:
                 self.schemas[entity_type][field_name]["description"] = field_data["description"]
 
-            if "default" in field_data and field_data["default"]:
+            if "default" in field_data and field_data["default"] not in (None, ""):
                 self.schemas[entity_type][field_name]["default"] = field_data["default"]
 
             if "options" in field_data:
@@ -218,12 +225,12 @@ class SchemaBuilderWidget(ttk.Frame):
         
         # Handle both string (legacy) and dict (rich) field specs
         if isinstance(field_spec, str):
-            # Legacy format: just a type string
+            # Legacy format: treat as description
             field_data = {
                 "name": field_name,
-                "type": field_spec,
+                "type": "string",
                 "required": False,
-                "description": "",
+                "description": field_spec,
                 "default": "",
                 "options": []
             }
@@ -234,7 +241,7 @@ class SchemaBuilderWidget(ttk.Frame):
                 "type": field_spec.get("type", "string"),
                 "required": field_spec.get("required", False),
                 "description": field_spec.get("description", ""),
-                "default": field_spec.get("default", ""),
+                "default": field_spec.get("default", field_spec.get("default_value", "")),
                 "options": field_spec.get("options", [])
             }
         else:
@@ -267,7 +274,7 @@ class SchemaBuilderWidget(ttk.Frame):
             if "description" in updated_data and updated_data["description"]:
                 self.schemas[entity_type][new_name]["description"] = updated_data["description"]
 
-            if "default" in updated_data and updated_data["default"]:
+            if "default" in updated_data and updated_data["default"] not in (None, ""):
                 self.schemas[entity_type][new_name]["default"] = updated_data["default"]
 
             if "options" in updated_data:

@@ -1,0 +1,52 @@
+name: "Default Entity Schemas"
+description: "Generic entity field schemas for all entity types"
+version: "1.1"
+author: "PyScrAI Team"
+genre: "default"
+
+schemas:
+  actor:
+    name: "Name or identifier of the person/character"
+    description: "Bio or background information"
+    rank: "Military rank or hierarchical position (e.g., Sergeant, Commander)"
+    role: "Role, position, or occupation (if distinct from rank)"
+    status: "Current status or state"
+    affiliation: "Organization, group, or faction they belong to"
+    tags: "Categories or labels (e.g., sergeant, operative)"
+    wealth:
+      description: "Representation of monetary value; i.e cash, tokens, points, wealth, etc"
+      default_value: 0
+    health:
+      description: "actor's health rating 0-100"
+      default_value: 100
+  
+  polity:
+    name: "Name of the organization/group"
+    type: "Type of organization (military, civilian, corporate, etc)"
+    description: "Overview of the organization"
+    leader: "Primary leader or head of organization"
+    members: "Known members or composition"
+    status: "Current operational status"
+    tags: "Categories or labels"
+  
+  location:
+    name: "Name of the location"
+    type: "Type of location (city, base, safehouse, region, etc)"
+    description: "Description of the location"
+    status: "Current security or operational status"
+    accessibility: "How accessible or restricted it is"
+    capacity: "Size, population, or capacity (if relevant)"
+    tags: "Categories or labels"
+  
+  abstract:
+    name: "Name of the concept/event/treaty"
+    type: "Type (concept, event, movement, treaty, etc)"
+    description: "Description or context"
+    participants: "Who is involved"
+    status: "Current state or outcome"
+    tags: "Categories or labels"
+
+metadata:
+  compatible_genres: ["default", "generic", "any"]
+  entity_types: ["actor", "polity", "location", "abstract"]
+  created_at: "2026-01-04"

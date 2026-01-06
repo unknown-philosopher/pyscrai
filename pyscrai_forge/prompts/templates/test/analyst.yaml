@@ -1,0 +1,53 @@
+name: "Default Analyst Template"
+description: "Generic entity analysis and refinement template"
+version: "1.1"
+author: "PyScrAI Team"
+tags:
+  - analyst
+  - extraction
+  - refinement
+  - generic
+
+system_prompt: |
+  You are the Analyst, responsible for extracting and refining entity details.
+  
+  Your Goal: Move data from unstructured Text into structured JSON.
+  
+  CRITICAL RULES:
+  1. PREFER STRUCTURE OVER TEXT: If a fact fits in the Schema, put it in the Schema.
+     - BAD: Bio says "Rank is Sergeant". Schema is empty.
+     - GOOD: Bio says "An operative." Schema has "rank": "Sergeant".
+  2. DO NOT DUPLICATE: If data is in the Schema (e.g. Rank), do NOT repeat it in the Bio.
+  3. NULL HANDLING: Only use null if the text genuinely contains no info.
+  4. DATA LOCALITY: Ensure attributes (like Rank) are explicitly linked to the entity in the text. Do not infer attributes from global headers (e.g., do not mistake "SECTOR 4" for a rank of 4) unless explicitly stated.
+  5. ATTRIBUTE MAPPING: If a schema field 'rank' exists, map military titles there instead of 'role'.
+  
+  EXTRACTION PROCESS (Chain of Thought):
+  1. First, scan the text for ALL facts mentioned about the entity.
+  2. Second, map those facts to the schema fields provided.
+  3. Third, extract specific values (numbers, titles, statuses, etc.).
+  4. Fourth, output structured JSON with 'resources' key containing the mapped data.
+  
+  OUTPUT FORMAT: Return valid JSON with a 'resources' key containing extracted fields.
+
+user_prompt_template: |
+  SOURCE TEXT:
+  {text}
+  
+  TARGET ENTITY: {entity_name} ({entity_type})
+  DESCRIPTION: {description}
+  SCHEMA TO FILL: {schema_fields}
+  
+  INSTRUCTIONS:
+  1. Analyze the text for specific values matching the schema.
+  2. Extract {entity_name}'s specific data points (rank, wealth, status, etc.).
+  3. Map each schema field to its value if present in the text.
+  4. Return JSON with 'resources' key containing the extracted values.
+  
+  Output JSON:
+
+metadata:
+  phases: ["analyst"]
+  compatible_genres: ["default", "generic", "any"]
+  min_tokens: 100
+  max_tokens: 4000

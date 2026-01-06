@@ -75,6 +75,18 @@ class ScoutAgent:
         # Render template with text
         system_prompt, user_prompt = template.render(text=text, genre=genre.value if hasattr(genre, 'value') else genre)
         
+        # Verbose logging: Show prompts
+        logger.debug("=" * 80)
+        logger.debug("SCOUT AGENT - Entity Discovery")
+        logger.debug("=" * 80)
+        logger.debug(f"Model: {self.model or self.provider.default_model}")
+        logger.debug(f"Temperature: 0.1")
+        logger.debug("\n--- SYSTEM PROMPT ---")
+        logger.debug(system_prompt)
+        logger.debug("\n--- USER PROMPT ---")
+        logger.debug(user_prompt)
+        logger.debug("\n--- Sending request to LLM ---")
+        
         try:
             # Use model if provided, otherwise use provider's default (same pattern as Analyst/Narrator)
             response = await self.provider.complete_simple(
@@ -83,6 +95,13 @@ class ScoutAgent:
                 system_prompt=system_prompt,
                 temperature=0.1
             )
+            
+            # Verbose logging: Show response
+            logger.debug("\n--- LLM RESPONSE ---")
+            logger.debug(response)
+            logger.debug(f"\n--- Parsed {len(self._parse_response(response))} entities ---")
+            logger.debug("=" * 80)
+            
             return self._parse_response(response)
         except Exception as e:
             # Re-raise with more context instead of silently returning empty list

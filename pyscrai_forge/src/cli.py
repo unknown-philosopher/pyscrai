@@ -57,6 +57,7 @@ async def _process_file(
     model: str,
     output: Path | None,
     project_path: Path | None = None,
+    verbose: bool = False,
 ) -> str:
     """Internal async function for processing a single file."""
     provider, env_model = create_provider_from_env()
@@ -106,7 +107,8 @@ async def _process_file(
         result_path = await manager.run_extraction_pipeline(
             text=text,
             genre=genre,
-            output_path=output
+            output_path=output,
+            verbose=verbose
         )
         
         return result_path
@@ -119,6 +121,7 @@ def process_file(
     model: Annotated[str | None, typer.Option("--model", "-m", help="LLM model to use")] = DEFAULT_MODEL or None,
     output: Annotated[Path | None, typer.Option("--output", "-o", help="Output JSON file")] = None,
     project: Annotated[Path | None, typer.Option("--project", "-p", help="Path to Project (for schema)")] = None,
+    verbose: Annotated[bool, typer.Option("--verbose", "-v", help="Enable verbose output (show prompts and responses)")] = False,
 ) -> None:
     """Process a single text file and extract entities (automated)."""
     if not file.exists():
@@ -128,12 +131,13 @@ def process_file(
     console.print(Panel(
         f"[bold]File:[/bold] {file}\n"
         f"[bold]Genre:[/bold] {genre.value}\n"
-        f"[bold]Model:[/bold] {model or 'auto'}",
+        f"[bold]Model:[/bold] {model or 'auto'}\n"
+        f"[bold]Verbose:[/bold] {verbose}",
         title="Entity Extraction",
         border_style="blue",
     ))
     
-    out_path = asyncio.run(_process_file(file, genre, model, output, project))
+    out_path = asyncio.run(_process_file(file, genre, model, output, project, verbose))
     
     console.print(Panel(
         f"Review Packet ready at:\n[bold]{out_path}[/bold]\n\n"

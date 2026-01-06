@@ -342,12 +342,17 @@ class ReviewerApp:
                             tmp_path = Path(tmp.name)
                         
                         try:
+                            # Check for verbose mode via environment variable or config
+                            import os
+                            verbose = os.getenv("PYSCRAI_VERBOSE", "").lower() in ("1", "true", "yes")
+                            
                             packet_path = await manager.run_extraction_pipeline(
                                 text=text,
                                 genre=Genre.GENERIC,
                                 output_path=tmp_path,
                                 template_name=template_name,
-                                interactive=interactive
+                                interactive=interactive,
+                                verbose=verbose
                             )
                             
                             # Load the packet to get entities and relationships

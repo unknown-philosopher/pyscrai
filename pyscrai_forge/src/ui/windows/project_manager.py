@@ -34,6 +34,7 @@ class ProjectManagerWindow(tk.Toplevel):
         self.project_path = project_path
         self.manifest: Optional[ProjectManifest] = None
         self.modified = False
+        self._suppress_template_change = False
 
         self._create_ui()
         self._load_project()
@@ -98,13 +99,16 @@ class ProjectManagerWindow(tk.Toplevel):
         ttk.Label(tab, text="Template:").grid(row=4, column=0, sticky=tk.W, pady=5)
         self.template_var = tk.StringVar()
         templates = self._get_available_templates()
-        ttk.Combobox(
+        self.template_dropdown = ttk.Combobox(
             tab,
             textvariable=self.template_var,
             values=templates,
             state="readonly",
             width=48
-        ).grid(row=4, column=1, sticky=tk.EW, pady=5)
+        )
+        self.template_dropdown.grid(row=4, column=1, sticky=tk.EW, pady=5)
+        # Bind template change event
+        self.template_var.trace_add("write", self._on_template_changed)
 
         # Schema Version (read-only)
         ttk.Label(tab, text="Schema Version:").grid(row=5, column=0, sticky=tk.W, pady=5)
@@ -237,17 +241,43 @@ class ProjectManagerWindow(tk.Toplevel):
 
     def _get_available_templates(self):
         """Return a list of available template directory names from the templates directory."""
-        import os
-        # Find project root (assume this file is always 4 levels below root)
-        current = os.path.abspath(os.path.dirname(__file__))
-        for _ in range(4):
-            current = os.path.dirname(current)
-        templates_dir = os.path.join(current, 'pyscrai_forge', 'prompts', 'templates')
         try:
-            templates = [d for d in os.listdir(templates_dir) if os.path.isdir(os.path.join(templates_dir, d))]
-            return sorted(templates)
+            from pyscrai_forge.src.template_utils import get_available_templates
+            return get_available_templates()
         except Exception:
             return []
+
+    def _on_template_changed(self, *args):
+        """Handle template selection change by loading and applying template schemas.
+        
+        This callback is triggered when the user changes the template dropdown.
+        """
+        if getattr(self, "_suppress_template_change", False):
+            return
+
+        template_name = self.template_var.get()
+        if not template_name:
+            return
+        
+        try:
+            from pyscrai_forge.src.template_utils import load_template_schema
+            template_schemas = load_template_schema(template_name)
+            
+            if template_schemas:
+                # Ask user if they want to apply template schemas
+                if messagebox.askyesno(
+                    "Apply Template Schemas",
+                    f"Load entity schemas from template '{template_name}'?\n\n"
+                    "This will replace the current entity schemas.",
+                    parent=self
+                ):
+                    # Update schema builder with template schemas
+                    self.schema_builder.set_schemas(template_schemas)
+                    self._mark_modified()
+                    self.logger.info(f"Applied schemas from template '{template_name}'")
+        except Exception as e:
+            self.logger.error(f"Error loading template schemas: {e}")
+            messagebox.showerror("Error", f"Failed to load template schemas:\n{str(e)}", parent=self)
 
     def _load_project(self):
         """Load project manifest from disk."""
@@ -289,7 +319,9 @@ class ProjectManagerWindow(tk.Toplevel):
         self.description_text.insert("1.0", self.manifest.description)
         self.author_var.set(self.manifest.author)
         self.version_var.set(self.manifest.version)
+        self._suppress_template_change = True
         self.template_var.set(self.manifest.template or "")
+        self._suppress_template_change = False
         self.schema_version_var.set(str(self.manifest.schema_version))
         self.created_at_var.set(str(self.manifest.created_at))
         self.last_modified_var.set(str(self.manifest.last_modified_at))
@@ -346,11 +378,19 @@ class ProjectManagerWindow(tk.Toplevel):
         try:
             # Build manifest from UI
             from datetime import datetime, UTC
+            from pyscrai_forge.src.template_utils import ensure_template_schemas
 
             enabled_systems = [system for system, var in self.systems_vars.items() if var.get()]
             
             # Log what we are saving
             self.logger.info(f"Saving project manifest to: {path}")
+
+            # Ensure schemas are hydrated from template if empty
+            hydrated_schemas = ensure_template_schemas(
+                self.template_var.get() or None,
+                self.schema_builder.get_schemas(),
+                logger=self.logger
+            )
 
             new_manifest = ProjectManifest(
                 name=self.name_var.get(),
@@ -360,7 +400,7 @@ class ProjectManagerWindow(tk.Toplevel):
                 schema_version=self.manifest.schema_version if self.manifest else 1,
                 created_at=self.manifest.created_at if self.manifest else datetime.now(UTC),
                 last_modified_at=datetime.now(UTC),
-                entity_schemas=self.schema_builder.get_schemas(),
+                entity_schemas=hydrated_schemas,
                 enabled_systems=enabled_systems,
                 llm_provider=self.llm_provider_var.get(),
                 llm_default_model=self.llm_default_model_var.get(),

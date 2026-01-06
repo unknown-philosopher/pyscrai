@@ -40,16 +40,10 @@ class UserConfig(BaseModel):
     @classmethod
     def get_config_path(cls) -> Path:
         """Get user config file path (cross-platform)."""
-        # Windows: %APPDATA%/pyscrai/user_config.json
-        # macOS/Linux: ~/.config/pyscrai/user_config.json
-        if os.name == 'nt':
-            base = Path(os.environ.get('APPDATA', str(Path.home())))
-        else:
-            base = Path.home() / '.config'
-        
-        config_dir = base / 'pyscrai'
-        config_dir.mkdir(parents=True, exist_ok=True)
-        return config_dir / 'user_config.json'
+        """Get user config file path."""
+        config_path = Path("C:\\Users\\Dev\\Documents\\dev\\projectus\\pyscrai-2\\pyscrai\\data\\user\\default\\user_config.json")
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        return config_path
 
     @classmethod
     def load(cls) -> 'UserConfig':

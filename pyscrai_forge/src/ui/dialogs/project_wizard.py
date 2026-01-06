@@ -144,21 +144,16 @@ class ProjectWizardDialog(tk.Toplevel):
         location_frame = ttk.Frame(self.content_frame)
         location_frame.pack(anchor=tk.W, pady=(0, 10))
 
-        self.location_var = tk.StringVar(value=self.project_data.get("location", ""))
+        default_location = self.project_data.get("location", "C:\\Users\\Dev\\Documents\\dev\\projectus\\pyscrai-2\\pyscrai\\data\\projects")
+        self.location_var = tk.StringVar(value=default_location)
         ttk.Entry(location_frame, textvariable=self.location_var, width=40).pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(location_frame, text="Browse...", command=self._browse_location).pack(side=tk.LEFT)
 
     def _get_available_templates(self):
         """Return a list of available template directory names from the templates directory."""
-        import os
-        # Find project root (assume this file is always 4 levels below root)
-        current = os.path.abspath(os.path.dirname(__file__))
-        for _ in range(4):
-            current = os.path.dirname(current)
-        templates_dir = os.path.join(current, 'pyscrai_forge', 'prompts', 'templates')
         try:
-            templates = [d for d in os.listdir(templates_dir) if os.path.isdir(os.path.join(templates_dir, d))]
-            return sorted(templates)
+            from pyscrai_forge.src.template_utils import get_available_templates
+            return get_available_templates()
         except Exception:
             return []
 
@@ -184,7 +179,13 @@ class ProjectWizardDialog(tk.Toplevel):
 
         # Schema builder
         from ..widgets.schema_builder import SchemaBuilderWidget
+        from pyscrai_forge.src.template_utils import ensure_template_schemas
+
         schemas = self.project_data.get("schemas", {})
+        schemas = ensure_template_schemas(self.project_data.get("template"), schemas)
+        if schemas:
+            self.project_data["schemas"] = schemas
+
         self.schema_builder = SchemaBuilderWidget(self.content_frame, schemas=schemas)
         self.schema_builder.pack(fill=tk.BOTH, expand=True)
 
@@ -263,7 +264,15 @@ The wizard will create:
             self.project_data["description"] = self.description_text.get("1.0", tk.END).strip()
             self.project_data["author"] = self.author_var.get().strip()
             self.project_data["location"] = self.location_var.get().strip()
-            self.project_data["template"] = self.template_var.get() if self.template_var.get() else None
+            template_name = self.template_var.get() if self.template_var.get() else None
+            self.project_data["template"] = template_name
+            
+            # Load template schemas if template selected
+            if template_name:
+                from pyscrai_forge.src.template_utils import load_template_schema
+                template_schemas = load_template_schema(template_name)
+                if template_schemas:
+                    self.project_data["schemas"] = template_schemas
         elif self.current_step == 1:
             self.project_data["schemas"] = self.schema_builder.get_schemas()
         elif self.current_step == 2:
@@ -331,6 +340,13 @@ The wizard will create:
             (project_path / "assets").mkdir(exist_ok=True)
             (project_path / "data").mkdir(exist_ok=True)
             (project_path / "logs").mkdir(exist_ok=True)
+
+            # Finalize schemas: ensure template schemas are applied if empty
+            from pyscrai_forge.src.template_utils import ensure_template_schemas
+            self.project_data["schemas"] = ensure_template_schemas(
+                self.project_data.get("template"),
+                self.project_data.get("schemas", {})
+            )
 
             # Create manifest
             manifest = ProjectManifest(

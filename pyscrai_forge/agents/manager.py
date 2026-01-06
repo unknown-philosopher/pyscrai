@@ -186,7 +186,8 @@ class ForgeManager:
         genre: Genre = Genre.GENERIC,
         output_path: Optional[Path] = None,
         template_name: Optional[str] = None,
-        interactive: bool = False
+        interactive: bool = False,
+        verbose: bool = False
     ) -> str:
         """Run the full extraction pipeline: Scout → Analyst → Relationships → Save.
         
@@ -198,12 +199,27 @@ class ForgeManager:
             output_path: Optional path to save review packet JSON
             template_name: Optional custom template directory name to use
             interactive: If True and hil_callback is available, pauses for human review
+            verbose: If True, enables DEBUG level logging to show prompts and responses
             
         Returns:
             Path to the generated review packet JSON file
         """
         if not self.controller:
             raise ValueError("No project loaded. Cannot run extraction pipeline.")
+        
+        # Enable verbose logging if requested or if DEBUG is already enabled
+        import logging
+        root_logger = logging.getLogger()
+        is_debug = root_logger.level <= logging.DEBUG
+        
+        if verbose or is_debug:
+            root_logger.setLevel(logging.DEBUG)
+            for handler in root_logger.handlers:
+                handler.setLevel(logging.DEBUG)
+            if verbose:
+                logger.info("Verbose mode enabled - showing prompts and responses")
+            elif is_debug:
+                logger.debug("DEBUG logging detected - verbose output enabled")
         
         # For now, treat both interactive and non-interactive the same
         # The hil_callback is stored and can be used by _run_extraction_pipeline_impl if needed
@@ -274,10 +290,31 @@ class ForgeManager:
             for e in enriched_entities
         ]
         rel_system_prompt, rel_user_prompt = get_relationship_prompt(text, ent_dicts, genre)
+        
+        # Verbose logging: Show relationship prompts
+        logger.debug("=" * 80)
+        logger.debug("RELATIONSHIP EXTRACTION")
+        logger.debug("=" * 80)
+        logger.debug(f"Model: {self.provider.default_model}")
+        logger.debug(f"Temperature: 0.1")
+        logger.debug(f"Entities: {len(ent_dicts)}")
+        logger.debug("\n--- SYSTEM PROMPT ---")
+        logger.debug(rel_system_prompt)
+        logger.debug("\n--- USER PROMPT ---")
+        logger.debug(rel_user_prompt)
+        logger.debug("\n--- Sending request to LLM ---")
+        
         relationships = await self._extract_relationships_with_prompts(
             rel_system_prompt,
             rel_user_prompt
         )
+        
+        # Verbose logging: Show relationship results
+        logger.debug(f"\n--- Found {len(relationships)} relationships ---")
+        for rel in relationships:
+            logger.debug(f"  {rel.source_id} --[{rel.relationship_type.value}]--> {rel.target_id}")
+        logger.debug("=" * 80)
+        
         console.print(f"Found {len(relationships)} relationships.")
 
         # Validate
@@ -337,6 +374,10 @@ class ForgeManager:
                 model=self.provider.default_model
             )
             
+            # Verbose logging: Show raw response
+            logger.debug("\n--- LLM RESPONSE ---")
+            logger.debug(response)
+            
             # Parse response
             import re
             cleaned = response.strip()
@@ -348,6 +389,9 @@ class ForgeManager:
                 match = re.search(r"```\s*(.*?)\s*```", cleaned, re.DOTALL)
                 if match:
                     cleaned = match.group(1)
+            
+            logger.debug("\n--- Parsed JSON ---")
+            logger.debug(cleaned)
                 
             data = json.loads(cleaned)
             rels_raw = data.get("relationships", [])
