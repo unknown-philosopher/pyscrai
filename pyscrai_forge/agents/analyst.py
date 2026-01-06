@@ -209,7 +209,14 @@ class AnalystAgent:
             tags=stub.tags
         )
         
-        state = StateComponent(resources_json=json.dumps(resources))
+        # Filter out fields that duplicate DescriptorComponent data
+        # These fields are already stored in descriptor, so we don't need them in resources_json
+        filtered_resources = {
+            k: v for k, v in resources.items()
+            if k not in ["name", "description", "tags"]
+        }
+        
+        state = StateComponent(resources_json=json.dumps(filtered_resources))
         
         # Helper logic for Location Layers
         spatial = None

@@ -368,14 +368,19 @@ class ForgeManager:
             "call sign", "callsign", "call-sign",
             "code name", "codename", "code-name",
             "also known as", "aka", "a.k.a.",
-            "nickname", "handle", "pseudonym"
+            "nickname", "handle", "pseudonym",
+            "identified as"  # e.g., "Viper is identified as Captain Elena Rossi"
         ]
+        
+        # Track alias relationships to remove them after merging (they've served their purpose)
+        alias_relationships_to_remove = []
         
         for rel in relationships:
             desc = rel.description.lower()
             # Check if relationship type is explicitly same_as
             if rel.relationship_type.value == "same_as":
                 alias_map[rel.source_id] = rel.target_id
+                alias_relationships_to_remove.append(rel)
                 logger.info(f"ForgeManager: Found alias relationship (same_as type) {rel.source_id} -> {rel.target_id}")
                 continue
             
@@ -394,9 +399,18 @@ class ForgeManager:
                 if re.search(pattern, desc):
                     is_alias_relationship = True
             
+            # Additional pattern: "X is identified as Y" (common identity pattern)
+            if not is_alias_relationship:
+                # Pattern: "X is identified as Y" - indicates identity relationship
+                pattern = r"(\w+)\s+is\s+identified\s+as\s+(.+)"
+                if re.search(pattern, desc):
+                    is_alias_relationship = True
+                    logger.debug(f"ForgeManager: Matched 'identified as' pattern: {rel.description}")
+            
             if is_alias_relationship:
                 # Assume the target is the canonical one if mentioned in description
                 alias_map[rel.source_id] = rel.target_id
+                alias_relationships_to_remove.append(rel)
                 logger.info(f"ForgeManager: Found alias relationship {rel.source_id} -> {rel.target_id} (description: '{rel.description}')")
 
         if not alias_map:
@@ -453,7 +467,10 @@ class ForgeManager:
             final_alias_map[alias_id] = current
         
         # Update relationships that reference deleted alias entities
+        # Also filter out self-referential relationships (entity pointing to itself)
         relationships_updated = 0
+        relationships_to_remove = []
+        
         for rel in relationships:
             updated = False
             # Check if source_id is an alias that was deleted
@@ -465,12 +482,30 @@ class ForgeManager:
                 rel.target_id = final_alias_map[rel.target_id]
                 updated = True
             
-            if updated:
+            # Check for self-referential relationships (entity pointing to itself)
+            if rel.source_id == rel.target_id:
+                relationships_to_remove.append(rel)
+                logger.info(f"ForgeManager: Removing self-referential relationship {rel.id} ({rel.description})")
+            elif updated:
                 relationships_updated += 1
                 logger.info(f"ForgeManager: Updated relationship {rel.id} to reference master entities")
         
+        # Remove self-referential relationships
+        for rel in relationships_to_remove:
+            relationships.remove(rel)
+        
+        # Remove alias relationships themselves (they've served their purpose after merging)
+        for rel in alias_relationships_to_remove:
+            if rel in relationships:  # Check if not already removed
+                relationships.remove(rel)
+                logger.info(f"ForgeManager: Removed alias relationship {rel.id} after merge ({rel.description})")
+        
         if relationships_updated > 0:
             console.print(f"[dim]Updated {relationships_updated} relationships to point to master entities[/dim]")
+        if relationships_to_remove:
+            console.print(f"[dim]Removed {len(relationships_to_remove)} self-referential relationship(s)[/dim]")
+        if alias_relationships_to_remove:
+            console.print(f"[dim]Removed {len(alias_relationships_to_remove)} alias relationship(s) after merge[/dim]")
 
         # 4. Clean up the entities list
         return [e for e in entities if e.id not in to_delete]
