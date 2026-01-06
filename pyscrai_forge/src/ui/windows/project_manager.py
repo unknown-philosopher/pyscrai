@@ -1,12 +1,15 @@
 # pyscrai_forge/harvester/ui/windows/project_manager.py
 """Project configuration manager window."""
 
+import asyncio
 import json
+import os
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from pathlib import Path
 from typing import Optional
 from pyscrai_core import ProjectManifest
+from pyscrai_core.llm_interface import create_provider, ProviderType
 from pyscrai_forge.src.logging_config import get_logger
 from ..widgets.schema_builder import SchemaBuilderWidget
 from ..widgets.dependency_manager import DependencyManagerWidget
@@ -148,28 +151,62 @@ class ProjectManagerWindow(tk.Toplevel):
         # Provider
         ttk.Label(tab, text="LLM Provider:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.llm_provider_var = tk.StringVar()
-        self.llm_provider_var.trace_add("write", lambda *args: self.logger.info(f"Setting changed: LLM Provider -> {self.llm_provider_var.get()}"))
-        providers = ["openrouter", "lmstudio", "ollama", "anthropic", "openai"]
-        ttk.Combobox(
+        self.llm_provider_var.trace_add("write", self._on_provider_change)
+        providers = ["openrouter", "cherry", "lm_studio", "lm_proxy"]
+        self.provider_combo = ttk.Combobox(
             tab,
             textvariable=self.llm_provider_var,
             values=providers,
             state="readonly",
             width=30
-        ).grid(row=0, column=1, sticky=tk.W, pady=5)
+        )
+        self.provider_combo.grid(row=0, column=1, sticky=tk.W, pady=5)
 
-        # Default Model
-        ttk.Label(tab, text="Default Model:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        # Base URL (optional)
+        ttk.Label(tab, text="Base URL:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.llm_base_url_var = tk.StringVar()
+        base_url_entry = ttk.Entry(tab, textvariable=self.llm_base_url_var, width=50)
+        base_url_entry.grid(row=1, column=1, sticky=tk.EW, pady=5)
+        ttk.Label(
+            tab, 
+            text="(Optional - uses provider default if empty)", 
+            foreground="gray",
+            font=("Arial", 8)
+        ).grid(row=1, column=2, sticky=tk.W, padx=5)
+
+        # Default Model with Refresh button
+        model_frame = ttk.Frame(tab)
+        model_frame.grid(row=2, column=1, sticky=tk.EW, pady=5)
+        
+        ttk.Label(tab, text="Default Model:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.llm_default_model_var = tk.StringVar()
-        ttk.Entry(tab, textvariable=self.llm_default_model_var, width=50).grid(row=1, column=1, sticky=tk.EW, pady=5)
+        self.default_model_combo = ttk.Combobox(
+            model_frame, 
+            textvariable=self.llm_default_model_var, 
+            width=47
+        )
+        self.default_model_combo.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        self.refresh_models_btn = ttk.Button(
+            model_frame, 
+            text="⟳", 
+            width=3,
+            command=self._refresh_models
+        )
+        self.refresh_models_btn.pack(side=tk.LEFT, padx=(5, 0))
 
         # Fallback Model
-        ttk.Label(tab, text="Fallback Model:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(tab, text="Fallback Model:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.llm_fallback_model_var = tk.StringVar()
-        ttk.Entry(tab, textvariable=self.llm_fallback_model_var, width=50).grid(row=2, column=1, sticky=tk.EW, pady=5)
+        self.fallback_model_combo = ttk.Combobox(
+            tab, 
+            textvariable=self.llm_fallback_model_var, 
+            width=50
+        )
+        self.fallback_model_combo.grid(row=3, column=1, sticky=tk.EW, pady=5)
 
         # Memory Backend
-        ttk.Label(tab, text="Memory Backend:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(tab, text="Memory Backend:").grid(row=4, column=0, sticky=tk.W, pady=5)
         self.memory_backend_var = tk.StringVar()
         self.memory_backend_var.trace_add("write", lambda *args: self.logger.info(f"Setting changed: Memory Backend -> {self.memory_backend_var.get()}"))
         ttk.Combobox(
@@ -178,14 +215,21 @@ class ProjectManagerWindow(tk.Toplevel):
             values=["chromadb_local", "chromadb_remote"],
             state="readonly",
             width=30
-        ).grid(row=3, column=1, sticky=tk.W, pady=5)
+        ).grid(row=4, column=1, sticky=tk.W, pady=5)
 
         # Memory Collection ID
-        ttk.Label(tab, text="Memory Collection ID:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(tab, text="Memory Collection ID:").grid(row=5, column=0, sticky=tk.W, pady=5)
         self.memory_collection_id_var = tk.StringVar()
-        ttk.Entry(tab, textvariable=self.memory_collection_id_var, width=50).grid(row=4, column=1, sticky=tk.EW, pady=5)
+        ttk.Entry(tab, textvariable=self.memory_collection_id_var, width=50).grid(row=5, column=1, sticky=tk.EW, pady=5)
+
+        # Status label for model loading
+        self.model_status_label = ttk.Label(tab, text="", foreground="gray", font=("Arial", 8))
+        self.model_status_label.grid(row=6, column=1, sticky=tk.W, pady=(5, 0))
 
         tab.columnconfigure(1, weight=1)
+        
+        # Store available models cache
+        self._available_models = []
 
     def _create_systems_tab(self):
         """Create the Systems tab."""
@@ -331,6 +375,7 @@ class ProjectManagerWindow(tk.Toplevel):
 
         # LLM Settings
         self.llm_provider_var.set(self.manifest.llm_provider)
+        self.llm_base_url_var.set(getattr(self.manifest, 'llm_base_url', None) or "")
         self.llm_default_model_var.set(self.manifest.llm_default_model)
         self.llm_fallback_model_var.set(self.manifest.llm_fallback_model or "")
         self.memory_backend_var.set(self.manifest.memory_backend)
@@ -352,6 +397,105 @@ class ProjectManagerWindow(tk.Toplevel):
         """Mark the project as modified."""
         self.modified = True
         self.status_label.config(text="Modified (unsaved)", foreground="orange")
+
+    def _on_provider_change(self, *args):
+        """Handle provider selection change."""
+        provider = self.llm_provider_var.get()
+        self.logger.info(f"Setting changed: LLM Provider -> {provider}")
+        
+        # Clear current models
+        self._available_models = []
+        self.default_model_combo['values'] = []
+        self.fallback_model_combo['values'] = []
+        self.model_status_label.config(text="Click ⟳ to load models", foreground="gray")
+
+    def _refresh_models(self):
+        """Refresh available models from the selected provider."""
+        provider_name = self.llm_provider_var.get()
+        if not provider_name:
+            messagebox.showwarning("No Provider", "Please select a provider first.")
+            return
+        
+        self.logger.info(f"Refreshing models for provider: {provider_name}")
+        self.model_status_label.config(text="Loading models...", foreground="blue")
+        self.refresh_models_btn.config(state="disabled")
+        
+        # Run async model fetching in a thread
+        import threading
+        thread = threading.Thread(
+            target=self._fetch_models_async, 
+            args=(provider_name,),
+            daemon=True
+        )
+        thread.start()
+
+    def _fetch_models_async(self, provider_name: str):
+        """Fetch models asynchronously from provider."""
+        try:
+            # Get API key and base URL from environment or UI
+            api_key = self._get_api_key_for_provider(provider_name)
+            base_url = self.llm_base_url_var.get() or None
+            
+            # Create provider and fetch models
+            provider = create_provider(
+                provider_name,
+                api_key=api_key,
+                base_url=base_url,
+                timeout=30.0
+            )
+            
+            # Run async list_models in new event loop
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                models = loop.run_until_complete(provider.list_models())
+                model_ids = [m.id for m in models]  # Use 'id' not 'model_id'
+                
+                # Update UI in main thread
+                self.after(0, lambda: self._update_model_list(model_ids))
+            finally:
+                loop.close()
+                
+        except Exception as e:
+            self.logger.error(f"Error fetching models: {e}")
+            error_msg = str(e)  # Capture error message
+            self.after(0, lambda msg=error_msg: self._show_model_error(msg))
+
+    def _get_api_key_for_provider(self, provider_name: str) -> str:
+        """Get API key for provider from environment."""
+        env_key_map = {
+            "openrouter": "OPENROUTER_API_KEY",
+            "cherry": "CHERRY_API_KEY",
+            "lm_studio": "LM_STUDIO_API_KEY",
+            "lm_proxy": "LM_PROXY_API_KEY",
+        }
+        
+        env_key = env_key_map.get(provider_name, "")
+        api_key = os.getenv(env_key, "not-needed")
+        return api_key
+
+    def _update_model_list(self, model_ids: list[str]):
+        """Update the model dropdown with fetched models."""
+        self._available_models = model_ids
+        self.default_model_combo['values'] = model_ids
+        self.fallback_model_combo['values'] = model_ids
+        
+        count = len(model_ids)
+        self.model_status_label.config(
+            text=f"Loaded {count} model{'s' if count != 1 else ''}", 
+            foreground="green"
+        )
+        self.refresh_models_btn.config(state="normal")
+        self.logger.info(f"Loaded {count} models")
+
+    def _show_model_error(self, error_msg: str):
+        """Show error message when model fetching fails."""
+        self.model_status_label.config(
+            text=f"Error: {error_msg[:50]}...", 
+            foreground="red"
+        )
+        self.refresh_models_btn.config(state="normal")
+
 
     def _save_manifest(self):
         """Save the manifest to disk."""
@@ -403,6 +547,7 @@ class ProjectManagerWindow(tk.Toplevel):
                 entity_schemas=hydrated_schemas,
                 enabled_systems=enabled_systems,
                 llm_provider=self.llm_provider_var.get(),
+                llm_base_url=self.llm_base_url_var.get() or None,
                 llm_default_model=self.llm_default_model_var.get(),
                 llm_fallback_model=self.llm_fallback_model_var.get() or None,
                 memory_backend=self.memory_backend_var.get(),

@@ -12,6 +12,7 @@ from enum import Enum
 from dotenv import load_dotenv
 
 from .base import LLMProvider
+from .cherry_provider import CherryProvider
 from .openrouter_provider import OpenRouterProvider
 
 # Load .env early so helpers work in CLI contexts
@@ -22,6 +23,7 @@ class ProviderType(str, Enum):
     """Supported LLM provider types."""
 
     OPENROUTER = "openrouter"
+    CHERRY = "cherry"
     LM_PROXY = "lm_proxy"
     LM_STUDIO = "lm_studio"
     # Future: OPENAI = "openai"
@@ -34,6 +36,11 @@ PROVIDER_ENV_MAP: dict[str, dict[str, str]] = {
         "api_key": "OPENROUTER_API_KEY",
         "base_url": "OPENROUTER_BASE_URL",
         "model": "OPENROUTER_DEFAULT_MODEL",
+    },
+    ProviderType.CHERRY.value: {
+        "api_key": "CHERRY_API_KEY",
+        "base_url": "CHERRY_API_URL",
+        "model": "CHERRY_MODEL",
     },
     ProviderType.LM_PROXY.value: {
         "api_key": "LM_PROXY_API_KEY",
@@ -124,6 +131,31 @@ def create_provider(
             timeout=timeout,
             app_name=app_name,
         )
+    
+    elif provider_type == ProviderType.CHERRY:
+        base_url = base_url or CherryProvider.DEFAULT_BASE_URL
+        return CherryProvider(
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
+            app_name=app_name,
+        )
+    
+    elif provider_type in (ProviderType.LM_PROXY, ProviderType.LM_STUDIO):
+        # LM Proxy and LM Studio use OpenAI-compatible API
+        # Set default base URLs if not provided
+        if not base_url:
+            if provider_type == ProviderType.LM_STUDIO:
+                base_url = "http://localhost:1234/v1"
+            elif provider_type == ProviderType.LM_PROXY:
+                base_url = "http://localhost:4000/openai/v1"
+        
+        return OpenRouterProvider(
+            api_key=api_key or "not-needed",
+            base_url=base_url,
+            timeout=timeout,
+            app_name=app_name,
+        )
 
     # Future providers would be added here
     # elif provider_type == ProviderType.OPENAI:
@@ -159,17 +191,17 @@ def create_provider_from_env(
     base_url = os.getenv(env_map["base_url"]) if env_map.get("base_url") else None
     model = os.getenv(env_map["model"]) if env_map.get("model") else None
 
-    # For now we route all providers through the OpenRouter-compatible client
+    # Create provider based on the configured type
     provider = create_provider(
-        ProviderType.OPENROUTER,
+        provider_name,
         api_key=api_key,  # Provider will validate presence when required
-        base_url=base_url or OpenRouterProvider.DEFAULT_BASE_URL,
+        base_url=base_url,
         timeout=timeout,
         app_name=app_name,
     )
 
-    # Stash default model if provided (OpenRouterProvider already takes it)
-    if isinstance(provider, OpenRouterProvider) and model:
+    # Stash default model if provided
+    if model and hasattr(provider, 'default_model'):
         provider.default_model = model
 
     return provider, model

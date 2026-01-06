@@ -17,6 +17,7 @@ from .models import (
     ModelPricing,
 )
 from .openrouter_provider import OpenRouterProvider
+from .cherry_provider import CherryProvider
 from .provider_factory import ProviderType, create_provider, get_provider_type_from_model_id
 
 __all__ = [
@@ -36,6 +37,7 @@ __all__ = [
     "Generation",
     # Providers
     "OpenRouterProvider",
+    "CherryProvider",
     # Factory
     "create_provider",
     "ProviderType",

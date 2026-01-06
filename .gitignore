@@ -5,6 +5,7 @@ _workspace
 world.db
 /data/projects
 user_config.json
+/cherry_test
 
 *.pdf
 # Byte-compiled / optimized / DLL files

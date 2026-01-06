@@ -76,7 +76,10 @@ class ProjectManifest(BaseModel):
 
     # LLM configuration
     llm_provider: str = Field(
-        default="openrouter", description="LLM provider (openrouter, lmstudio, ollama)"
+        default="openrouter", description="LLM provider (openrouter, cherry, lm_studio, lm_proxy)"
+    )
+    llm_base_url: Optional[str] = Field(
+        default=None, description="Base URL for LLM provider API (optional, uses provider default if not specified)"
     )
     llm_default_model: str = Field(
         default="", description="Default LLM model ID for AI agents"

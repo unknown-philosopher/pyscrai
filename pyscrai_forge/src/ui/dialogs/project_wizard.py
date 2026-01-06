@@ -200,7 +200,7 @@ class ProjectWizardDialog(tk.Toplevel):
         # Provider
         ttk.Label(self.content_frame, text="LLM Provider:").pack(anchor=tk.W, pady=5)
         self.llm_provider_var = tk.StringVar(value=self.project_data.get("llm_provider", "openrouter"))
-        providers = ["openrouter", "lmstudio", "ollama", "anthropic", "openai"]
+        providers = ["openrouter", "cherry", "lm_studio", "lm_proxy"]
         ttk.Combobox(
             self.content_frame,
             textvariable=self.llm_provider_var,
