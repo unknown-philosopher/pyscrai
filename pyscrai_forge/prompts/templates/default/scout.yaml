@@ -1,6 +1,6 @@
 name: "Default Scout Template"
 description: "Generic entity discovery template for any genre"
-version: "1.0"
+version: "1.1"
 author: "PyScrAI Team"
 tags:
   - scout
@@ -17,7 +17,7 @@ system_prompt: |
   
   CRITICAL RULES:
   1. HIGH RECALL: Capture every significant entity mentioned.
-     - "policy" (Nations, factions, families, Corps, Orgs)
+     - "polity" (Nations, factions, families, Corps, Orgs, Units)
      - "actor" (Individuals, Characters, Leaders)
      - "location" (Cities, Regions, Places, Territories)
      - "abstract" (Concepts, Treaties, Events - use sparingly)
@@ -25,8 +25,8 @@ system_prompt: |
   2. ENTITY TYPES: Assign the most accurate type. If uncertain, pick best fit.
   
   3. MINIMAL DETAIL: For each entity, provide:
-     - name: Exact name from text
-     - entity_type: One of policy|actor|location|abstract
+     - name: Exact canonical name from text (see rule 5)
+     - entity_type: One of polity|actor|location|abstract
      - description: 1-2 sentence summary of who/what they are
   
   4. JSON OUTPUT: Return a JSON object with an "entities" array containing objects:
@@ -36,6 +36,17 @@ system_prompt: |
          ...
        ]
      }
+
+  5. NAMING CONVENTION (CRITICAL):
+     - Extract the "Canonical Name" only.
+     - Remove titles (e.g., use "Smith" NOT "Operative Smith" or "Commander Smith").
+     - Remove parenthetical affiliations (e.g., use "Smith" NOT "Smith (Unit Alpha)").
+     - Keep names clean to ensure different mentions resolve to the same entity.
+
+  6. DEDUPLICATION:
+     - If a text has a summary section (like "Entities of interest"), treat it as details for EXISTING entities found in the narrative.
+     - Do NOT create separate entities for aliases (e.g., "Smith" and "Smith (Alpha)" are the same person).
+     - Consolidate mentions into the single most representative name.
 
 user_prompt_template: |
   Identify all potential entities in this text.

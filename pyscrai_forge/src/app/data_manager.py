@@ -85,6 +85,14 @@ class DataManager:
         self.manifest = manifest
         self.entities_sorter = entities_sorter
         self.relationships_sorter = relationships_sorter
+
+        # Persist intuitive ID counters (entities + relationships) per project
+        if project_path:
+            try:
+                from pyscrai_core.models import set_id_counters_path
+                set_id_counters_path(project_path / ".id_counters.json")
+            except Exception:
+                pass
     
     def set_db_path(self, db_path: Optional[Path]) -> None:
         """Update database path.
@@ -105,6 +113,7 @@ class DataManager:
         """
         try:
             from pyscrai_core import Actor, Entity, Location, Polity, Relationship
+            from pyscrai_core.models import seed_id_counter_from_value
             
             with open(path, encoding="utf-8") as f:
                 data = json.load(f)
@@ -128,6 +137,7 @@ class DataManager:
                         obj = Entity.model_validate(raw)
                     
                     self.entities.append(obj)
+                    seed_id_counter_from_value(obj.id)
                 except Exception as e:
                     print(f"Failed to reconstruct entity: {e}")
             
@@ -135,7 +145,9 @@ class DataManager:
             self.relationships = []
             for raw in data.get("relationships", []):
                 try:
-                    self.relationships.append(Relationship.model_validate(raw))
+                    rel_obj = Relationship.model_validate(raw)
+                    self.relationships.append(rel_obj)
+                    seed_id_counter_from_value(rel_obj.id)
                 except Exception as e:
                     print(f"Failed to reconstruct relationship: {e}")
             
@@ -342,6 +354,16 @@ class DataManager:
         """Refresh treeviews with current data."""
         if not self.entities_tree or not self.relationships_tree:
             return
+
+        # Ensure ID counters reflect loaded data (entities + relationships)
+        try:
+            from pyscrai_core.models import seed_id_counter_from_value
+            for ent in self.entities:
+                seed_id_counter_from_value(ent.id)
+            for rel in self.relationships:
+                seed_id_counter_from_value(rel.id)
+        except Exception:
+            pass
         
         # Entities
         for item in self.entities_tree.get_children():

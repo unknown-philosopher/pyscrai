@@ -1,0 +1,93 @@
+{
+  "entities": [
+    {
+      "id": "ENTITY_001",
+      "created_at": "2026-01-06T13:02:23.864359Z",
+      "updated_at": "2026-01-06T13:02:23.864361Z",
+      "descriptor": {
+        "name": "Smith",
+        "bio": "An operative in Unit Alpha with the rank of Sergeant who transferred 500 Credits to a safehouse.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_002",
+      "created_at": "2026-01-06T13:02:23.864381Z",
+      "updated_at": "2026-01-06T13:02:23.864381Z",
+      "descriptor": {
+        "name": "J. Smith",
+        "bio": "A commander in Unit Beta who received a package at a safehouse.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_003",
+      "created_at": "2026-01-06T13:02:23.864401Z",
+      "updated_at": "2026-01-06T13:02:23.864402Z",
+      "descriptor": {
+        "name": "Safehouse Gamma",
+        "bio": "A safehouse location that has been compromised.",
+        "tags": [],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "current_location_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel_001",
+      "source_id": "ENTITY_001",
+      "target_id": "ENTITY_003",
+      "relationship_type": "trade",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Smith transferred 500 Credits to the safehouse",
+      "metadata": "{}",
+      "created_at": "2026-01-06T13:02:25.849581Z"
+    },
+    {
+      "id": "rel_002",
+      "source_id": "ENTITY_002",
+      "target_id": "ENTITY_003",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "J. Smith received a package at the safehouse",
+      "metadata": "{}",
+      "created_at": "2026-01-06T13:02:25.849696Z"
+    }
+  ],
+  "validation_report": {}
+}

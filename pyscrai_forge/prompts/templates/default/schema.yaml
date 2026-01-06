@@ -1,6 +1,6 @@
 name: "Default Entity Schemas"
 description: "Generic entity field schemas for all entity types"
-version: "1.0"
+version: "1.1"
 author: "PyScrAI Team"
 genre: "default"
 
@@ -8,7 +8,8 @@ schemas:
   actor:
     name: "Name or identifier of the person/character"
     description: "Bio or background information"
-    role: "Role, position, or occupation"
+    rank: "Military rank or hierarchical position (e.g., Sergeant, Commander)"
+    role: "Role, position, or occupation (if distinct from rank)"
     status: "Current status or state"
     affiliation: "Organization, group, or faction they belong to"
     tags: "Categories or labels (e.g., sergeant, operative)"

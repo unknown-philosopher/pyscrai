@@ -18,6 +18,7 @@ necessary for any simulation.
 """
 
 import json
+import re
 import threading
 from datetime import UTC, datetime
 from pathlib import Path
@@ -33,6 +34,7 @@ from pydantic import BaseModel, Field, field_validator
 _id_counters: dict[str, int] = {}
 _id_lock = threading.Lock()
 _id_counters_path: Path | None = None
+_id_pattern = re.compile(r"^(?P<prefix>[A-Za-z]+)_0*(?P<num>\d+)$")
 def generate_intuitive_id(prefix: str) -> str:
     with _id_lock:
         if prefix not in _id_counters:
@@ -64,6 +66,30 @@ def set_id_counters_path(path: str | Path) -> None:
             _id_counters = {str(k): int(v) for k, v in data.items()}
         except Exception:
             _id_counters = {}
+
+
+def seed_id_counter_from_value(id_value: str) -> None:
+    """Raise the counter for a prefix based on an existing ID value.
+
+    Accepts IDs like REL_005 or rel_005; updates the counter so future
+    generate_intuitive_id calls continue sequentially. No-op on parse failures.
+    """
+    match = _id_pattern.match(id_value)
+    if not match:
+        return
+
+    prefix = match.group("prefix").upper()
+    num = int(match.group("num"))
+
+    with _id_lock:
+        current = _id_counters.get(prefix, 0)
+        if num > current:
+            _id_counters[prefix] = num
+            if _id_counters_path:
+                try:
+                    _id_counters_path.write_text(json.dumps(_id_counters), encoding="utf-8")
+                except Exception:
+                    pass
 
 
 class EntityType(str, Enum):

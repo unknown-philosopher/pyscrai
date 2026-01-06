@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from .models import (
     Actor,
@@ -58,7 +58,7 @@ class ProjectManifest(BaseModel):
     # --- DYNAMIC SCHEMA DEFINITION ---
     # This dictionary defines valid fields for StateComponent.resources_json
     # Format: { "polity": { "treasury": "float", "stability": "float" }, "actor": {...} }
-    entity_schemas: dict[str, dict[str, str]] = Field(
+    entity_schemas: dict[str, dict[str, Any]] = Field(
         default_factory=lambda: {
             "polity": {},
             "actor": {},
@@ -121,6 +121,37 @@ class ProjectManifest(BaseModel):
         default="{}",
         description="JSON string for scenario-specific settings",
     )
+
+    @classmethod
+    def _normalize_entity_schemas(cls, schemas: dict[str, Any]) -> dict[str, dict[str, Any]]:
+        """Coerce schema field definitions into dict form.
+
+        Supports legacy string field specs ("float") and rich dict specs
+        ({"type": "float", "required": True, "default": 0}).
+        """
+        normalized: dict[str, dict[str, Any]] = {}
+        for entity_type, fields in (schemas or {}).items():
+            if not isinstance(fields, dict):
+                continue
+
+            norm_fields: dict[str, Any] = {}
+            for field_name, field_def in fields.items():
+                if isinstance(field_def, str):
+                    norm_fields[field_name] = {"type": field_def}
+                elif isinstance(field_def, dict):
+                    norm_fields[field_name] = field_def
+                else:
+                    norm_fields[field_name] = {"type": str(field_def)}
+            normalized[entity_type] = norm_fields
+
+        return normalized
+
+    @field_validator("entity_schemas", mode="before")
+    @classmethod
+    def normalize_entity_schemas(cls, value):
+        if isinstance(value, dict):
+            return cls._normalize_entity_schemas(value)
+        return value
 
     class Config:
         frozen = False

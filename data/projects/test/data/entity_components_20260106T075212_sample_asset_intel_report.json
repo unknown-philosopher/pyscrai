@@ -1,12 +1,12 @@
 {
   "entities": [
     {
-      "id": "ENTITY_013",
-      "created_at": "2026-01-06T12:39:51.217667Z",
-      "updated_at": "2026-01-06T12:39:51.217669Z",
+      "id": "ENTITY_009",
+      "created_at": "2026-01-06T12:52:05.297230Z",
+      "updated_at": "2026-01-06T12:52:05.297234Z",
       "descriptor": {
         "name": "SECTOR 4",
-        "bio": "A designated sector or area mentioned in the intercept report.",
+        "bio": "A designated sector or area mentioned in the intercept header.",
         "tags": [],
         "entity_type": "location"
       },
@@ -20,38 +20,38 @@
         "capacity": null
       },
       "state": {
-        "resources_json": "{\"type\": null, \"status\": null, \"capacity\": null, \"security_level\": null}",
+        "resources_json": "{\"type\": null, \"status\": \"compromised\", \"capacity\": null, \"security_level\": \"Red\"}",
         "region_version": null,
         "adjacency_json": null,
         "travel_times_json": null
       }
     },
     {
-      "id": "ENTITY_014",
-      "created_at": "2026-01-06T12:39:52.672870Z",
-      "updated_at": "2026-01-06T12:39:52.672872Z",
+      "id": "ENTITY_010",
+      "created_at": "2026-01-06T12:51:54.597990Z",
+      "updated_at": "2026-01-06T12:51:54.597994Z",
       "descriptor": {
         "name": "Operative Smith (Unit Alpha)",
-        "bio": "An operative with the rank of Sergeant who transferred 500 Credits.",
+        "bio": "An operative who transferred 500 Credits to the safehouse.",
         "tags": [],
         "entity_type": "actor"
       },
       "cognitive": null,
       "spatial": null,
       "state": {
-        "resources_json": "{\"rank\": \"Sergeant\", \"status\": null, \"unit\": \"Alpha\", \"role\": null, \"wealth\": 500.0, \"health\": null}",
+        "resources_json": "{\"rank\": \"Sergeant\", \"status\": null, \"unit\": \"Alpha\", \"role\": null, \"wealth\": null, \"health\": null}",
         "region_version": null,
         "adjacency_json": null,
         "travel_times_json": null
       }
     },
     {
-      "id": "ENTITY_015",
-      "created_at": "2026-01-06T12:39:51.095734Z",
-      "updated_at": "2026-01-06T12:39:51.095741Z",
+      "id": "ENTITY_011",
+      "created_at": "2026-01-06T12:51:54.542889Z",
+      "updated_at": "2026-01-06T12:51:54.542902Z",
       "descriptor": {
         "name": "Commander J. Smith (Unit Beta)",
-        "bio": "A commander who received a package at the safehouse.",
+        "bio": "A commander who received the package at the safehouse.",
         "tags": [],
         "entity_type": "actor"
       },
@@ -65,12 +65,12 @@
       }
     },
     {
-      "id": "ENTITY_016",
-      "created_at": "2026-01-06T12:39:51.133883Z",
-      "updated_at": "2026-01-06T12:39:51.133887Z",
+      "id": "ENTITY_012",
+      "created_at": "2026-01-06T12:51:56.055534Z",
+      "updated_at": "2026-01-06T12:51:56.055538Z",
       "descriptor": {
         "name": "Safehouse Gamma",
-        "bio": "A safehouse location that is currently compromised with a status of Red.",
+        "bio": "A safehouse location that is currently compromised.",
         "tags": [],
         "entity_type": "location"
       },
@@ -84,19 +84,19 @@
         "capacity": null
       },
       "state": {
-        "resources_json": "{\"type\": \"Safehouse\", \"status\": \"Red\", \"capacity\": null, \"security_level\": null}",
+        "resources_json": "{\"type\": \"safehouse\", \"status\": \"compromised\", \"capacity\": null, \"security_level\": \"Red\"}",
         "region_version": null,
         "adjacency_json": null,
         "travel_times_json": null
       }
     },
     {
-      "id": "ENTITY_017",
-      "created_at": "2026-01-06T12:39:51.173598Z",
-      "updated_at": "2026-01-06T12:39:51.173600Z",
+      "id": "ENTITY_013",
+      "created_at": "2026-01-06T12:52:00.862433Z",
+      "updated_at": "2026-01-06T12:52:00.862442Z",
       "descriptor": {
         "name": "Smith (Alpha)",
-        "bio": "An entity of interest with the rank of Sergeant.",
+        "bio": "A Sergeant and operative in Unit Alpha.",
         "tags": [],
         "entity_type": "actor"
       },
@@ -110,12 +110,12 @@
       }
     },
     {
-      "id": "ENTITY_018",
-      "created_at": "2026-01-06T12:39:50.964628Z",
-      "updated_at": "2026-01-06T12:39:50.964642Z",
+      "id": "ENTITY_014",
+      "created_at": "2026-01-06T12:52:04.846179Z",
+      "updated_at": "2026-01-06T12:52:04.846189Z",
       "descriptor": {
         "name": "J. Smith (Beta)",
-        "bio": "An entity of interest with the rank of Commander.",
+        "bio": "A Commander in Unit Beta.",
         "tags": [],
         "entity_type": "actor"
       },
@@ -132,47 +132,58 @@
   "relationships": [
     {
       "id": "rel_001",
-      "source_id": "ENTITY_014",
-      "target_id": "ENTITY_016",
+      "source_id": "ENTITY_010",
+      "target_id": "ENTITY_012",
       "relationship_type": "trade",
       "visibility": "public",
       "strength": 1.0,
       "description": "Operative Smith (Unit Alpha) transferred 500 Credits to Safehouse Gamma.",
       "metadata": "{}",
-      "created_at": "2026-01-06T12:39:56.653095Z"
+      "created_at": "2026-01-06T12:52:12.082076Z"
     },
     {
       "id": "rel_002",
-      "source_id": "ENTITY_015",
-      "target_id": "ENTITY_016",
+      "source_id": "ENTITY_011",
+      "target_id": "ENTITY_012",
       "relationship_type": "custom",
       "visibility": "public",
       "strength": 1.0,
-      "description": "Commander J. Smith (Unit Beta) received a package at Safehouse Gamma.",
+      "description": "Commander J. Smith (Unit Beta) received the package at Safehouse Gamma.",
       "metadata": "{}",
-      "created_at": "2026-01-06T12:39:56.653115Z"
+      "created_at": "2026-01-06T12:52:12.082085Z"
     },
     {
       "id": "rel_003",
-      "source_id": "ENTITY_017",
-      "target_id": "ENTITY_014",
+      "source_id": "ENTITY_012",
+      "target_id": "ENTITY_009",
       "relationship_type": "custom",
       "visibility": "public",
       "strength": 1.0,
-      "description": "Smith (Alpha) is the entity of interest corresponding to Operative Smith (Unit Alpha).",
+      "description": "Safehouse Gamma is located in SECTOR 4.",
       "metadata": "{}",
-      "created_at": "2026-01-06T12:39:56.653121Z"
+      "created_at": "2026-01-06T12:52:12.082097Z"
     },
     {
       "id": "rel_004",
-      "source_id": "ENTITY_018",
-      "target_id": "ENTITY_015",
-      "relationship_type": "custom",
+      "source_id": "ENTITY_013",
+      "target_id": "ENTITY_010",
+      "relationship_type": "member_of",
       "visibility": "public",
       "strength": 1.0,
-      "description": "J. Smith (Beta) is the entity of interest corresponding to Commander J. Smith (Unit Beta).",
+      "description": "Smith (Alpha) is the operative identified as Operative Smith (Unit Alpha).",
       "metadata": "{}",
-      "created_at": "2026-01-06T12:39:56.653126Z"
+      "created_at": "2026-01-06T12:52:12.082099Z"
+    },
+    {
+      "id": "rel_005",
+      "source_id": "ENTITY_014",
+      "target_id": "ENTITY_011",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "J. Smith (Beta) is the commander identified as Commander J. Smith (Unit Beta).",
+      "metadata": "{}",
+      "created_at": "2026-01-06T12:52:12.082102Z"
     }
   ],
   "validation_report": {}

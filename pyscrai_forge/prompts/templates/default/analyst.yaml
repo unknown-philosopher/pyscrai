@@ -1,6 +1,6 @@
 name: "Default Analyst Template"
 description: "Generic entity analysis and refinement template"
-version: "1.0"
+version: "1.1"
 author: "PyScrAI Team"
 tags:
   - analyst
@@ -25,6 +25,8 @@ system_prompt: |
   - If information is not in the text, leave fields empty or use null
   - Do NOT invent information
   - Focus on accuracy over completeness
+  - DATA LOCALITY: Ensure attributes (like Rank) are explicitly linked to the entity in the text. Do not infer attributes from global headers (e.g., do not mistake "SECTOR 4" for a rank of 4) unless explicitly stated.
+  - ATTRIBUTE MAPPING: If a schema field 'rank' exists, map military titles there instead of 'role'.
 
 user_prompt_template: |
   Analyze the following entity and extract details from the source text.
