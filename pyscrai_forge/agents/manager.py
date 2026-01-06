@@ -7,6 +7,7 @@ HarvesterOrchestrator with a single unified interface.
 import json
 import asyncio
 import logging
+import re
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
@@ -236,9 +237,9 @@ class ForgeManager:
         import asyncio
         import json
         from datetime import datetime
-        
+
         manifest = self.controller.manifest
-        
+
         # =================================================================
         # PHASE 1: SCOUT (Entity Discovery)
         # =================================================================
@@ -250,13 +251,13 @@ class ForgeManager:
             logger.info(f"ForgeManager: Running extraction without explicit template_name (using genre-based selection)")
         system_prompt, user_prompt = get_scout_prompt(text, genre)
         stubs = await self.scout.discover_entities(text, genre, template_name=template_name)
-        
+
         if not stubs:
             console.print("[yellow]Scout phase found no entities[/yellow]")
             stubs = []
         else:
             console.print(f"Found {len(stubs)} potential entities.")
-        
+
         # Dedup stubs (simple by ID)
         seen_ids = set()
         unique_stubs = []
@@ -264,7 +265,7 @@ class ForgeManager:
             if stub.id not in seen_ids:
                 unique_stubs.append(stub)
                 seen_ids.add(stub.id)
-        
+
         # =================================================================
         # PHASE 2: ANALYST (Entity Extraction & Refinement)
         # =================================================================
@@ -290,7 +291,7 @@ class ForgeManager:
             for e in enriched_entities
         ]
         rel_system_prompt, rel_user_prompt = get_relationship_prompt(text, ent_dicts, genre)
-        
+
         # Verbose logging: Show relationship prompts
         logger.debug("=" * 80)
         logger.debug("RELATIONSHIP EXTRACTION")
@@ -303,19 +304,25 @@ class ForgeManager:
         logger.debug("\n--- USER PROMPT ---")
         logger.debug(rel_user_prompt)
         logger.debug("\n--- Sending request to LLM ---")
-        
+
         relationships = await self._extract_relationships_with_prompts(
             rel_system_prompt,
             rel_user_prompt
         )
-        
+
         # Verbose logging: Show relationship results
         logger.debug(f"\n--- Found {len(relationships)} relationships ---")
         for rel in relationships:
             logger.debug(f"  {rel.source_id} --[{rel.relationship_type.value}]--> {rel.target_id}")
         logger.debug("=" * 80)
-        
+
         console.print(f"Found {len(relationships)} relationships.")
+
+        # =================================================================
+        # NEW PHASE: ALIAS RESOLUTION (Merging Duplicates)
+        # =================================================================
+        console.print("[dim]--- [Phase 3.5] Resolving Aliases ---[/dim]")
+        enriched_entities = self._resolve_aliases(enriched_entities, relationships)
 
         # Validate
         console.print("[dim]--- [Phase 4] Validation ---[/dim]")
@@ -324,6 +331,8 @@ class ForgeManager:
         report = validator.validate(enriched_entities, relationships, manifest)
         if not report.is_valid:
             console.print(f"[yellow]Validation Errors: {len(report.critical_errors)}[/yellow]")
+            for idx, err in enumerate(report.critical_errors, 1):
+                console.print(f"    [red]Error {idx}:[/red] {err}")
         else:
             console.print("Validation Passed.")
 
@@ -337,17 +346,134 @@ class ForgeManager:
             report,
             text
         )
-        
+
         if output_path is None:
             output_path = Path("review_packet.json")
         else:
             output_path = Path(output_path)
-            
+
         output_path.parent.mkdir(parents=True, exist_ok=True)
         reviewer.save_packet(packet, output_path)
         console.print(f"Review Packet saved to: {output_path}")
-        
+
         return str(output_path)
+    def _resolve_aliases(self, entities: List[Entity], relationships: List[Relationship]) -> List[Entity]:
+        """Merges entities that are identified as the same person/object."""
+        alias_map = {} # source_id -> target_id (The 'Master' entity)
+
+        # 1. Identify "Alias" relationships
+        # Check for various terms that indicate entity identity/alias relationships
+        alias_keywords = [
+            "alias", "same as", "same person", "same entity", "same object",
+            "call sign", "callsign", "call-sign",
+            "code name", "codename", "code-name",
+            "also known as", "aka", "a.k.a.",
+            "nickname", "handle", "pseudonym"
+        ]
+        
+        for rel in relationships:
+            desc = rel.description.lower()
+            # Check if relationship type is explicitly same_as
+            if rel.relationship_type.value == "same_as":
+                alias_map[rel.source_id] = rel.target_id
+                logger.info(f"ForgeManager: Found alias relationship (same_as type) {rel.source_id} -> {rel.target_id}")
+                continue
+            
+            # Check description for alias-indicating keywords
+            is_alias_relationship = False
+            for keyword in alias_keywords:
+                if keyword in desc:
+                    is_alias_relationship = True
+                    break
+            
+            # Additional pattern: "X is the Y for Z" or "X is Y for Z" patterns
+            # These often indicate aliases (e.g., "Viper is the call sign for Captain Elena Rossi")
+            if not is_alias_relationship:
+                # Pattern: "X is [the] Y for Z" where Y could be alias/call sign/etc
+                pattern = r"(\w+)\s+is\s+(?:the\s+)?(?:call\s+sign|callsign|alias|codename|code\s+name|nickname|handle)\s+for\s+(.+)"
+                if re.search(pattern, desc):
+                    is_alias_relationship = True
+            
+            if is_alias_relationship:
+                # Assume the target is the canonical one if mentioned in description
+                alias_map[rel.source_id] = rel.target_id
+                logger.info(f"ForgeManager: Found alias relationship {rel.source_id} -> {rel.target_id} (description: '{rel.description}')")
+
+        if not alias_map:
+            console.print("[dim]No aliases detected.[/dim]")
+            return entities
+
+        # 2. Perform the Merge
+        resolved_entities = {e.id: e for e in entities}
+        to_delete = []
+
+
+        for alias_id, master_id in alias_map.items():
+            if alias_id in resolved_entities and master_id in resolved_entities:
+                master = resolved_entities[master_id]
+                alias = resolved_entities[alias_id]
+
+                console.print(f"[yellow]Merging alias '{alias.descriptor.name}' into canonical '{master.descriptor.name}'[/yellow]")
+
+                # Merge Tags and Aliases
+                # Ensure tags are sets for merging, then restore original type
+                master_tags = master.descriptor.tags
+                alias_tags = alias.descriptor.tags
+                # Convert to set if not already
+                master_tags_set = set(master_tags) if isinstance(master_tags, list) else master_tags
+                alias_tags_set = set(alias_tags) if isinstance(alias_tags, list) else alias_tags
+                master_tags_set.update(alias_tags_set)
+                master_tags_set.add(alias.descriptor.name)
+                # Restore to original type (list or set)
+                if isinstance(master_tags, list):
+                    master.descriptor.tags = list(master_tags_set)
+                else:
+                    master.descriptor.tags = master_tags_set
+
+                # Merge Resources (Master wins if both have data)
+                m_res = json.loads(master.state.resources_json or "{}")
+                a_res = json.loads(alias.state.resources_json or "{}")
+
+                # Fill master gaps with alias data
+                for key, val in a_res.items():
+                    if val and not m_res.get(key):
+                        m_res[key] = val
+
+                master.state.resources_json = json.dumps(m_res)
+                to_delete.append(alias_id)
+
+        # 3. Update relationships to point to master entities instead of deleted aliases
+        # Build a mapping that includes transitive aliases (if A->B and B->C, then A->C)
+        final_alias_map = {}
+        for alias_id, master_id in alias_map.items():
+            # Follow the chain to find the ultimate master
+            current = master_id
+            while current in alias_map:
+                current = alias_map[current]
+            final_alias_map[alias_id] = current
+        
+        # Update relationships that reference deleted alias entities
+        relationships_updated = 0
+        for rel in relationships:
+            updated = False
+            # Check if source_id is an alias that was deleted
+            if rel.source_id in final_alias_map:
+                rel.source_id = final_alias_map[rel.source_id]
+                updated = True
+            # Check if target_id is an alias that was deleted
+            if rel.target_id in final_alias_map:
+                rel.target_id = final_alias_map[rel.target_id]
+                updated = True
+            
+            if updated:
+                relationships_updated += 1
+                logger.info(f"ForgeManager: Updated relationship {rel.id} to reference master entities")
+        
+        if relationships_updated > 0:
+            console.print(f"[dim]Updated {relationships_updated} relationships to point to master entities[/dim]")
+
+        # 4. Clean up the entities list
+        return [e for e in entities if e.id not in to_delete]
 
     async def _extract_relationships(self, text: str, entities: list, genre: Genre) -> List[Relationship]:
         """Helper to extract relationships using the prompt system."""

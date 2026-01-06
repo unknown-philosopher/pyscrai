@@ -21,11 +21,46 @@ class SchemaBuilderWidget(ttk.Frame):
             on_change: Callback function() called when schemas change
         """
         super().__init__(parent)
-        self.schemas = schemas or {}
+        self.schemas = self._normalize_schemas(schemas or {})
         self.on_change = on_change
 
         self._create_ui()
         self._refresh_tree()
+
+    def _normalize_schemas(self, schemas: Dict) -> Dict:
+        """Normalize legacy string field specs to dict format.
+        
+        Converts:
+            "field": "description text"
+        To:
+            "field": {"type": "string", "description": "description text"}
+        """
+        normalized = {}
+        for entity_type, fields in schemas.items():
+            if not isinstance(fields, dict):
+                continue
+            
+            normalized_fields = {}
+            for field_name, field_spec in fields.items():
+                if isinstance(field_spec, str):
+                    # Legacy string format - treat as description
+                    normalized_fields[field_name] = {
+                        "type": "string",
+                        "description": field_spec
+                    }
+                elif isinstance(field_spec, dict):
+                    # Already dict format - keep as is
+                    normalized_fields[field_name] = field_spec
+                else:
+                    # Unknown format - convert to string
+                    normalized_fields[field_name] = {
+                        "type": "string",
+                        "description": str(field_spec)
+                    }
+            
+            normalized[entity_type] = normalized_fields
+        
+        return normalized
 
     def _create_ui(self):
         """Build the widget UI."""
@@ -44,22 +79,22 @@ class SchemaBuilderWidget(ttk.Frame):
 
         self.tree = ttk.Treeview(
             tree_frame,
-            columns=("type", "required", "default", "description"),
+            columns=("type", "required", "description", "default"),
             show="tree headings",
             selectmode=tk.BROWSE
         )
         self.tree.heading("#0", text="Field Name")
         self.tree.heading("type", text="Type")
         self.tree.heading("required", text="Required")
-        self.tree.heading("default", text="Default")
         self.tree.heading("description", text="Description")
+        self.tree.heading("default", text="Default")
 
-        # Make the grid ~30% wider for readability
-        self.tree.column("#0", width=240)
-        self.tree.column("type", width=130)
-        self.tree.column("required", width=90)
-        self.tree.column("default", width=170)
-        self.tree.column("description", width=260)
+        # Column widths (Required small, Type small, Field Name medium, Description largest, Default medium)
+        self.tree.column("#0", width=180, anchor=tk.W)
+        self.tree.column("type", width=40, anchor=tk.W)
+        self.tree.column("required", width=40, anchor=tk.CENTER)
+        self.tree.column("description", width=400, anchor=tk.W)
+        self.tree.column("default", width=100, anchor=tk.W)
 
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.config(yscrollcommand=scrollbar.set)
@@ -73,6 +108,16 @@ class SchemaBuilderWidget(ttk.Frame):
     def _refresh_tree(self):
         """Refresh the treeview with current schema data."""
         self.tree.delete(*self.tree.get_children())
+
+        # Mapping for display type names
+        type_display_map = {
+            "string": "str",
+            "integer": "int",
+            "boolean": "bool",
+            "select": "selct",
+            "list": "list",
+            "float": "float",
+        }
 
         for entity_type, fields in sorted(self.schemas.items()):
             # Add entity type node
@@ -91,7 +136,7 @@ class SchemaBuilderWidget(ttk.Frame):
                 elif isinstance(field_spec, dict):
                     # Rich format: dict with type, required, default, etc.
                     field_type = field_spec.get("type", "string")
-                    required = "Yes" if field_spec.get("required", False) else ""
+                    required = "X" if field_spec.get("required", False) else ""
                     default_val = field_spec.get("default", field_spec.get("default_value", ""))
                     default = str(default_val) if default_val not in (None, "") else ""
                     description = field_spec.get("description", "")
@@ -102,11 +147,14 @@ class SchemaBuilderWidget(ttk.Frame):
                     default = ""
                     description = ""
 
+                # Map internal type to display type
+                display_type = type_display_map.get(field_type, field_type)
+
                 self.tree.insert(
                     entity_node,
                     tk.END,
                     text=field_name,
-                    values=(field_type, required, default, description),
+                    values=(display_type, required, description, default),
                     tags=("field",)
                 )
 
@@ -332,5 +380,5 @@ class SchemaBuilderWidget(ttk.Frame):
 
     def set_schemas(self, schemas: Dict):
         """Set the schemas dictionary and refresh."""
-        self.schemas = schemas
+        self.schemas = self._normalize_schemas(schemas)
         self._refresh_tree()
