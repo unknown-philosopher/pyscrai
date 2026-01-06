@@ -174,6 +174,10 @@ class TabbedEntityEditor(tk.Toplevel):
             schema = self.project_manifest.entity_schemas.get(entity_type)
 
         if schema:
+            # Track resources when using schema-driven widgets so we can serialize on save
+            self._state_resources = resources
+            self._using_schema = True
+
             ttk.Label(self.state_frame, text=f"Schema: {entity_type}", font=("", 10, "bold")).pack(pady=5)
 
             # Iterate through schema fields
@@ -199,6 +203,8 @@ class TabbedEntityEditor(tk.Toplevel):
                 for k in extra_fields:
                     ttk.Label(self.state_frame, text=f"{k}: {resources[k]}").pack(anchor='w')
         else:
+            # Flag that we're not using schema widgets; saves rely on raw resources_json field
+            self._using_schema = False
             ttk.Label(self.state_frame, text=f"No schema found for {entity_type}. Using Raw JSON.").pack(pady=5)
             txt = tk.Text(self.state_frame, height=15)
             txt.insert("1.0", json.dumps(resources, indent=2))
@@ -240,7 +246,10 @@ class TabbedEntityEditor(tk.Toplevel):
         if self.on_save:
             # Convert resources dict back to JSON string for state component
             state_comp = self.entity_data.get('state', {})
-            if 'resources_json' in state_comp:
+            if getattr(self, "_using_schema", False):
+                # Widgets populated resources dict; serialize for model
+                state_comp['resources_json'] = json.dumps(getattr(self, '_state_resources', {}))
+            elif 'resources_json' in state_comp:
                 # If it's already a string (from text editor), keep it
                 # If it's a dict (from schema widgets), stringify it
                 if isinstance(state_comp['resources_json'], dict):

@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Optional, Any
-import uuid
+from .models import generate_intuitive_id
 
 
 # ============================================================================
@@ -60,7 +60,7 @@ class Intention:
 
     source_id: str  # Actor or system agent ID
     priority: int = 1  # Higher = processed first
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    id: str = field(default_factory=lambda: generate_intuitive_id("INT"))
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     status: IntentionStatus = IntentionStatus.PENDING
     rejection_reason: Optional[str] = None

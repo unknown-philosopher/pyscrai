@@ -9,4 +9,5 @@ TODO:
 
 - Add a narraritive summary output of the imported data, as well as the ability to modify the harvester agents prompts / create other custom component output schema's, templates, etc. 
 
+- Add the ability to assign different llm_model_provider profiles to different entities in the same simulation (harness local models for 'smaller' scale actors or quick actions, and large cloud models for orchestrators / large polities etc)
 

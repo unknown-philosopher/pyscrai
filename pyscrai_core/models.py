@@ -18,8 +18,9 @@ necessary for any simulation.
 """
 
 import json
-import uuid
+import threading
 from datetime import UTC, datetime
+from pathlib import Path
 from enum import Enum
 from typing import Any, Optional
 
@@ -27,6 +28,42 @@ from pydantic import BaseModel, Field, field_validator
 # ============================================================================
 # Enums and Type Definitions
 # ============================================================================
+
+# Intuitive ID generator (thread-safe, per type)
+_id_counters: dict[str, int] = {}
+_id_lock = threading.Lock()
+_id_counters_path: Path | None = None
+def generate_intuitive_id(prefix: str) -> str:
+    with _id_lock:
+        if prefix not in _id_counters:
+            _id_counters[prefix] = 1
+        else:
+            _id_counters[prefix] += 1
+        # Persist counters if path configured
+        if _id_counters_path:
+            try:
+                _id_counters_path.write_text(json.dumps(_id_counters), encoding="utf-8")
+            except Exception:
+                pass
+        return f"{prefix}_{_id_counters[prefix]:03d}"
+
+
+def set_id_counters_path(path: str | Path) -> None:
+    """Configure a JSON file path to persist ID counters across runs.
+
+    When set, the file will be loaded if present and written each time a counter
+    is incremented.
+    """
+    global _id_counters_path, _id_counters
+    p = Path(path)
+    _id_counters_path = p
+    if p.exists():
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+            # normalize to ints
+            _id_counters = {str(k): int(v) for k, v in data.items()}
+        except Exception:
+            _id_counters = {}
 
 
 class EntityType(str, Enum):
@@ -106,6 +143,7 @@ class SpatialComponent(BaseModel):
     x: float = Field(default=0.0, description="X coordinate")
     y: float = Field(default=0.0, description="Y coordinate")
     region_id: Optional[str] = Field(default=None, description="Parent region identifier")
+    current_location_id: Optional[str] = Field(default=None, description="Current location entity ID (for actors)")
     layer: LocationLayer = Field(default=LocationLayer.TERRESTRIAL, description="Spatial layer")
     capacity: Optional[int] = Field(default=None, description="Occupancy capacity")
 
@@ -181,7 +219,7 @@ class StateComponent(BaseModel):
 
 class Entity(BaseModel):
     """Base entity class in the ECS architecture."""
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique entity ID")
+    id: str = Field(default_factory=lambda: generate_intuitive_id("ENTITY"), description="Unique entity ID")
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
@@ -281,7 +319,7 @@ class Location(Entity):
 
 class Relationship(BaseModel):
     """Relationship between two entities."""
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    id: str = Field(default_factory=lambda: generate_intuitive_id("REL"))
     source_id: str = Field(description="Source entity ID")
     target_id: str = Field(description="Target entity ID")
     relationship_type: RelationshipType = Field(description="Type of relationship")

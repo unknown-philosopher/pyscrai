@@ -1,6 +1,6 @@
 """Data models for LLM interactions in PyScrAI."""
 
-import uuid
+from pyscrai_core.models import generate_intuitive_id
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
@@ -18,7 +18,7 @@ class MessageRole(str, Enum):
 class ChatMessage:
     """A single chat message."""
 
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    id: str = field(default_factory=lambda: generate_intuitive_id("CHAT"))
     role: MessageRole = MessageRole.USER
     content: str = ""
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
@@ -47,7 +47,7 @@ class ChatMessage:
     def from_dict(cls, data: dict) -> "ChatMessage":
         """Create from dictionary."""
         return cls(
-            id=data.get("id", str(uuid.uuid4())),
+            id=data.get("id", generate_intuitive_id("CHAT")),
             role=MessageRole(data.get("role", "user")),
             content=data.get("content", ""),
             timestamp=datetime.fromisoformat(data["timestamp"])
@@ -62,7 +62,7 @@ class ChatMessage:
 class Conversation:
     """A collection of chat messages."""
 
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    id: str = field(default_factory=lambda: generate_intuitive_id("CONV"))
     title: str = "New Conversation"
     messages: list[ChatMessage] = field(default_factory=list)
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
@@ -114,7 +114,7 @@ class Conversation:
     def from_dict(cls, data: dict) -> "Conversation":
         """Create from dictionary."""
         return cls(
-            id=data.get("id", str(uuid.uuid4())),
+            id=data.get("id", generate_intuitive_id("CONV")),
             title=data.get("title", "New Conversation"),
             messages=[ChatMessage.from_dict(m) for m in data.get("messages", [])],
             created_at=datetime.fromisoformat(data["created_at"])

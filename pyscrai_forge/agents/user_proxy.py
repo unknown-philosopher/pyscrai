@@ -35,7 +35,7 @@ class UserProxyAgent:
         self.model = model
         self.conversation_history: List[Dict[str, str]] = []
     
-    async def process_command(self, user_input: str, entities: List[Entity], relationships: List[Relationship]) -> str:
+    async def process_command(self, user_input: str, entities: List[Entity], relationships: List[Relationship]) -> Dict[str, Any] | str:
         """Process user input and execute appropriate operations.
         
         Args:
@@ -69,17 +69,17 @@ ENTITIES:
 RELATIONSHIPS:
 {relationship_list}
 
-When the user asks you to modify entities or relationships, respond with a JSON object describing the operation.
-Respond ONLY with valid JSON in this format:
+Respond with ONE JSON object only. No prose, no bullet lists, no code fences.
 
+Schema:
 {{
-    "operation": "merge" | "split" | "add_relationship" | "remove_entity" | "modify_entity" | "help" | "list",
+    "operation": "merge" | "split" | "add_relationship" | "remove_entity" | "modify_entity" | "batch_modify" | "help" | "list",
     "entities_involved": ["entity_id_1", "entity_id_2"],
     "details": {{}},
     "message": "Human-readable description of what will happen"
 }}
 
-For merge operations:
+Merge example:
 {{
     "operation": "merge",
     "entities_involved": ["keep_id", "merge_id"],
@@ -87,7 +87,7 @@ For merge operations:
     "message": "Merging entity merge_id into keep_id"
 }}
 
-For split operations:
+Split example:
 {{
     "operation": "split",
     "entities_involved": ["entity_id"],
@@ -95,7 +95,7 @@ For split operations:
     "message": "Splitting entity_id into new entities"
 }}
 
-For relationship operations:
+Relationship example:
 {{
     "operation": "add_relationship",
     "entities_involved": ["source_id", "target_id"],
@@ -103,7 +103,7 @@ For relationship operations:
     "message": "Creating relationship between source and target"
 }}
 
-For entity removal:
+Removal example:
 {{
     "operation": "remove_entity",
     "entities_involved": ["entity_id"],
@@ -111,15 +111,26 @@ For entity removal:
     "message": "Removing entity_id from project"
 }}
 
-For entity modifications:
+Single modify example:
 {{
     "operation": "modify_entity",
     "entities_involved": ["entity_id"],
-    "details": {{"entity_id": "...", "field": "bio|name|description", "value": "new_value"}},
+    "details": {{"entity_id": "...", "field": "bio|name|description|health|wealth|custom_field", "value": "new_value"}},
     "message": "Updating entity_id field to new_value"
 }}
 
-For listing/filtering:
+Batch modify example (use when multiple entities or fields are updated in one request):
+{{
+    "operation": "batch_modify",
+    "entities_involved": ["entity_id_1", "entity_id_2"],
+    "details": {{"updates": [
+        {{"entity_id": "entity_id_1", "field": "health", "value": 100}},
+        {{"entity_id": "entity_id_2", "field": "wealth", "value": 500}}
+    ]}},
+    "message": "Updating fields for listed entities"
+}}
+
+List example:
 {{
     "operation": "list",
     "entities_involved": [],
@@ -127,7 +138,7 @@ For listing/filtering:
     "message": "Showing entities matching filter"
 }}
 
-For help:
+Help example:
 {{
     "operation": "help",
     "entities_involved": [],
@@ -143,19 +154,21 @@ For help:
                 temperature=0.2,
                 model=self.model or self.provider.default_model
             )
-            
-            # Parse JSON response
-            json_match = re.search(r'\{.*\}', response, re.DOTALL)
-            if not json_match:
-                return f"I didn't understand that. Could you be more specific? (Example: 'Merge entity A into entity B' or 'Add a relationship between A and B')"
-            
-            operation_data = json.loads(json_match.group())
+
+            operation_data = self._extract_json_object(response)
+            if not operation_data:
+                msg = (
+                    "I didn't understand that. Could you rephrase with a clear action? "
+                    "(Example: 'Merge entity A into entity B' or 'Set health=100 for ENTITY_006')"
+                )
+                self.conversation_history.append({"role": "assistant", "content": msg})
+                return {"operation": "error", "message": msg}
+
             self.conversation_history.append({"role": "assistant", "content": response})
-            
             return operation_data
-            
+
         except json.JSONDecodeError as e:
-            error_msg = f"I tried to process that but got confused. Could you rephrase? (Error: {str(e)[:50]})"
+            error_msg = f"I tried to process that but got confused. Could you rephrase? (Error: {str(e)[:80]})"
             self.conversation_history.append({"role": "assistant", "content": error_msg})
             return {"operation": "error", "message": error_msg}
         except Exception as e:
@@ -166,3 +179,43 @@ For help:
     def clear_history(self):
         """Clear conversation history."""
         self.conversation_history = []
+
+    def _extract_json_object(self, response: str) -> Optional[Dict[str, Any]]:
+        """Robustly extract the first JSON object from an LLM response.
+
+        Accepts raw text, optional code fences, and trailing notes. Uses
+        JSONDecoder.raw_decode to safely ignore trailing content after the
+        first valid object.
+        """
+
+        if not response:
+            return None
+
+        cleaned = response.strip()
+
+        fence_match = re.search(r"```json\s*(\{.*?\})\s*```", cleaned, re.DOTALL)
+        if not fence_match:
+            fence_match = re.search(r"```\s*(\{.*?\})\s*```", cleaned, re.DOTALL)
+
+        if fence_match:
+            candidate = fence_match.group(1)
+        else:
+            brace_index = cleaned.find("{")
+            if brace_index == -1:
+                return None
+            candidate = cleaned[brace_index:]
+
+        decoder = json.JSONDecoder()
+        try:
+            obj, _ = decoder.raw_decode(candidate)
+            return obj
+        except json.JSONDecodeError:
+            # Try a non-greedy brace match as a fallback
+            fallback_match = re.search(r"\{.*?\}", candidate, re.DOTALL)
+            if not fallback_match:
+                return None
+            try:
+                obj, _ = decoder.raw_decode(fallback_match.group(0))
+                return obj
+            except json.JSONDecodeError:
+                return None

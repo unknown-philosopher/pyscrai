@@ -115,8 +115,8 @@ class ScoutAgent:
                     # Generate ID if not provided
                     entity_id = item.get("id")
                     if not entity_id:
-                        import uuid
-                        entity_id = str(uuid.uuid4())
+                        from pyscrai_core.models import generate_intuitive_id
+                        entity_id = generate_intuitive_id("ENTITY")
                         
                     stubs.append(EntityStub(
                         id=entity_id,

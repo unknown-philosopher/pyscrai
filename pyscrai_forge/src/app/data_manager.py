@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 import tkinter as tk
-import uuid
 from datetime import datetime, UTC
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
@@ -175,17 +174,14 @@ class DataManager:
     def add_entity(self) -> None:
         """Add a new entity."""
         from pyscrai_core import Actor, DescriptorComponent, EntityType, StateComponent
-        
-        e_id = f"ent_{uuid.uuid4().hex[:8]}"
         new_ent = Actor(
-            id=e_id,
             descriptor=DescriptorComponent(name="New Entity", entity_type=EntityType.ACTOR),
             state=StateComponent()
         )
         self.entities.append(new_ent)
         self.refresh_ui()
         self.update_validation_status()
-        self.edit_entity(entity_id=e_id)
+        self.edit_entity(entity_id=new_ent.id)
     
     def delete_selected_entity(self) -> None:
         """Delete selected entities."""
@@ -270,12 +266,8 @@ class DataManager:
         """Add a new relationship."""
         if not self.entities:
             return
-        
         from pyscrai_core import Relationship, RelationshipType
-        
-        r_id = f"rel_{uuid.uuid4().hex[:8]}"
         new_rel = Relationship(
-            id=r_id,
             source_id=self.entities[0].id,
             target_id=self.entities[0].id,
             relationship_type=RelationshipType.CUSTOM
@@ -283,7 +275,7 @@ class DataManager:
         self.relationships.append(new_rel)
         self.refresh_ui()
         self.update_validation_status()
-        self.edit_relationship(rel_id=r_id)
+        self.edit_relationship(rel_id=new_rel.id)
     
     def delete_selected_relationship(self) -> None:
         """Delete selected relationships."""
@@ -389,9 +381,15 @@ class DataManager:
                 tags=(tag,) if tag else ()
             )
         
-        # Relationships
-        for item in self.relationships_tree.get_children():
-            self.relationships_tree.delete(item)
+        # Relationships - clear all items
+        try:
+            for item in self.relationships_tree.get_children():
+                try:
+                    self.relationships_tree.delete(item)
+                except tk.TclError:
+                    pass  # Item might already be deleted
+        except Exception:
+            pass  # If tree is in bad state, continue anyway
         
         # Build entity ID to name lookup
         entity_names = {
@@ -400,6 +398,14 @@ class DataManager:
         }
         
         for rel in self.relationships:
+            # Check if item already exists (safety check)
+            try:
+                existing = self.relationships_tree.exists(rel.id)
+                if existing:
+                    continue  # Skip if already exists
+            except:
+                pass  # If exists() fails, continue anyway
+            
             issues = []
             tag = ""
             for c in crit_msgs:
@@ -411,18 +417,24 @@ class DataManager:
             source_name = entity_names.get(rel.source_id, rel.source_id)
             target_name = entity_names.get(rel.target_id, rel.target_id)
             
-            self.relationships_tree.insert(
-                "",
-                tk.END,
-                iid=rel.id,
-                values=(
-                    source_name,
-                    target_name,
-                    rel.relationship_type.value,
-                    "; ".join(issues)
-                ),
-                tags=(tag,) if tag else ()
-            )
+            try:
+                self.relationships_tree.insert(
+                    "",
+                    tk.END,
+                    iid=rel.id,
+                    values=(
+                        source_name,
+                        target_name,
+                        rel.relationship_type.value,
+                        "; ".join(issues)
+                    ),
+                    tags=(tag,) if tag else ()
+                )
+            except tk.TclError as e:
+                # Item already exists - skip it
+                if "already exists" in str(e):
+                    continue
+                raise
     
     def update_validation_status(self) -> None:
         """Update validation status banner."""

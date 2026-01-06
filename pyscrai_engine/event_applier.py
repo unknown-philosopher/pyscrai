@@ -125,17 +125,37 @@ class EventApplier:
         
         Modifies StateComponent.resources_json based on event fields.
         """
-        entity = self.engine.get_entity(event.entity_id)
+        entity = self.engine.get_entity(event.target_id)
         if not entity:
-            raise ValueError(f"Entity {event.entity_id} not found")
+            raise ValueError(f"Entity {event.target_id} not found")
+            
+        if not entity.state:
+            raise ValueError(f"Entity {event.target_id} has no state component")
             
         # Parse resources
         resources = json.loads(entity.state.resources_json) if entity.state.resources_json else {}
         
-        # Apply changes
-        for field, value in event.changes.items():
-            resources[field] = value
-            print(f"[EventApplier] Set {entity.descriptor.name}.{field} = {value}")
+        # Parse new value (it's a JSON string)
+        try:
+            new_value = json.loads(event.new_value) if event.new_value else None
+        except json.JSONDecodeError:
+            # If not JSON, treat as string
+            new_value = event.new_value
+        
+        # Apply change to field (supports dot notation for nested resources)
+        if "." in event.field_name:
+            # Handle nested paths like "resources_json.mana"
+            parts = event.field_name.split(".")
+            if parts[0] == "resources_json" and len(parts) == 2:
+                resources[parts[1]] = new_value
+            else:
+                raise ValueError(f"Unsupported field path: {event.field_name}")
+        else:
+            # Direct field in resources_json
+            resources[event.field_name] = new_value
+            
+        entity_name = entity.descriptor.name if entity.descriptor else event.target_id
+        print(f"[EventApplier] Set {entity_name}.{event.field_name} = {new_value}")
             
         # Save back
         entity.state.resources_json = json.dumps(resources)
@@ -145,29 +165,64 @@ class EventApplier:
         
         Creates, updates, or deletes relationships between entities.
         """
-        # Find existing relationship
+        # Find existing relationship (check both directions)
         existing = None
         for rel in self.engine.relationships:
-            if (rel.source_id == event.entity_a_id and rel.target_id == event.entity_b_id) or \
-               (rel.source_id == event.entity_b_id and rel.target_id == event.entity_a_id):
+            if (rel.source_id == event.source_id and rel.target_id == event.target_id) or \
+               (rel.source_id == event.target_id and rel.target_id == event.source_id):
                 existing = rel
                 break
                 
+        # Map RelationshipChangeType to RelationshipType
+        from pyscrai_core import RelationshipType
+        type_mapping = {
+            "alliance_formed": RelationshipType.ALLIANCE,
+            "alliance_broken": RelationshipType.ENMITY,  # Broken alliance becomes enmity
+            "war_declared": RelationshipType.ENMITY,
+            "peace_treaty": RelationshipType.ALLIANCE,
+            "trade_agreement": RelationshipType.TRADE,
+            "trade_embargo": RelationshipType.ENMITY,
+            "vassalization": RelationshipType.COMMANDS,
+            "independence": RelationshipType.CUSTOM,
+            "hostile_action": RelationshipType.ENMITY,
+            "cooperation": RelationshipType.ALLIANCE,
+            "custom": RelationshipType.CUSTOM,
+        }
+        
+        new_relationship_type = type_mapping.get(event.change_type.value, RelationshipType.CUSTOM)
+        
         if existing:
             # Update existing relationship
             old_type = existing.relationship_type
-            existing.relationship_type = event.new_type
-            print(f"[EventApplier] Updated relationship between {event.entity_a_id} and {event.entity_b_id}: {old_type} → {event.new_type}")
+            existing.relationship_type = new_relationship_type
+            # Update metadata if provided
+            if event.metadata_json:
+                try:
+                    metadata = json.loads(event.metadata_json)
+                    existing.metadata = json.dumps({**existing.metadata_dict, **metadata})
+                except json.JSONDecodeError:
+                    pass
+                    
+            source_entity = self.engine.get_entity(event.source_id)
+            target_entity = self.engine.get_entity(event.target_id)
+            source_name = source_entity.descriptor.name if source_entity and source_entity.descriptor else event.source_id
+            target_name = target_entity.descriptor.name if target_entity and target_entity.descriptor else event.target_id
+            print(f"[EventApplier] Updated relationship between {source_name} and {target_name}: {old_type} → {new_relationship_type}")
         else:
             # Create new relationship
             new_rel = Relationship(
-                source_id=event.entity_a_id,
-                target_id=event.entity_b_id,
-                relationship_type=event.new_type,
-                strength=0.5  # Default strength
+                source_id=event.source_id,
+                target_id=event.target_id,
+                relationship_type=new_relationship_type,
+                strength=0.5,  # Default strength
+                metadata=event.metadata_json if event.metadata_json else "{}"
             )
             self.engine.relationships.append(new_rel)
-            print(f"[EventApplier] Created new relationship between {event.entity_a_id} and {event.entity_b_id}: {event.new_type}")
+            source_entity = self.engine.get_entity(event.source_id)
+            target_entity = self.engine.get_entity(event.target_id)
+            source_name = source_entity.descriptor.name if source_entity and source_entity.descriptor else event.source_id
+            target_name = target_entity.descriptor.name if target_entity and target_entity.descriptor else event.target_id
+            print(f"[EventApplier] Created new relationship between {source_name} and {target_name}: {new_relationship_type}")
             
     def _apply_custom(self, event: CustomEvent) -> None:
         """Apply a custom event.

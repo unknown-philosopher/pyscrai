@@ -227,6 +227,13 @@ class ProjectController:
         self.manifest_path.write_text(manifest.to_json(), encoding="utf-8")
         self._manifest = manifest
 
+        # Configure ID counters persistence for this project
+        try:
+            from .models import set_id_counters_path
+            set_id_counters_path(self.project_path / ".id_counters.json")
+        except Exception:
+            pass
+
         self._init_database(manifest.schema_version)
 
     def load_project(self) -> ProjectManifest:
@@ -248,6 +255,12 @@ class ProjectController:
             )
 
         self._manifest = manifest
+        # Configure ID counters persistence for this project
+        try:
+            from .models import set_id_counters_path
+            set_id_counters_path(self.project_path / ".id_counters.json")
+        except Exception:
+            pass
         return manifest
 
     def get_all_entities(self) -> list[Entity]:
@@ -562,10 +575,10 @@ class ProjectController:
     def _apply_migration(self, from_version: int, to_version: int) -> SchemaMigration:
         """Apply a single schema migration."""
         import sqlite3
-        import uuid
+        from .models import generate_intuitive_id
 
         migration = SchemaMigration(
-            id=str(uuid.uuid4()),
+            id=generate_intuitive_id("MIG"),
             from_version=from_version,
             to_version=to_version,
             migration_script=f"migration_{from_version}_to_{to_version}.py",

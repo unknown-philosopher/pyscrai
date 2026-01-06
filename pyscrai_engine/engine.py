@@ -73,6 +73,11 @@ class SimulationEngine:
         self.turn_processor = None
         self.intention_validator = None
         self.event_applier = None
+        self.world_query = None
+        self.narrator = None
+        
+        # Agent configuration
+        self.enable_agents = False  # Set to True to enable rule-based agents
         
     def initialize(self) -> None:
         """Load project and initialize all subsystems.
@@ -98,10 +103,14 @@ class SimulationEngine:
         from .turn_processor import TurnProcessor
         from .intention_validator import IntentionValidator
         from .event_applier import EventApplier
+        from .world_state import WorldStateQuery
+        from .narrator import NarratorAgent
         
         self.intention_validator = IntentionValidator(self)
         self.event_applier = EventApplier(self)
         self.turn_processor = TurnProcessor(self)
+        self.world_query = WorldStateQuery(self)
+        self.narrator = NarratorAgent(self)
         
         print(f"[Engine] Initialized with {len(self.entities)} entities, {len(self.relationships)} relationships")
         
@@ -133,11 +142,23 @@ class SimulationEngine:
         
         print(f"\n[Engine] === Turn {self.current_turn + 1} ===")
         
+        # Generate agent intentions if enabled
+        if self.enable_agents:
+            self._generate_agent_intentions()
+        
         # Process turn
         turn_result = self.turn_processor.process_turn(
             self.current_turn_intentions,
             self.current_turn
         )
+        
+        # Generate and save narrative
+        if self.narrator:
+            try:
+                narrative_path = self.narrator.save_turn_narrative(turn_result, self.project_path)
+                print(f"[Engine] Narrative saved to {narrative_path}")
+            except Exception as e:
+                print(f"[Engine] Failed to save narrative: {e}")
         
         # Store events
         self.current_turn_events = turn_result.events
@@ -160,6 +181,32 @@ class SimulationEngine:
         print(f"[Engine] Processed {len(turn_result.events)} events")
         
         return turn_result
+    
+    def _generate_agent_intentions(self) -> None:
+        """Generate intentions from rule-based agents.
+        
+        Iterates through all actors and asks agents to generate intentions.
+        """
+        from .agents.rule_based import BasicNeedsAgent
+        
+        # Get all actors
+        actors = self.get_entities_by_type(EntityType.ACTOR)
+        
+        if not actors:
+            return
+        
+        # Create agent instance
+        agent = BasicNeedsAgent()
+        
+        # Generate intentions for each actor
+        for actor in actors:
+            try:
+                intention = agent.generate_intention(actor, self.world_query)
+                if intention:
+                    self.submit_intention(intention)
+                    print(f"[Engine] Agent generated intention for {actor.descriptor.name if actor.descriptor else actor.id}")
+            except Exception as e:
+                print(f"[Engine] Agent failed to generate intention for {actor.id}: {e}")
         
     def run(self, max_turns: int = 100, stop_condition=None) -> None:
         """Run simulation for multiple turns.
@@ -214,10 +261,19 @@ class SimulationEngine:
         
     def _create_snapshot(self) -> None:
         """Create a world snapshot for this turn."""
+        import json
+        entity_states = {}
+        for eid, e in self.entities.items():
+            if e.state:
+                entity_states[eid] = {
+                    "resources_json": e.state.resources_json,
+                    "region_version": e.state.region_version,
+                }
+        
         snapshot = WorldSnapshot(
-            turn_number=self.current_turn,
-            entity_states={eid: e.state.model_dump() for eid, e in self.entities.items()},
-            relationship_states=[r.model_dump() for r in self.relationships]
+            tick=self.current_turn,
+            entities_json=json.dumps(entity_states),
+            relationships_json=json.dumps([r.model_dump() for r in self.relationships])
         )
         # TODO: Save to database (requires snapshot table in pyscrai_core)
         print(f"[Engine] Created snapshot at turn {self.current_turn}")

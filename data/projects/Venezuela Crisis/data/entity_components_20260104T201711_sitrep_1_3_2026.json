@@ -1,0 +1,1128 @@
+{
+  "entities": [
+    {
+      "id": "ENTITY_001",
+      "created_at": "2026-01-05T01:16:58.033102Z",
+      "updated_at": "2026-01-05T01:16:58.033105Z",
+      "descriptor": {
+        "name": "Venezuela",
+        "bio": "A South American nation undergoing a geopolitical crisis and military intervention, described as the Bolivarian Republic of Venezuela.",
+        "tags": [],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "current_location_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_002",
+      "created_at": "2026-01-05T01:16:58.033155Z",
+      "updated_at": "2026-01-05T01:16:58.033156Z",
+      "descriptor": {
+        "name": "United States",
+        "bio": "A global superpower that executed a military intervention in Venezuela in January 2026, led by President Donald Trump.",
+        "tags": [],
+        "entity_type": "abstract"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_003",
+      "created_at": "2026-01-05T01:16:58.033178Z",
+      "updated_at": "2026-01-05T01:16:58.033179Z",
+      "descriptor": {
+        "name": "Nicol\u00e1s Maduro",
+        "bio": "The former President of Venezuela who was captured by U.S. forces and faces narco-terrorism charges.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_004",
+      "created_at": "2026-01-05T01:16:58.033194Z",
+      "updated_at": "2026-01-05T01:16:58.033195Z",
+      "descriptor": {
+        "name": "Cilia Flores",
+        "bio": "The First Lady of Venezuela and wife of Nicol\u00e1s Maduro, who was captured alongside him.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_005",
+      "created_at": "2026-01-05T01:16:58.033207Z",
+      "updated_at": "2026-01-05T01:16:58.033207Z",
+      "descriptor": {
+        "name": "Donald Trump",
+        "bio": "The President of the United States who ordered the military intervention and blockade against Venezuela.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_006",
+      "created_at": "2026-01-05T01:16:58.033218Z",
+      "updated_at": "2026-01-05T01:16:58.033218Z",
+      "descriptor": {
+        "name": "United Nations Security Council",
+        "bio": "The international body responsible for maintaining peace and security, which convened an emergency session regarding the intervention.",
+        "tags": [],
+        "entity_type": "abstract"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_007",
+      "created_at": "2026-01-05T01:16:58.033233Z",
+      "updated_at": "2026-01-05T01:16:58.033233Z",
+      "descriptor": {
+        "name": "Fuerte Tiuna",
+        "bio": "A heavily fortified military complex in Caracas that served as the headquarters for the Venezuelan armed forces and the site of the presidential extraction.",
+        "tags": [],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "current_location_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_008",
+      "created_at": "2026-01-05T01:16:58.033245Z",
+      "updated_at": "2026-01-05T01:16:58.033246Z",
+      "descriptor": {
+        "name": "Bolivarian National Armed Forces (FANB)",
+        "bio": "The official military organization of Venezuela, whose command and control infrastructure was targeted during the intervention.",
+        "tags": [],
+        "entity_type": "abstract"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_009",
+      "created_at": "2026-01-05T01:16:58.033257Z",
+      "updated_at": "2026-01-05T01:16:58.033258Z",
+      "descriptor": {
+        "name": "La Carlota",
+        "bio": "A primary urban military airfield in Caracas that was neutralized to prevent aerial escape.",
+        "tags": [],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "current_location_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_010",
+      "created_at": "2026-01-05T01:16:58.033269Z",
+      "updated_at": "2026-01-05T01:16:58.033269Z",
+      "descriptor": {
+        "name": "El Volc\u00e1n",
+        "bio": "A critical communications antenna hub used for state security and military coordination.",
+        "tags": [],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "current_location_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_011",
+      "created_at": "2026-01-05T01:16:58.033281Z",
+      "updated_at": "2026-01-05T01:16:58.033283Z",
+      "descriptor": {
+        "name": "Port of La Guaira",
+        "bio": "A major seaport and logistics gateway that sustained significant damage during the operation.",
+        "tags": [],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "current_location_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_012",
+      "created_at": "2026-01-05T01:16:58.033295Z",
+      "updated_at": "2026-01-05T01:16:58.033296Z",
+      "descriptor": {
+        "name": "La Guaira State",
+        "bio": "A strategic state targeted to secure approaches from the Caribbean Sea.",
+        "tags": [],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "current_location_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_013",
+      "created_at": "2026-01-05T01:16:58.033308Z",
+      "updated_at": "2026-01-05T01:16:58.033309Z",
+      "descriptor": {
+        "name": "Miranda",
+        "bio": "A strategic state where secondary command structures were neutralized to isolate the capital.",
+        "tags": [],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "current_location_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_014",
+      "created_at": "2026-01-05T01:16:58.033321Z",
+      "updated_at": "2026-01-05T01:16:58.033321Z",
+      "descriptor": {
+        "name": "Aragua",
+        "bio": "A strategic state where secondary command structures were neutralized to isolate the capital.",
+        "tags": [],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "current_location_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_015",
+      "created_at": "2026-01-05T01:16:58.033331Z",
+      "updated_at": "2026-01-05T01:16:58.033332Z",
+      "descriptor": {
+        "name": "Vladimir Padrino L\u00f3pez",
+        "bio": "The Venezuelan Defense Minister who condemned the strikes and attempted to maintain military control.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_016",
+      "created_at": "2026-01-05T01:16:58.033344Z",
+      "updated_at": "2026-01-05T01:16:58.033345Z",
+      "descriptor": {
+        "name": "USS Iwo Jima",
+        "bio": "A Wasp-class amphibious assault ship used to transport the captured Venezuelan leadership.",
+        "tags": [],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "current_location_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_017",
+      "created_at": "2026-01-05T01:16:58.033355Z",
+      "updated_at": "2026-01-05T01:16:58.033355Z",
+      "descriptor": {
+        "name": "Pam Bondi",
+        "bio": "The U.S. Attorney General who confirmed the indictment of Maduro and Flores on narco-terrorism charges.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_018",
+      "created_at": "2026-01-05T01:16:58.033368Z",
+      "updated_at": "2026-01-05T01:16:58.033368Z",
+      "descriptor": {
+        "name": "Cartel of the Suns",
+        "bio": "A group of high-ranking Venezuelan officials allegedly involved in narco-terrorism and drug trafficking.",
+        "tags": [],
+        "entity_type": "abstract"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_019",
+      "created_at": "2026-01-05T01:16:58.033379Z",
+      "updated_at": "2026-01-05T01:16:58.033380Z",
+      "descriptor": {
+        "name": "International Monetary Fund (IMF)",
+        "bio": "An international financial institution that documented the severe economic contraction in Venezuela.",
+        "tags": [],
+        "entity_type": "abstract"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_020",
+      "created_at": "2026-01-05T01:16:58.033391Z",
+      "updated_at": "2026-01-05T01:16:58.033391Z",
+      "descriptor": {
+        "name": "PDVSA",
+        "bio": "Petr\u00f3leos de Venezuela, S.A., the Venezuelan state-owned oil and natural gas company.",
+        "tags": [],
+        "entity_type": "abstract"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_021",
+      "created_at": "2026-01-05T01:16:58.033400Z",
+      "updated_at": "2026-01-05T01:16:58.033401Z",
+      "descriptor": {
+        "name": "Bella 1",
+        "bio": "A tanker carrying Venezuelan crude that was seized by the United States.",
+        "tags": [],
+        "entity_type": "abstract"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_022",
+      "created_at": "2026-01-05T01:16:58.033412Z",
+      "updated_at": "2026-01-05T01:16:58.033413Z",
+      "descriptor": {
+        "name": "Orinoco Belt",
+        "bio": "A major oil-rich region in Venezuela producing extra-heavy crude oil.",
+        "tags": [],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "current_location_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_023",
+      "created_at": "2026-01-05T01:16:58.033426Z",
+      "updated_at": "2026-01-05T01:16:58.033426Z",
+      "descriptor": {
+        "name": "Zulia",
+        "bio": "A state in western Venezuela containing oil fields that saw a decline in production.",
+        "tags": [],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "current_location_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_024",
+      "created_at": "2026-01-05T01:16:58.033438Z",
+      "updated_at": "2026-01-05T01:16:58.033439Z",
+      "descriptor": {
+        "name": "Monagas State",
+        "bio": "A state producing light crudes essential for diluting heavy crude from the Orinoco Belt.",
+        "tags": [],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "current_location_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_025",
+      "created_at": "2026-01-05T01:16:58.033449Z",
+      "updated_at": "2026-01-05T01:16:58.033449Z",
+      "descriptor": {
+        "name": "Delcy Rodr\u00edguez",
+        "bio": "The Vice President of Venezuela who attempted to maintain control by declaring a state of emergency.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_026",
+      "created_at": "2026-01-05T01:16:58.033459Z",
+      "updated_at": "2026-01-05T01:16:58.033460Z",
+      "descriptor": {
+        "name": "Plan Zamora",
+        "bio": "An emergency protocol activated by the Maduro regime to counter the crisis.",
+        "tags": [],
+        "entity_type": "abstract"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_027",
+      "created_at": "2026-01-05T01:16:58.033470Z",
+      "updated_at": "2026-01-05T01:16:58.033471Z",
+      "descriptor": {
+        "name": "Mar\u00eda Corina Machado",
+        "bio": "A 2025 Nobel Peace Prize winner and leader of the democratic opposition, symbolizing resistance against the regime.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_028",
+      "created_at": "2026-01-05T01:16:58.033481Z",
+      "updated_at": "2026-01-05T01:16:58.033481Z",
+      "descriptor": {
+        "name": "Edmundo Gonz\u00e1lez Urrutia",
+        "bio": "The legitimate president-elect of Venezuela recognized by the U.S., currently in asylum in Spain.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_029",
+      "created_at": "2026-01-05T01:16:58.033493Z",
+      "updated_at": "2026-01-05T01:16:58.033494Z",
+      "descriptor": {
+        "name": "Colectivos",
+        "bio": "Pro-government paramilitary militias in Venezuela that remain a significant threat to stability.",
+        "tags": [],
+        "entity_type": "abstract"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_030",
+      "created_at": "2026-01-05T01:16:58.033506Z",
+      "updated_at": "2026-01-05T01:16:58.033506Z",
+      "descriptor": {
+        "name": "Guri Dam",
+        "bio": "A hydroelectric dam that is the primary source of power for Venezuela, considered high-risk infrastructure.",
+        "tags": [],
+        "entity_type": "location"
+      },
+      "cognitive": null,
+      "spatial": {
+        "x": 0.0,
+        "y": 0.0,
+        "region_id": null,
+        "current_location_id": null,
+        "layer": "terrestrial",
+        "capacity": null
+      },
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_031",
+      "created_at": "2026-01-05T01:16:58.033516Z",
+      "updated_at": "2026-01-05T01:16:58.033517Z",
+      "descriptor": {
+        "name": "R4V",
+        "bio": "A regional inter-agency coordination platform for refugees and migrants from Venezuela.",
+        "tags": [],
+        "entity_type": "abstract"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_032",
+      "created_at": "2026-01-05T01:16:58.033527Z",
+      "updated_at": "2026-01-05T01:16:58.033527Z",
+      "descriptor": {
+        "name": "Monroe Doctrine",
+        "bio": "A U.S. foreign policy doctrine invoked by the administration to assert regional hegemony in the Western Hemisphere.",
+        "tags": [],
+        "entity_type": "abstract"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_033",
+      "created_at": "2026-01-05T01:16:58.033537Z",
+      "updated_at": "2026-01-05T01:16:58.033537Z",
+      "descriptor": {
+        "name": "Rome Statute",
+        "bio": "The treaty that established the International Criminal Court, under which the blockade could be considered a crime of aggression.",
+        "tags": [],
+        "entity_type": "abstract"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_034",
+      "created_at": "2026-01-05T01:16:58.033549Z",
+      "updated_at": "2026-01-05T01:16:58.033550Z",
+      "descriptor": {
+        "name": "Gustavo Petro",
+        "bio": "The President of Colombia who condemned the intervention and warned of a new humanitarian crisis.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_035",
+      "created_at": "2026-01-05T01:16:58.033561Z",
+      "updated_at": "2026-01-05T01:16:58.033561Z",
+      "descriptor": {
+        "name": "Lula",
+        "bio": "The President of Brazil who condemned the strikes and urged a UN response.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_036",
+      "created_at": "2026-01-05T01:16:58.033571Z",
+      "updated_at": "2026-01-05T01:16:58.033572Z",
+      "descriptor": {
+        "name": "Javier Milei",
+        "bio": "The President of Argentina who celebrated the capture of Maduro.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_037",
+      "created_at": "2026-01-05T01:16:58.033583Z",
+      "updated_at": "2026-01-05T01:16:58.033583Z",
+      "descriptor": {
+        "name": "Keir Starmer",
+        "bio": "The Prime Minister of the United Kingdom who stated the UK was not involved and emphasized international law.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    },
+    {
+      "id": "ENTITY_038",
+      "created_at": "2026-01-05T01:16:58.033593Z",
+      "updated_at": "2026-01-05T01:16:58.033594Z",
+      "descriptor": {
+        "name": "Christopher Landau",
+        "bio": "The U.S. Deputy Secretary of State who described a 'new dawn' for Venezuela.",
+        "tags": [],
+        "entity_type": "actor"
+      },
+      "cognitive": null,
+      "spatial": null,
+      "state": {
+        "resources_json": "{}",
+        "region_version": null,
+        "adjacency_json": null,
+        "travel_times_json": null
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel_001",
+      "source_id": "ENTITY_002",
+      "target_id": "ENTITY_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "The United States executed a large-scale military intervention against Venezuela, capturing its leadership.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685716Z"
+    },
+    {
+      "id": "rel_002",
+      "source_id": "ENTITY_005",
+      "target_id": "ENTITY_001",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Donald Trump ordered the military strike and blockade against Venezuela.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685730Z"
+    },
+    {
+      "id": "rel_003",
+      "source_id": "ENTITY_003",
+      "target_id": "ENTITY_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Nicol\u00e1s Maduro was the President of Venezuela.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685734Z"
+    },
+    {
+      "id": "rel_004",
+      "source_id": "ENTITY_004",
+      "target_id": "ENTITY_003",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Cilia Flores is the wife of Nicol\u00e1s Maduro.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685741Z"
+    },
+    {
+      "id": "rel_005",
+      "source_id": "ENTITY_003",
+      "target_id": "ENTITY_007",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Maduro was captured at his residence within the Fuerte Tiuna military complex.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685745Z"
+    },
+    {
+      "id": "rel_006",
+      "source_id": "ENTITY_004",
+      "target_id": "ENTITY_007",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Cilia Flores was captured at the Fuerte Tiuna military complex.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685764Z"
+    },
+    {
+      "id": "rel_007",
+      "source_id": "ENTITY_008",
+      "target_id": "ENTITY_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "The Bolivarian National Armed Forces (FANB) is the official military organization of Venezuela.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685768Z"
+    },
+    {
+      "id": "rel_008",
+      "source_id": "ENTITY_015",
+      "target_id": "ENTITY_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Vladimir Padrino L\u00f3pez is the Venezuelan Defense Minister.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685770Z"
+    },
+    {
+      "id": "rel_009",
+      "source_id": "ENTITY_015",
+      "target_id": "ENTITY_002",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Vladimir Padrino L\u00f3pez condemned the United States military strikes.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685774Z"
+    },
+    {
+      "id": "rel_010",
+      "source_id": "ENTITY_003",
+      "target_id": "ENTITY_016",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Nicol\u00e1s Maduro was transported to the USS Iwo Jima after capture.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685778Z"
+    },
+    {
+      "id": "rel_011",
+      "source_id": "ENTITY_004",
+      "target_id": "ENTITY_016",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Cilia Flores was transported to the USS Iwo Jima after capture.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685781Z"
+    },
+    {
+      "id": "rel_012",
+      "source_id": "ENTITY_017",
+      "target_id": "ENTITY_003",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Pam Bondi confirmed the indictment of Nicol\u00e1s Maduro for narco-terrorism.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685786Z"
+    },
+    {
+      "id": "rel_013",
+      "source_id": "ENTITY_017",
+      "target_id": "ENTITY_004",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Pam Bondi confirmed the indictment of Cilia Flores for narco-terrorism.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685789Z"
+    },
+    {
+      "id": "rel_014",
+      "source_id": "ENTITY_003",
+      "target_id": "ENTITY_018",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 0.9,
+      "description": "Nicol\u00e1s Maduro is associated with the Cartel of the Suns, a group of high-ranking officials.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685792Z"
+    },
+    {
+      "id": "rel_015",
+      "source_id": "ENTITY_020",
+      "target_id": "ENTITY_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "PDVSA is the Venezuelan state oil company.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685794Z"
+    },
+    {
+      "id": "rel_016",
+      "source_id": "ENTITY_021",
+      "target_id": "ENTITY_020",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Bella 1 is a tanker carrying Venezuelan crude produced by PDVSA.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685796Z"
+    },
+    {
+      "id": "rel_017",
+      "source_id": "ENTITY_025",
+      "target_id": "ENTITY_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Delcy Rodr\u00edguez is the Vice President of Venezuela.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685798Z"
+    },
+    {
+      "id": "rel_018",
+      "source_id": "ENTITY_025",
+      "target_id": "ENTITY_003",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Delcy Rodr\u00edguez is the Vice President under Nicol\u00e1s Maduro.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685802Z"
+    },
+    {
+      "id": "rel_019",
+      "source_id": "ENTITY_027",
+      "target_id": "ENTITY_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Mar\u00eda Corina Machado is a leader of the democratic opposition in Venezuela.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685811Z"
+    },
+    {
+      "id": "rel_020",
+      "source_id": "ENTITY_028",
+      "target_id": "ENTITY_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Edmundo Gonz\u00e1lez Urrutia is the legitimate president-elect of Venezuela.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685841Z"
+    },
+    {
+      "id": "rel_021",
+      "source_id": "ENTITY_027",
+      "target_id": "ENTITY_028",
+      "relationship_type": "alliance",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Mar\u00eda Corina Machado and Edmundo Gonz\u00e1lez Urrutia are partners in the transition plan for Venezuela.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685845Z"
+    },
+    {
+      "id": "rel_022",
+      "source_id": "ENTITY_029",
+      "target_id": "ENTITY_001",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Colectivos are pro-government militias operating within Venezuela.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685848Z"
+    },
+    {
+      "id": "rel_023",
+      "source_id": "ENTITY_029",
+      "target_id": "ENTITY_003",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.9,
+      "description": "Colectivos are loyal to the Maduro regime.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685854Z"
+    },
+    {
+      "id": "rel_024",
+      "source_id": "ENTITY_034",
+      "target_id": "ENTITY_002",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Gustavo Petro (Colombia) condemned the United States intervention.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685868Z"
+    },
+    {
+      "id": "rel_025",
+      "source_id": "ENTITY_035",
+      "target_id": "ENTITY_002",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Lula (Brazil) condemned the United States strikes.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685872Z"
+    },
+    {
+      "id": "rel_026",
+      "source_id": "ENTITY_036",
+      "target_id": "ENTITY_002",
+      "relationship_type": "alliance",
+      "visibility": "public",
+      "strength": 0.8,
+      "description": "Javier Milei (Argentina) celebrated the capture of Maduro by the United States.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685874Z"
+    },
+    {
+      "id": "rel_027",
+      "source_id": "ENTITY_037",
+      "target_id": "ENTITY_002",
+      "relationship_type": "custom",
+      "visibility": "public",
+      "strength": 0.5,
+      "description": "Keir Starmer (UK) stated the UK was not involved in the US operation.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685878Z"
+    },
+    {
+      "id": "rel_028",
+      "source_id": "ENTITY_038",
+      "target_id": "ENTITY_002",
+      "relationship_type": "member_of",
+      "visibility": "public",
+      "strength": 1.0,
+      "description": "Christopher Landau is the U.S. Deputy Secretary of State.",
+      "metadata": "{}",
+      "created_at": "2026-01-05T01:17:11.685880Z"
+    }
+  ],
+  "validation_report": {}
+}

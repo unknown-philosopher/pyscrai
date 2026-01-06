@@ -4,7 +4,7 @@ These handlers take the structured operations from UserProxyAgent and
 actually modify the entities and relationships in the DataManager.
 """
 
-import uuid
+# ID generation is handled by pyscrai_core model defaults
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -49,6 +49,8 @@ class OperationHandler:
                 return self._remove_entity(details)
             elif operation == "modify_entity":
                 return self._modify_entity(details)
+            elif operation == "batch_modify":
+                return self._batch_modify(details)
             elif operation == "list":
                 return self._list_entities(details)
             elif operation == "help":
@@ -197,7 +199,6 @@ class OperationHandler:
         
         # Create new relationship
         new_rel = Relationship(
-            id=f"rel_{uuid.uuid4().hex[:8]}",
             source_id=source_id,
             target_id=target_id,
             relationship_type=rel_type,
@@ -280,6 +281,24 @@ class OperationHandler:
                     return (f"Could not modify field '{field}'", False)
             else:
                 return (f"Unknown field '{field}'", False)
+
+    def _batch_modify(self, details: dict) -> tuple[str, bool]:
+        """Apply multiple modify operations in one request."""
+
+        updates = details.get("updates", [])
+        if not updates:
+            return ("Batch modify requires a non-empty 'updates' list", False)
+
+        messages: list[str] = []
+        all_success = True
+
+        for update in updates:
+            msg, success = self._modify_entity(update)
+            prefix = "ok" if success else "fail"
+            messages.append(f"[{prefix}] {msg}")
+            all_success = all_success and success
+
+        return ("\n".join(messages), all_success)
     
     def _list_entities(self, details: dict) -> tuple[str, bool]:
         """List entities matching a filter.

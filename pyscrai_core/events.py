@@ -15,10 +15,10 @@ Specifically, `ResourceTransferEvent` and `StateChangeEvent` target keys within 
 from __future__ import annotations
 
 import json
-import uuid
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Optional
+from .models import generate_intuitive_id
 
 from pydantic import BaseModel, Field
 
@@ -38,7 +38,7 @@ class Event(BaseModel):
     4. Turn N resolution applies event → mutates StateComponent.resources_json.
     """
 
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique event ID")
+    id: str = Field(default_factory=lambda: generate_intuitive_id("EVENT"), description="Unique event ID")
     event_type: str = Field(description="Type identifier for event dispatching")
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now(UTC), description="When event was created"

@@ -11,7 +11,7 @@ Guardrail 5: Memory Coherence as Gameplay Signal
 > Example: Agent believes 'gold' = 100, Reality 'gold' = 0.
 """
 
-import uuid
+from .models import generate_intuitive_id
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Optional, Any
@@ -47,7 +47,7 @@ class MemoryChunk(BaseModel):
     Stored in ChromaDB.
     """
 
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique memory ID")
+    id: str = Field(default_factory=lambda: generate_intuitive_id("MEM"), description="Unique memory ID")
     owner_id: str = Field(description="Actor/Polity who holds this memory")
     domain: MemoryDomain = Field(description="Memory category")
     tags: list[str] = Field(default_factory=list, description="Extensible semantic tags")
@@ -136,7 +136,7 @@ class MemoryDivergence(BaseModel):
         )
     """
 
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    id: str = Field(default_factory=lambda: generate_intuitive_id("DIV"))
     actor_id: str = Field(description="Entity with divergent perception")
     memory_id: str = Field(description="MemoryChunk containing false belief")
     state_field: str = Field(description="Key in resources_json that diverges")

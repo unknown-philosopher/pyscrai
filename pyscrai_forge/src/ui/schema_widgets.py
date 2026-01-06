@@ -14,10 +14,18 @@ class SchemaWidgetFactory:
         Args:
             parent: Parent widget
             field_name: Name of the field
-            field_def: Dictionary defining the field (type, description, etc.)
+            field_def: Dictionary defining the field (type, description, etc.) OR string type name
             current_value: Current value of the field
             callback: Function to call when value changes (arg: new_value)
         """
+        # Normalize field_def: handle both string format ("string") and dict format ({"type": "string"})
+        if isinstance(field_def, str):
+            # Simple string format: "string" -> {"type": "string"}
+            field_def = {"type": field_def}
+        elif not isinstance(field_def, dict):
+            # Fallback: treat as string
+            field_def = {"type": str(field_def)}
+        
         frame = ttk.Frame(parent)
         frame.pack(fill=tk.X, pady=2)
 

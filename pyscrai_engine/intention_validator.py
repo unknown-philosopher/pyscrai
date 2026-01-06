@@ -128,28 +128,31 @@ class IntentionValidator:
         - Amount is positive
         """
         # Check source entity exists
-        source = self.engine.get_entity(intention.from_id)
+        source = self.engine.get_entity(intention.source_id)
         if not source:
-            return False, f"Source entity {intention.from_id} does not exist"
+            return False, f"Source entity {intention.source_id} does not exist"
             
         # Check target entity exists
-        target = self.engine.get_entity(intention.to_id)
+        target = self.engine.get_entity(intention.target_id)
         if not target:
-            return False, f"Target entity {intention.to_id} does not exist"
+            return False, f"Target entity {intention.target_id} does not exist"
             
         # Check amount is positive
         if intention.amount <= 0:
             return False, "Transfer amount must be positive"
             
         # Get project schema for entity type
-        entity_type_str = source.entity_type.value
+        entity_type_str = source.entity_type.value if source.entity_type else "abstract"
         schema = self.engine.manifest.entity_schemas.get(entity_type_str, {})
         
-        # Check resource type exists in schema
-        if intention.resource_type not in schema:
+        # Check resource type exists in schema (if schema is defined, otherwise allow any)
+        if schema and intention.resource_type not in schema:
             return False, f"Resource '{intention.resource_type}' not in schema for {entity_type_str}"
             
         # Check source has enough resources
+        if not source.state:
+            return False, f"Source entity {intention.source_id} has no state component"
+            
         try:
             resources = json.loads(source.state.resources_json) if source.state.resources_json else {}
             current_amount = resources.get(intention.resource_type, 0)
@@ -158,7 +161,7 @@ class IntentionValidator:
                 return False, f"Insufficient {intention.resource_type}: has {current_amount}, needs {intention.amount}"
                 
         except json.JSONDecodeError:
-            return False, f"Invalid resources_json for entity {intention.from_id}"
+            return False, f"Invalid resources_json for entity {intention.source_id}"
             
         return True, ""
         
@@ -170,21 +173,26 @@ class IntentionValidator:
         - Relationship exists if updating
         - New relationship type is valid
         """
-        # Check both entities exist
-        entity_a = self.engine.get_entity(intention.entity_a_id)
-        if not entity_a:
-            return False, f"Entity {intention.entity_a_id} does not exist"
+        # Check source entity exists
+        source = self.engine.get_entity(intention.source_id)
+        if not source:
+            return False, f"Source entity {intention.source_id} does not exist"
             
-        entity_b = self.engine.get_entity(intention.entity_b_id)
-        if not entity_b:
-            return False, f"Entity {intention.entity_b_id} does not exist"
+        # Check target entity exists
+        target = self.engine.get_entity(intention.target_id)
+        if not target:
+            return False, f"Target entity {intention.target_id} does not exist"
             
         # Check can't create relationship with self
-        if intention.entity_a_id == intention.entity_b_id:
+        if intention.source_id == intention.target_id:
             return False, "Cannot create relationship with self"
             
+        # Validate new relationship type (basic check - should be a valid string)
+        if not intention.new_relationship_type or not intention.new_relationship_type.strip():
+            return False, "New relationship type cannot be empty"
+            
         # TODO: Check relationship exists if old_type is specified
-        # TODO: Validate new relationship type against RelationshipType enum
+        # TODO: Validate new relationship type against RelationshipChangeType enum
         
         return True, ""
         
