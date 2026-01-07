@@ -1,11 +1,11 @@
 {
-  "name": "Test Project",
-  "description": "test",
-  "author": "test",
+  "name": "Test",
+  "description": "Test",
+  "author": "Test",
   "version": "0.1.0",
   "schema_version": 1,
-  "created_at": "2026-01-07T21:26:25.493719Z",
-  "last_modified_at": "2026-01-07T21:28:42.671533Z",
+  "created_at": "2026-01-07T23:43:16.498782Z",
+  "last_modified_at": "2026-01-07T23:43:16.498788Z",
   "entity_schemas": {
     "actor": {
       "name": {
@@ -38,13 +38,15 @@
       },
       "wealth": {
         "type": "integer",
+        "required": true,
         "description": "Representation of monetary value; i.e cash, tokens, points, wealth, etc",
-        "default_value": 0
+        "default": "0"
       },
       "health": {
         "type": "integer",
+        "required": true,
         "description": "actor's health rating 0-100",
-        "default_value": 100
+        "default": "100"
       }
     },
     "polity": {
@@ -142,7 +144,7 @@
   "llm_provider": "cherry",
   "llm_base_url": null,
   "llm_default_model": "openrouter:xiaomi/mimo-v2-flash:free",
-  "llm_fallback_model": "openrouter:z-ai/glm-4.7",
+  "llm_fallback_model": null,
   "memory_backend": "chromadb_local",
   "memory_collection_id": "",
   "snapshot_interval": 100,

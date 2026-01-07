@@ -562,26 +562,46 @@ class LoomPanel(ttk.Frame):
             )
             return
         
-        # Show progress dialog
+        # Show progress dialog with better UX
         progress_win = tk.Toplevel(self)
         progress_win.title("Inferring Relationships")
-        progress_win.geometry("400x150")
+        progress_win.geometry("400x120")
         progress_win.transient(self)
         progress_win.grab_set()
+        progress_win.resizable(False, False)
+        
+        # Center on parent
+        progress_win.update_idletasks()
+        x = self.winfo_x() + (self.winfo_width() - 400) // 2
+        y = self.winfo_y() + (self.winfo_height() - 120) // 2
+        progress_win.geometry(f"+{x}+{y}")
+        
+        # Progress bar style
+        style = ttk.Style()
+        style.configure("pyscrai.Horizontal.TProgressbar", thickness=20)
         
         ttk.Label(
             progress_win,
-            text="Analyzing entities...",
+            text="Analyzing entities and inferring relationships...",
             font=("Segoe UI", 11)
-        ).pack(pady=20)
+        ).pack(pady=(15, 5))
         
-        progress_label = ttk.Label(
+        progress_bar = ttk.Progressbar(
             progress_win,
-            text="Connecting to LLM...",
-            font=("Segoe UI", 10),
+            mode="indeterminate",
+            style="pyscrai.Horizontal.TProgressbar",
+            length=300
+        )
+        progress_bar.pack(pady=5)
+        progress_bar.start(50)
+        
+        status_label = ttk.Label(
+            progress_win,
+            text=f"Processing {len(self.entities)} entities with {len(self.relationships)} existing relationships...",
+            font=("Segoe UI", 9),
             foreground="gray"
         )
-        progress_label.pack()
+        status_label.pack(pady=(5, 10))
         
         def run_inference():
             """Run relationship inference in background."""
@@ -601,6 +621,7 @@ class LoomPanel(ttk.Frame):
         def finish_inference():
             """Handle inference results."""
             try:
+                progress_bar.stop()
                 progress_win.destroy()
             except:
                 pass
@@ -741,26 +762,46 @@ class LoomPanel(ttk.Frame):
             )
             return
         
-        # Show progress dialog
+        # Show progress dialog with better UX
         progress_win = tk.Toplevel(self)
         progress_win.title("Detecting Conflicts")
-        progress_win.geometry("400x150")
+        progress_win.geometry("400x120")
         progress_win.transient(self)
         progress_win.grab_set()
+        progress_win.resizable(False, False)
+        
+        # Center on parent
+        progress_win.update_idletasks()
+        x = self.winfo_x() + (self.winfo_width() - 400) // 2
+        y = self.winfo_y() + (self.winfo_height() - 120) // 2
+        progress_win.geometry(f"+{x}+{y}")
+        
+        # Progress bar style
+        style = ttk.Style()
+        style.configure("pyscrai.Horizontal.TProgressbar", thickness=20)
         
         ttk.Label(
             progress_win,
-            text="Scanning for issues...",
+            text="Scanning entities and relationships for issues...",
             font=("Segoe UI", 11)
-        ).pack(pady=20)
+        ).pack(pady=(15, 5))
         
-        progress_label = ttk.Label(
+        progress_bar = ttk.Progressbar(
             progress_win,
-            text="Connecting to LLM...",
-            font=("Segoe UI", 10),
+            mode="indeterminate",
+            style="pyscrai.Horizontal.TProgressbar",
+            length=300
+        )
+        progress_bar.pack(pady=5)
+        progress_bar.start(50)
+        
+        status_label = ttk.Label(
+            progress_win,
+            text=f"Analyzing {len(self.entities)} entities and {len(self.relationships)} relationships...",
+            font=("Segoe UI", 9),
             foreground="gray"
         )
-        progress_label.pack()
+        status_label.pack(pady=(5, 10))
         
         def run_detection():
             """Run conflict detection in background."""
@@ -780,6 +821,7 @@ class LoomPanel(ttk.Frame):
         def finish_detection():
             """Handle detection results."""
             try:
+                progress_bar.stop()
                 progress_win.destroy()
             except:
                 pass
@@ -794,7 +836,7 @@ class LoomPanel(ttk.Frame):
                 )
                 return
             
-            # Show results
+            # Show results - also populates the Issues & Suggestions panel
             self._show_conflict_results(conflicts)
         
         # Run in background
@@ -802,8 +844,36 @@ class LoomPanel(ttk.Frame):
         thread = threading.Thread(target=finish_detection, daemon=True)
         thread.start()
     
+    def _refresh_conflicts_list(self, conflicts: list) -> None:
+        """Refresh the conflicts/suggestions list."""
+        if not self.conflict_list:
+            return
+        
+        # Clear
+        for item in self.conflict_list.get_children():
+            self.conflict_list.delete(item)
+        
+        # Populate
+        for conflict in conflicts:
+            entity_ids = ", ".join(conflict.entity_ids[:3])
+            if len(conflict.entity_ids) > 3:
+                entity_ids += "..."
+            
+            self.conflict_list.insert(
+                "",
+                tk.END,
+                values=(
+                    conflict.conflict_type.title(),
+                    conflict.description
+                )
+            )
+    
     def _show_conflict_results(self, conflicts: list) -> None:
         """Show conflict detection results."""
+        # First, populate the Issues & Suggestions panel
+        self._refresh_conflicts_list(conflicts)
+        
+        # Also show a dialog for detailed viewing
         dialog = tk.Toplevel(self)
         dialog.title(f"Found {len(conflicts)} Issue(s)")
         dialog.geometry("550x400")

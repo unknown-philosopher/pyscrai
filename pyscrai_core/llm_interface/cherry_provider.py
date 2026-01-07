@@ -233,6 +233,7 @@ class CherryProvider(LLMProvider):
         model: str,
         system_prompt: str | None = None,
         temperature: float = 0.7,
+        max_tokens: int | None = None,
     ) -> str:
         """Simple completion with just a prompt string.
         
@@ -241,6 +242,7 @@ class CherryProvider(LLMProvider):
             model: Model identifier
             system_prompt: Optional system prompt
             temperature: Sampling temperature
+            max_tokens: Maximum tokens to generate
             
         Returns:
             Generated text content
@@ -250,7 +252,7 @@ class CherryProvider(LLMProvider):
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
-        response = await self.complete(messages, model, temperature)
+        response = await self.complete(messages, model, temperature, max_tokens)
         
         if "choices" in response and len(response["choices"]) > 0:
             return response["choices"][0]["message"]["content"]
