@@ -1,86 +1,175 @@
-# PyScrAI: Worldbuilding AI Platform
+# PyScrAI|Forge 2.0
 
-**PyScrAI** is a modular, agent-driven platform for creating, extracting, and managing complex simulated worlds. It consists of two main components:
+**Sequential Intelligence Pipeline for Worldbuilding & Entity Management**
 
-- **`pyscrai_core`**: High-performance Entity-Component-System (ECS) model with project management, events, intentions, and memory systems.
-- **`pyscrai_forge`**: Creation tools including multi-agent Harvester pipeline, modern GUI, and CLI for worldbuilding workflows.
-- **`pyscrai_engine`**: Currently only a shell, his will be the Engine which will be seeded with the final output of the Forge; turning static data into a fully interactive simulation. 
+PyScrAI|Forge 2.0 transforms worldbuilding into a structured 5-phase pipeline: extract entities, map relationships, generate narratives, anchor spatially, and merge into a canonical database with full provenance tracking.
 
-## Key Features
+## Features
 
-- **ECS Architecture**: Pydantic-based, schema-flexible data models for Entities, Components, and Relationships.
-- **Multi-Agent Harvester**: Automated extraction of structured world data from unstructured text using Scout, Analyst, Validator, and Reviewer agents.
-- **Project-First Workflow**: Explicit projects with manifests, databases, and a centralized `ConfigManager` for preferences and recents.
-- **Modern GUI**: 3-state UI with manager-based architecture (`main_app`, `state_manager`, `menu_manager`, `project_manager`, `data_manager`), sv-ttk dark/light theming, and click-to-sort Treeviews.
-- **Converter Pipeline**: Centralized registry for PDF/DOCX/HTML/OCR converters used by both GUI and CLI imports.
-- **Provider-Agnostic Interfaces & CLI**: OpenRouter/local LLM support plus a Typer-powered CLI for automation.
+- **5-Phase Sequential Pipeline**: Foundry → Loom → Chronicle → Cartography → Anvil
+- **Interactive Graph Visualization**: Networkx-powered relationship mapping with drag-and-drop
+- **Narrative Generation**: Blueprint templates with fact-checking
+- **Spatial Mapping**: Grid-based entity placement with region management
+- **Smart Merge Engine**: Semantic duplicate detection with conflict resolution
+- **Provenance Tracking**: Complete attribute history audit trail
+- **Staging Isolation**: Phase artifacts flow through JSON/MD files before final commit
 
-## Documentation
+## Project Structure
 
--*** OUTDATED [**Forge User & Developer Guide**](pyscrai_forge/docs/forge_user_guide.md): Comprehensive guide to using and extending PyScrAI|Forge.
--*** OUTDATED [**Project Structure Reference**](pyscrai_forge/docs/project_structure.md): Complete file-by-file guide to the PyScrAI|Forge codebase structure and organization.
-- *** OUTDATED [**Harvester Agents Guide**](pyscrai_forge/docs/harvester_agents.md): Details on Scout, Analyst, Validator, Reviewer, and Manager agents.
-- *** OUTDATED [**Current Dev Blueprint**](pyscrai_forge/docs/dev_plans/phase_1-3.md): The authoritative roadmap for ongoing and future development phases.
-- [**Completed Dev Plans**](pyscrai_forge/docs/dev_plans/completed/): Detailed retrospectives on completed development phases.
-- [**Tkinter Development Guides**](pyscrai_forge/docs/dev_plans/tkinter_dev/): Practical guides and tips for GUI development with Tkinter.
+```
+pyscrai/
+├── pyscrai_core/              # Core data models and services
+│   ├── models.py              # Entity, Relationship models
+│   ├── memory_service.py      # Semantic search (sqlite-vec/FTS5 fallback)
+│   └── llm_interface/         # LLM provider abstractions
+│
+├── pyscrai_forge/             # Main application
+│   ├── phases/                # Pipeline phases
+│   │   ├── foundry/           # Phase 1: Entity extraction
+│   │   ├── loom/              # Phase 2: Relationship mapping
+│   │   ├── chronicle/         # Phase 3: Narrative synthesis
+│   │   ├── cartography/       # Phase 4: Spatial anchoring
+│   │   └── anvil/             # Phase 5: Merge & finalization
+│   │
+│   ├── agents/                # LLM agents (Scout, Analyst, Narrator)
+│   ├── src/
+│   │   ├── app/               # Application controllers
+│   │   │   ├── main_app.py    # Three-pane UI layout
+│   │   │   ├── state_manager.py
+│   │   │   ├── task_queue.py  # Async task execution
+│   │   │   └── project_migrator.py  # v1→v2 migration
+│   │   ├── staging.py         # Staging artifact management
+│   │   └── ui/                # UI components
+│   └── prompts/               # Template system
+│
+└── data/projects/             # Project data directory
+    └── <project>/
+        ├── project.json       # Project manifest
+        ├── world.db           # Canonical database
+        └── staging/           # Phase artifacts
+            ├── entities_staging.json
+            ├── graph_staging.json
+            ├── narrative_report.md
+            └── spatial_metadata.json
+```
 
-## Quick Start
-
-### Prerequisites
-- Python 3.10+
-- `pip`
+## Quickstart
 
 ### Installation
 
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd pyscrai
+
+# Install dependencies
 pip install -e .
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your LLM API keys (OPENROUTER_API_KEY, etc.)
 ```
 
-### Launching the Application
+### Run the Application
 
-- **GUI (Recommended):**
-  ```bash
-  forge gui
-  ```
-  Opens the main PyScrAI|Forge application (Landing Page, Project Dashboard, and tools) with sv-ttk theming (dark by default, respects `user_config` preference).
-
-- **CLI Harvester:**
-  ```bash
-  forge process <your_text_file.txt> --genre <genre> --output <output.json>
-  ```
-  Extracts entities from text using the multi-agent pipeline.
-
-### Running Tests
-(Not implemented)
 ```bash
-pytest
+# Launch PyScrAI|Forge GUI
+forge
+
+# Or run directly
+python -m pyscrai_forge.src.__main__
 ```
 
-## Project Structure
+### Basic Workflow
 
-- `pyscrai_core/` — Simulation engine: Entities, Components, Events, Project Manifest, Memory, Intentions.
-  - `llm_interface/` — LLM provider adapters (OpenRouter, local LLMs, etc.).
-- `pyscrai_forge/` — Creation tools: Harvester agents, GUI, CLI, project management.
-  - `docs/` — Documentation, guides, and dev plans.
-  - `src/app/` — Manager-based GUI core (`main_app.py`, `state_manager.py`, `menu_manager.py`, `project_manager.py`, `data_manager.py`).
-  - `src/ui/widgets/treeview_sorter.py` — Reusable column-sorting utility for Treeviews (Component Editor, DB Explorer).
-  - `src/converters/__init__.py` — `create_registry()` centralizes converter registration.
-  - `config_manager.py` — Singleton configuration manager for user preferences.
+1. **Create/Open Project**: File → New Project or Open Project
+2. **Phase 1 - Foundry**: Import documents → Extract entities → Save to staging
+3. **Phase 2 - Loom**: Load staging → Visualize graph → Add relationships → Save
+4. **Phase 3 - Chronicle**: Select blueprint → Generate narrative → Fact-check
+5. **Phase 4 - Cartography**: Place entities on map → Define regions → Save
+6. **Phase 5 - Anvil**: Review conflicts → Resolve merges → Commit to world.db
 
-## For Developers
+## Pipeline Phases
 
-- **Entry Points:**
-  - `forge gui` — Launch GUI (Tkinter-based, 3-state UI)
-  - `forge process` — Run Harvester pipeline from CLI
-- **Extending the System:**
-  - Work with the GUI core in `pyscrai_forge/src/app/` (coordinator + managers)
-  - Add new agents in `pyscrai_forge/agents/`
-  - Customize UI widgets in `pyscrai_forge/src/ui/widgets/`
-  - Define world schemas in `project.json` within your project folder
-  - Extend LLM providers via `pyscrai_core/llm_interface/`
-  - Use `ConfigManager` for shared access to user preferences (theme, recents, geometry)
+### Phase 1: FOUNDRY
+- **Input**: Documents (PDF, TXT, DOCX)
+- **Process**: Scout/Analyst agents extract entities
+- **Output**: `staging/entities_staging.json`
+- **UI**: Entity editor with validation
 
----
+### Phase 2: LOOM
+- **Input**: Entities from Foundry
+- **Process**: Interactive graph visualization, relationship inference
+- **Output**: `staging/graph_staging.json`
+- **UI**: Networkx graph canvas with drag-and-drop
 
-For comprehensive usage and development guidance, see the [Forge User & Developer Guide](pyscrai_forge/docs/forge_user_guide.md). For development planning, see the [Current Dev Blueprint](pyscrai_forge/docs/dev_plans/phase_1-3.md) and [Completed Dev Plans](pyscrai_forge/docs/dev_plans/completed/).
+### Phase 3: CHRONICLE
+- **Input**: Entities + relationships from Loom
+- **Process**: Narrative generation with blueprint templates
+- **Output**: `staging/narrative_report.md`
+- **UI**: Blueprint selector, fact-check highlighting
+
+### Phase 4: CARTOGRAPHY
+- **Input**: Entities from previous phases
+- **Process**: Spatial positioning on grid map
+- **Output**: `staging/spatial_metadata.json`
+- **UI**: Interactive map with entity placement
+
+### Phase 5: ANVIL
+- **Input**: All staging artifacts
+- **Process**: Conflict detection, merge resolution, provenance tracking
+- **Output**: Committed changes to `world.db`
+- **UI**: Diff viewer, merge controls, conflict resolution
+
+## Configuration
+
+### LLM Providers
+
+Supported providers (configured in project manifest):
+- OpenRouter
+- Cherry
+- LM Studio
+- LM Proxy
+
+Set API keys in `.env`:
+```bash
+OPENROUTER_API_KEY=your_key_here
+CHERRY_API_KEY=your_key_here
+```
+
+### Project Templates
+
+Templates define entity schemas and extraction prompts:
+- `default/` - Generic worldbuilding
+- `espionage/` - Intelligence/spy scenarios
+- `historical/` - Historical events
+
+## Development
+
+```bash
+# Run tests
+pytest
+
+# Check linting
+flake8 pyscrai_forge pyscrai_core
+
+# Type checking
+mypy pyscrai_forge pyscrai_core
+```
+
+## Dependencies
+
+- **Core**: pydantic, pydantic-ai, httpx
+- **UI**: tkinter (built-in), sv-ttk
+- **Graph**: networkx
+- **Embeddings**: sentence-transformers
+- **Vector DB**: sqlite-vec (optional, falls back to FTS5/keyword)
+
+## License
+
+[Your License Here]
+
+## Version
+
+**2.0.0** - Sequential Intelligence Pipeline
 

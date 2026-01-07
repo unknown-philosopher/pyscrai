@@ -18,7 +18,12 @@ class ProjectDashboardWidget(ttk.Frame):
                  on_browse_db: Callable[[], None],
                  on_settings: Callable[[], None],
                  on_browse_files: Callable[[], None],
-                 get_forge_manager: Optional[Callable[[], Any]] = None):
+                 get_forge_manager: Optional[Callable[[], Any]] = None,
+                 on_go_to_foundry: Optional[Callable[[], None]] = None,
+                 on_go_to_loom: Optional[Callable[[], None]] = None,
+                 on_go_to_chronicle: Optional[Callable[[], None]] = None,
+                 on_go_to_cartography: Optional[Callable[[], None]] = None,
+                 on_go_to_anvil: Optional[Callable[[], None]] = None):
         """
         Initialize project dashboard.
         
@@ -42,25 +47,18 @@ class ProjectDashboardWidget(ttk.Frame):
         self.on_settings = on_settings
         self.on_browse_files = on_browse_files
         self.get_forge_manager = get_forge_manager
+        self.on_go_to_foundry = on_go_to_foundry
+        self.on_go_to_loom = on_go_to_loom
+        self.on_go_to_chronicle = on_go_to_chronicle
+        self.on_go_to_cartography = on_go_to_cartography
+        self.on_go_to_anvil = on_go_to_anvil
         
         self._build_ui()
     
     def _build_ui(self):
-        """Build the dashboard UI with tabs."""
-        # Create notebook for tabs
-        self.notebook = ttk.Notebook(self)
-        self.notebook.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-        
-        # Overview tab (original dashboard content)
-        overview_frame = ttk.Frame(self.notebook)
-        self.notebook.add(overview_frame, text="📊 Overview")
-        self._build_overview_tab(overview_frame)
-        
-        # Narrative Generator tab (only if ForgeManager is available)
-        if self.get_forge_manager:
-            narrative_frame = ttk.Frame(self.notebook)
-            self.notebook.add(narrative_frame, text="📖 Narrative")
-            self._build_narrative_tab(narrative_frame)
+        """Build the dashboard UI."""
+        # Build overview directly (no tabs)
+        self._build_overview_tab(self)
     
     def _build_overview_tab(self, parent):
         """Build the original overview content."""
@@ -85,42 +83,73 @@ class ProjectDashboardWidget(ttk.Frame):
                               font=("Arial", 8), foreground="gray")
         path_label.pack(anchor='w')
         
-        # Quick action buttons
-        action_frame = ttk.Frame(main_container)
-        action_frame.pack(pady=20)
+        # Pipeline phase buttons
+        phase_frame = ttk.LabelFrame(main_container, text="Pipeline Phases", padding=15)
+        phase_frame.pack(fill=tk.X, pady=(0, 20))
         
-        # Import Data button
-        import_btn = ttk.Button(
-            action_frame,
-            text="📥 Import Data",
-            command=self.on_import,
-            width=20,
-            style="Accent.TButton",
+        # First row of buttons
+        row1 = ttk.Frame(phase_frame)
+        row1.pack(fill=tk.X, pady=(0, 10))
+        
+        edit_entities_btn = ttk.Button(
+            row1,
+            text="🔨 Edit Entities",
+            command=self.on_edit_components,  # Goes to Foundry
+            width=18,
             cursor="hand2"
         )
-        import_btn.pack(side=tk.LEFT, padx=15)
+        edit_entities_btn.pack(side=tk.LEFT, padx=8)
         
-        # Edit Components button
-        edit_btn = ttk.Button(
-            action_frame,
-            text="✏️ Edit Components",
-            command=self.on_edit_components,
-            width=20,
+        edit_relationships_btn = ttk.Button(
+            row1,
+            text="🕸️ Edit Relationships",
+            command=self._on_edit_relationships,  # Goes to Loom
+            width=18,
             cursor="hand2"
         )
-        edit_btn.pack(side=tk.LEFT, padx=15)
+        edit_relationships_btn.pack(side=tk.LEFT, padx=8)
         
-        # Browse Database button
-        browse_btn = ttk.Button(
-            action_frame,
+        narrative_btn = ttk.Button(
+            row1,
+            text="📖 Narrative",
+            command=self._on_narrative,  # Goes to Chronicle
+            width=18,
+            cursor="hand2"
+        )
+        narrative_btn.pack(side=tk.LEFT, padx=8)
+        
+        # Second row of buttons
+        row2 = ttk.Frame(phase_frame)
+        row2.pack(fill=tk.X)
+        
+        spatial_btn = ttk.Button(
+            row2,
+            text="🗺️ Spatial Editor",
+            command=self._on_spatial_editor,  # Goes to Cartography
+            width=18,
+            cursor="hand2"
+        )
+        spatial_btn.pack(side=tk.LEFT, padx=8)
+        
+        finalize_btn = ttk.Button(
+            row2,
+            text="⚒️ Finalize",
+            command=self._on_finalize,  # Goes to Anvil
+            width=18,
+            cursor="hand2"
+        )
+        finalize_btn.pack(side=tk.LEFT, padx=8)
+        
+        browse_db_btn = ttk.Button(
+            row2,
             text="🗄️ Browse Database",
             command=self.on_browse_db,
-            width=20,
+            width=18,
             cursor="hand2"
         )
-        browse_btn.pack(side=tk.LEFT, padx=15)
+        browse_db_btn.pack(side=tk.LEFT, padx=8)
         
-        # Two-column layout for project stats and recent activity  
+        # Three-column layout for stats, activity, and quick info
         bottom_frame = ttk.Frame(main_container)
         bottom_frame.pack(fill=tk.BOTH, expand=True, pady=20)
         
@@ -129,10 +158,15 @@ class ProjectDashboardWidget(ttk.Frame):
         stats_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
         self._load_project_stats(stats_frame)
         
-        # Right column - Recent Activity
+        # Middle column - Recent Activity
         activity_frame = ttk.LabelFrame(bottom_frame, text="Recent Imports", padding=15)
-        activity_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
+        activity_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
         self._load_recent_imports(activity_frame)
+        
+        # Right column - Quick Info
+        info_frame = ttk.LabelFrame(bottom_frame, text="Quick Info", padding=15)
+        info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(10, 0))
+        self._load_quick_info(info_frame)
         
         # Bottom actions
         bottom_action_frame = ttk.Frame(main_container)
@@ -143,32 +177,29 @@ class ProjectDashboardWidget(ttk.Frame):
         ttk.Button(bottom_action_frame, text="📂 Browse Files",
                   command=self.on_browse_files).pack(side=tk.LEFT)
     
-    def _build_narrative_tab(self, parent):
-        """Build the narrative generator tab."""
-        try:
-            from pyscrai_forge.src.ui.widgets.narrative_panel import NarrativeGeneratorWidget
-            
-            narrative_widget = NarrativeGeneratorWidget(
-                parent,
-                self.project_path,
-                self.manifest,
-                self.get_forge_manager
-            )
-            narrative_widget.pack(fill=tk.BOTH, expand=True)
-            
-        except Exception as e:
-            # Fallback if narrative widget can't be created
-            error_frame = ttk.Frame(parent)
-            error_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-            
-            ttk.Label(error_frame, text="📖 Narrative Generator",
-                     font=("Arial", 16, "bold")).pack(anchor='w', pady=(0, 10))
-            
-            ttk.Label(error_frame, text="❌ Narrative generation is not available.",
-                     font=("Arial", 12), foreground="red").pack(anchor='w', pady=(0, 5))
-            
-            ttk.Label(error_frame, text=f"Error: {str(e)}",
-                     font=("Arial", 10), foreground="gray").pack(anchor='w')
+    def _on_edit_relationships(self):
+        """Navigate to Loom phase."""
+        if self.on_go_to_loom:
+            self.on_go_to_loom()
+        elif self.on_edit_components:
+            # Fallback - try to go to component editor which should redirect
+            self.on_edit_components()
+    
+    def _on_narrative(self):
+        """Navigate to Chronicle phase."""
+        if self.on_go_to_chronicle:
+            self.on_go_to_chronicle()
+    
+    def _on_spatial_editor(self):
+        """Navigate to Cartography phase."""
+        if self.on_go_to_cartography:
+            self.on_go_to_cartography()
+    
+    def _on_finalize(self):
+        """Navigate to Anvil phase."""
+        if self.on_go_to_anvil:
+            self.on_go_to_anvil()
+    
     
     def _load_project_stats(self, parent):
         """Load and display database statistics."""
@@ -229,3 +260,59 @@ class ProjectDashboardWidget(ttk.Frame):
         for i, f in enumerate(files[:3]):
             ttk.Label(parent, text=f"• {f.name}",
                      font=("Arial", 9)).pack(anchor='w', pady=2)
+    
+    def _load_quick_info(self, parent):
+        """Load and display quick project information."""
+        try:
+            from pyscrai_forge.src import storage
+            from datetime import datetime
+            from pathlib import Path
+            
+            db_path = self.project_path / "world.db"
+            
+            # Database status
+            if db_path.exists():
+                db_size = db_path.stat().st_size / 1024  # KB
+                ttk.Label(parent, 
+                         text=f"Database: {db_size:.1f} KB",
+                         font=("Arial", 10)).pack(anchor='w', pady=(0, 5))
+            else:
+                ttk.Label(parent, 
+                         text="Database: Not initialized",
+                         font=("Arial", 10),
+                         foreground="gray").pack(anchor='w', pady=(0, 5))
+            
+            # Project path info
+            path_parts = Path(self.project_path).parts
+            if len(path_parts) > 3:
+                short_path = "..." + "/".join(path_parts[-2:])
+            else:
+                short_path = str(self.project_path)
+            
+            ttk.Label(parent,
+                     text=f"Path: {short_path}",
+                     font=("Arial", 9),
+                     foreground="gray",
+                     wraplength=200).pack(anchor='w', pady=(0, 10))
+            
+            # Template info
+            if self.manifest.template:
+                ttk.Label(parent,
+                         text=f"Template: {self.manifest.template}",
+                         font=("Arial", 10)).pack(anchor='w', pady=(0, 5))
+            
+            # LLM provider info
+            if self.manifest.llm_provider:
+                ttk.Label(parent,
+                         text=f"LLM: {self.manifest.llm_provider}",
+                         font=("Arial", 10)).pack(anchor='w', pady=(0, 5))
+                if self.manifest.llm_default_model:
+                    ttk.Label(parent,
+                             text=f"Model: {self.manifest.llm_default_model[:20]}...",
+                             font=("Arial", 9),
+                             foreground="gray").pack(anchor='w')
+            
+        except Exception as e:
+            ttk.Label(parent, text=f"Error: {str(e)}",
+                     font=("Arial", 9),
+                     foreground="red").pack(anchor='w')

@@ -73,7 +73,7 @@ class ProjectWizardDialog(tk.Toplevel):
         titles = [
             "Step 1 of 4: Project Identity",
             "Step 2 of 4: Entity Schemas",
-            "Step 3 of 4: LLM Configuration",
+            "Step 3 of 4: LLM & Memory Configuration",
             "Step 4 of 4: Review & Create"
         ]
         self.step_label.config(text=titles[step])
@@ -190,12 +190,19 @@ class ProjectWizardDialog(tk.Toplevel):
         self.schema_builder.pack(fill=tk.BOTH, expand=True)
 
     def _create_step_llm(self):
-        """Step 3: LLM Configuration."""
+        """Step 3: LLM & Memory Configuration."""
         ttk.Label(
             self.content_frame,
-            text="Configure LLM provider settings:",
-            font=("Arial", 10)
+            text="Configure LLM provider and memory backend settings:",
+            font=("Arial", 10, "bold")
         ).pack(anchor=tk.W, pady=(0, 15))
+
+        # LLM Settings Section
+        ttk.Label(
+            self.content_frame,
+            text="LLM Configuration",
+            font=("Arial", 9, "bold")
+        ).pack(anchor=tk.W, pady=(5, 5))
 
         # Provider
         ttk.Label(self.content_frame, text="LLM Provider:").pack(anchor=tk.W, pady=5)
@@ -206,17 +213,68 @@ class ProjectWizardDialog(tk.Toplevel):
             textvariable=self.llm_provider_var,
             values=providers,
             state="readonly",
-            width=30
+            width=50
+        ).pack(anchor=tk.W, pady=(0, 10))
+
+        # Base URL (optional)
+        ttk.Label(self.content_frame, text="Base URL (optional):").pack(anchor=tk.W, pady=5)
+        self.llm_base_url_var = tk.StringVar(value=self.project_data.get("llm_base_url", ""))
+        ttk.Entry(self.content_frame, textvariable=self.llm_base_url_var, width=50).pack(anchor=tk.W, pady=(0, 5))
+        ttk.Label(
+            self.content_frame,
+            text="Uses provider default if empty",
+            foreground="gray",
+            font=("Arial", 8)
         ).pack(anchor=tk.W, pady=(0, 10))
 
         # Default Model
         ttk.Label(self.content_frame, text="Default Model:").pack(anchor=tk.W, pady=5)
         self.llm_default_model_var = tk.StringVar(value=self.project_data.get("llm_default_model", ""))
-        ttk.Entry(self.content_frame, textvariable=self.llm_default_model_var, width=50).pack(anchor=tk.W, pady=(0, 10))
-
+        ttk.Entry(self.content_frame, textvariable=self.llm_default_model_var, width=50).pack(anchor=tk.W, pady=(0, 5))
         ttk.Label(
             self.content_frame,
-            text="(e.g., 'anthropic/claude-sonnet-4-20250514' for OpenRouter)",
+            text="e.g., 'anthropic/claude-sonnet-4-20250514' for OpenRouter",
+            foreground="gray",
+            font=("Arial", 8)
+        ).pack(anchor=tk.W, pady=(0, 10))
+
+        # Fallback Model (optional)
+        ttk.Label(self.content_frame, text="Fallback Model (optional):").pack(anchor=tk.W, pady=5)
+        self.llm_fallback_model_var = tk.StringVar(value=self.project_data.get("llm_fallback_model", ""))
+        ttk.Entry(self.content_frame, textvariable=self.llm_fallback_model_var, width=50).pack(anchor=tk.W, pady=(0, 5))
+        ttk.Label(
+            self.content_frame,
+            text="Used if primary model is unavailable",
+            foreground="gray",
+            font=("Arial", 8)
+        ).pack(anchor=tk.W, pady=(0, 15))
+
+        # Memory Settings Section
+        ttk.Separator(self.content_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
+        ttk.Label(
+            self.content_frame,
+            text="Memory Backend Configuration",
+            font=("Arial", 9, "bold")
+        ).pack(anchor=tk.W, pady=(5, 5))
+
+        # Memory Backend
+        ttk.Label(self.content_frame, text="Memory Backend:").pack(anchor=tk.W, pady=5)
+        self.memory_backend_var = tk.StringVar(value=self.project_data.get("memory_backend", "chromadb_local"))
+        ttk.Combobox(
+            self.content_frame,
+            textvariable=self.memory_backend_var,
+            values=["chromadb_local", "chromadb_remote"],
+            state="readonly",
+            width=50
+        ).pack(anchor=tk.W, pady=(0, 10))
+
+        # Memory Collection ID
+        ttk.Label(self.content_frame, text="Memory Collection ID (optional):").pack(anchor=tk.W, pady=5)
+        self.memory_collection_id_var = tk.StringVar(value=self.project_data.get("memory_collection_id", ""))
+        ttk.Entry(self.content_frame, textvariable=self.memory_collection_id_var, width=50).pack(anchor=tk.W, pady=(0, 5))
+        ttk.Label(
+            self.content_frame,
+            text="Leave empty to auto-generate from project name",
             foreground="gray",
             font=("Arial", 8)
         ).pack(anchor=tk.W)
@@ -238,13 +296,21 @@ class ProjectWizardDialog(tk.Toplevel):
 
         summary = f"""Project Name: {self.project_data.get('name', 'N/A')}
 Author: {self.project_data.get('author', 'N/A')}
+Template: {self.project_data.get('template', 'None')}
 Location: {self.project_data.get('location', 'N/A')}
 
 Description:
 {self.project_data.get('description', 'N/A')}
 
-LLM Provider: {self.project_data.get('llm_provider', 'openrouter')}
-Default Model: {self.project_data.get('llm_default_model', 'Not specified')}
+LLM Configuration:
+• Provider: {self.project_data.get('llm_provider', 'openrouter')}
+• Base URL: {self.project_data.get('llm_base_url') or 'Default'}
+• Default Model: {self.project_data.get('llm_default_model', 'Not specified')}
+• Fallback Model: {self.project_data.get('llm_fallback_model') or 'None'}
+
+Memory Configuration:
+• Backend: {self.project_data.get('memory_backend', 'chromadb_local')}
+• Collection ID: {self.project_data.get('memory_collection_id') or 'Auto-generate'}
 
 Entity Schemas: {len(self.project_data.get('schemas', {}))} type(s) defined
 
@@ -277,7 +343,11 @@ The wizard will create:
             self.project_data["schemas"] = self.schema_builder.get_schemas()
         elif self.current_step == 2:
             self.project_data["llm_provider"] = self.llm_provider_var.get()
+            self.project_data["llm_base_url"] = self.llm_base_url_var.get().strip() or None
             self.project_data["llm_default_model"] = self.llm_default_model_var.get().strip()
+            self.project_data["llm_fallback_model"] = self.llm_fallback_model_var.get().strip() or None
+            self.project_data["memory_backend"] = self.memory_backend_var.get()
+            self.project_data["memory_collection_id"] = self.memory_collection_id_var.get().strip()
 
     def _validate_step(self) -> bool:
         """Validate current step data."""
@@ -299,6 +369,17 @@ The wizard will create:
                     "Create Directory",
                     f"Directory does not exist:\n{location}\n\nCreate it?",
                     parent=self
+                ):
+                    return False
+
+        elif self.current_step == 2:
+            # Warn if no default model specified (not blocking, just a warning)
+            if not self.project_data.get("llm_default_model"):
+                if not messagebox.askyesno(
+                    "Missing LLM Model",
+                    "No default LLM model specified. AI features will require manual configuration later.\n\nContinue anyway?",
+                    parent=self,
+                    icon="warning"
                 ):
                     return False
 
@@ -356,7 +437,11 @@ The wizard will create:
                 version="0.1.0",
                 entity_schemas=self.project_data.get("schemas", {}),
                 llm_provider=self.project_data.get("llm_provider", "openrouter"),
+                llm_base_url=self.project_data.get("llm_base_url"),
                 llm_default_model=self.project_data.get("llm_default_model", ""),
+                llm_fallback_model=self.project_data.get("llm_fallback_model"),
+                memory_backend=self.project_data.get("memory_backend", "chromadb_local"),
+                memory_collection_id=self.project_data.get("memory_collection_id", ""),
                 template=self.project_data.get("template"),
                 created_at=datetime.now(UTC),
                 last_modified_at=datetime.now(UTC)

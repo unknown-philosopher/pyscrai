@@ -43,8 +43,9 @@ app = typer.Typer(
 @app.command("gui")
 def launch_gui():
     """Launch the PyScrAI|Forge main application (landing page)."""
-    from pyscrai_forge.src.forge import main as reviewer_main
-    reviewer_main()
+    from pyscrai_forge.src.app.main_app import ReviewerApp
+    app_instance = ReviewerApp()
+    app_instance.root.mainloop()
 
 console = Console()
 DEFAULT_PROVIDER = get_default_provider_name()

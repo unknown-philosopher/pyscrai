@@ -18,7 +18,8 @@ Usage:
 from ..prompts.core import PromptTemplate
 from ..prompts.narrative import get_scout_prompt
 try:
-    from .forge import ReviewerApp, main as reviewer_main
+    from .app.main_app import ReviewerApp
+    reviewer_main = lambda *args, **kwargs: ReviewerApp(*args, **kwargs).root.mainloop()
 except ImportError:
     # If tkinter is missing (e.g. in headless CI/CD), we skip this import
     ReviewerApp = None

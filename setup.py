@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="pyscrai-forge",
-    version="0.9.8",
+    version="1.5",
     description="PyScrAI|Forge - Worldbuilding and entity extraction toolkit",
     author="Your Name",
     packages=find_packages(),
@@ -22,6 +22,8 @@ setup(
         # CLI tools (for Harvester)
         "typer>=0.9.0",
         "rich>=13.0.0",
+        # Graph layout (for Loom phase)
+        "networkx>=3.0",
         # GUI - Tkinter is built-in, Dear PyGui for advanced editing
         "dearpygui>=1.10.0",
         # Web framework (for Environment Editor API)

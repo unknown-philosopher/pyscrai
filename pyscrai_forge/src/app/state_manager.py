@@ -19,10 +19,60 @@ if TYPE_CHECKING:
 
 
 class AppState(Enum):
-    """Application states for UI navigation."""
+    """Application states for UI navigation.
+    
+    PyScrAI 2.0 introduces a sequential pipeline with 5 phases:
+    - PHASE_FOUNDRY: Entity extraction and staging
+    - PHASE_LOOM: Relationship mapping and graph visualization
+    - PHASE_CHRONICLE: Narrative synthesis with verification
+    - PHASE_CARTOGRAPHY: Spatial anchoring and map placement
+    - PHASE_ANVIL: Merge, conflict resolution, and finalization
+    """
     LANDING = "landing"
     DASHBOARD = "dashboard"
-    COMPONENT_EDITOR = "component_editor"
+    COMPONENT_EDITOR = "component_editor"  # Legacy, maps to PHASE_FOUNDRY
+    
+    # PyScrAI 2.0 Pipeline Phases
+    PHASE_FOUNDRY = "phase_foundry"
+    PHASE_LOOM = "phase_loom"
+    PHASE_CHRONICLE = "phase_chronicle"
+    PHASE_CARTOGRAPHY = "phase_cartography"
+    PHASE_ANVIL = "phase_anvil"
+
+
+# Phase ordering for navigation
+PHASE_STATES = [
+    AppState.PHASE_FOUNDRY,
+    AppState.PHASE_LOOM,
+    AppState.PHASE_CHRONICLE,
+    AppState.PHASE_CARTOGRAPHY,
+    AppState.PHASE_ANVIL,
+]
+
+
+def get_next_phase_state(current: AppState) -> AppState | None:
+    """Get the next phase state, or None if at end."""
+    if current not in PHASE_STATES:
+        return None
+    idx = PHASE_STATES.index(current)
+    if idx < len(PHASE_STATES) - 1:
+        return PHASE_STATES[idx + 1]
+    return None
+
+
+def get_previous_phase_state(current: AppState) -> AppState | None:
+    """Get the previous phase state, or None if at start."""
+    if current not in PHASE_STATES:
+        return None
+    idx = PHASE_STATES.index(current)
+    if idx > 0:
+        return PHASE_STATES[idx - 1]
+    return None
+
+
+def is_phase_state(state: AppState) -> bool:
+    """Check if a state is a pipeline phase."""
+    return state in PHASE_STATES
 
 
 class AppStateManager:
@@ -108,7 +158,18 @@ class AppStateManager:
         elif new_state == AppState.DASHBOARD:
             self._build_dashboard()
         elif new_state == AppState.COMPONENT_EDITOR:
-            self._build_component_editor()
+            # Legacy: redirect to PHASE_FOUNDRY
+            self._build_phase_foundry()
+        elif new_state == AppState.PHASE_FOUNDRY:
+            self._build_phase_foundry()
+        elif new_state == AppState.PHASE_LOOM:
+            self._build_phase_loom()
+        elif new_state == AppState.PHASE_CHRONICLE:
+            self._build_phase_chronicle()
+        elif new_state == AppState.PHASE_CARTOGRAPHY:
+            self._build_phase_cartography()
+        elif new_state == AppState.PHASE_ANVIL:
+            self._build_phase_anvil()
         
         # Update status bar
         self.update_status_bar()
@@ -186,7 +247,12 @@ class AppStateManager:
             on_browse_db=self.callbacks.get("browse_db"),
             on_settings=self.callbacks.get("project_settings"),
             on_browse_files=self.callbacks.get("browse_files"),
-            get_forge_manager=get_forge_manager
+            get_forge_manager=get_forge_manager,
+            on_go_to_foundry=lambda: self.transition_to(AppState.PHASE_FOUNDRY),
+            on_go_to_loom=lambda: self.transition_to(AppState.PHASE_LOOM),
+            on_go_to_chronicle=lambda: self.transition_to(AppState.PHASE_CHRONICLE),
+            on_go_to_cartography=lambda: self.transition_to(AppState.PHASE_CARTOGRAPHY),
+            on_go_to_anvil=lambda: self.transition_to(AppState.PHASE_ANVIL)
         )
         dashboard.pack(fill=tk.BOTH, expand=True)
     
@@ -365,6 +431,161 @@ class AppStateManager:
             state=tk.NORMAL if self.db_path else tk.DISABLED,
         )
         commit_button.pack(side=tk.RIGHT, padx=5)
+    
+    def _build_phase_foundry(self) -> None:
+        """Build Phase 1: FOUNDRY - Entity Extraction and Staging.
+        
+        Uses the dedicated FoundryPanel widget with:
+        - Entity staging to JSON (not direct DB)
+        - Phase navigation buttons
+        - Integration with StagingService
+        """
+        try:
+            from pyscrai_forge.phases.foundry.ui import FoundryPanel
+            
+            self.foundry_panel = FoundryPanel(
+                self.main_container,
+                project_path=self.project_path,
+                callbacks=self.callbacks
+            )
+            self.foundry_panel.pack(fill=tk.BOTH, expand=True)
+            
+            # Wire up the treeview references for data manager compatibility
+            self.entities_tree = self.foundry_panel.entities_tree
+            self.relationships_tree = self.foundry_panel.relationships_tree
+            
+        except ImportError:
+            # Fallback to legacy component editor if FoundryPanel not available
+            self._build_component_editor()
+    
+    def _build_phase_loom(self) -> None:
+        """Build Phase 2: LOOM - Relationship Mapping.
+        
+        Uses the dedicated LoomPanel widget with:
+        - Interactive node-link graph (networkx + tk.Canvas)
+        - Relationship editor panel
+        - Conflict detection alerts
+        """
+        try:
+            from pyscrai_forge.phases.loom.ui import LoomPanel
+            
+            self.loom_panel = LoomPanel(
+                self.main_container,
+                project_path=self.project_path,
+                callbacks=self.callbacks
+            )
+            self.loom_panel.pack(fill=tk.BOTH, expand=True)
+            
+        except ImportError:
+            # Fallback to placeholder if LoomPanel not available
+            placeholder = ttk.Frame(self.main_container)
+            placeholder.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+            
+            ttk.Label(placeholder, text="Phase 2: LOOM", font=("Arial", 18, "bold")).pack(pady=10)
+            ttk.Label(placeholder, text="Relationship Mapping & Graph Visualization", font=("Arial", 12)).pack(pady=5)
+            ttk.Label(placeholder, text="[LoomPanel not available - check imports]", font=("Arial", 10, "italic"), foreground="red").pack(pady=20)
+            
+            nav_frame = ttk.Frame(placeholder)
+            nav_frame.pack(pady=20)
+            ttk.Button(nav_frame, text="← Back to Foundry", command=lambda: self.transition_to(AppState.PHASE_FOUNDRY)).pack(side=tk.LEFT, padx=10)
+            ttk.Button(nav_frame, text="Proceed to Chronicle →", command=lambda: self.transition_to(AppState.PHASE_CHRONICLE)).pack(side=tk.LEFT, padx=10)
+    
+    def _build_phase_chronicle(self) -> None:
+        """Build Phase 3: CHRONICLE - Narrative Synthesis.
+        
+        Uses the dedicated ChroniclePanel widget with:
+        - Blueprint template selector
+        - Narrative generation with fact-checking
+        - Entity reference panel
+        """
+        try:
+            from pyscrai_forge.phases.chronicle.ui import ChroniclePanel
+            
+            self.chronicle_panel = ChroniclePanel(
+                self.main_container,
+                project_path=self.project_path,
+                callbacks=self.callbacks
+            )
+            self.chronicle_panel.pack(fill=tk.BOTH, expand=True)
+            
+        except ImportError:
+            # Fallback to placeholder
+            placeholder = ttk.Frame(self.main_container)
+            placeholder.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+            
+            ttk.Label(placeholder, text="Phase 3: CHRONICLE", font=("Arial", 18, "bold")).pack(pady=10)
+            ttk.Label(placeholder, text="Narrative Synthesis with Verification", font=("Arial", 12)).pack(pady=5)
+            ttk.Label(placeholder, text="[ChroniclePanel not available - check imports]", font=("Arial", 10, "italic"), foreground="red").pack(pady=20)
+            
+            nav_frame = ttk.Frame(placeholder)
+            nav_frame.pack(pady=20)
+            ttk.Button(nav_frame, text="← Back to Loom", command=lambda: self.transition_to(AppState.PHASE_LOOM)).pack(side=tk.LEFT, padx=10)
+            ttk.Button(nav_frame, text="Proceed to Cartography →", command=lambda: self.transition_to(AppState.PHASE_CARTOGRAPHY)).pack(side=tk.LEFT, padx=10)
+    
+    def _build_phase_cartography(self) -> None:
+        """Build Phase 4: CARTOGRAPHY - Spatial Anchoring.
+        
+        Uses the dedicated CartographyPanel widget with:
+        - Grid map canvas
+        - Entity placement via drag-and-drop
+        - Region management
+        """
+        try:
+            from pyscrai_forge.phases.cartography.ui import CartographyPanel
+            
+            self.cartography_panel = CartographyPanel(
+                self.main_container,
+                project_path=self.project_path,
+                callbacks=self.callbacks
+            )
+            self.cartography_panel.pack(fill=tk.BOTH, expand=True)
+            
+        except ImportError:
+            # Fallback to placeholder
+            placeholder = ttk.Frame(self.main_container)
+            placeholder.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+            
+            ttk.Label(placeholder, text="Phase 4: CARTOGRAPHY", font=("Arial", 18, "bold")).pack(pady=10)
+            ttk.Label(placeholder, text="Spatial Anchoring & Map Placement", font=("Arial", 12)).pack(pady=5)
+            ttk.Label(placeholder, text="[CartographyPanel not available - check imports]", font=("Arial", 10, "italic"), foreground="red").pack(pady=20)
+            
+            nav_frame = ttk.Frame(placeholder)
+            nav_frame.pack(pady=20)
+            ttk.Button(nav_frame, text="← Back to Chronicle", command=lambda: self.transition_to(AppState.PHASE_CHRONICLE)).pack(side=tk.LEFT, padx=10)
+            ttk.Button(nav_frame, text="Proceed to Anvil →", command=lambda: self.transition_to(AppState.PHASE_ANVIL)).pack(side=tk.LEFT, padx=10)
+    
+    def _build_phase_anvil(self) -> None:
+        """Build Phase 5: ANVIL - Finalization & Continuity.
+        
+        Uses the dedicated AnvilPanel widget with:
+        - Diff viewer (staging vs canon)
+        - Semantic duplicate detection
+        - Merge/Reject/Branch controls
+        - Provenance tracking
+        """
+        try:
+            from pyscrai_forge.phases.anvil.ui import AnvilPanel
+            
+            self.anvil_panel = AnvilPanel(
+                self.main_container,
+                project_path=self.project_path,
+                callbacks=self.callbacks
+            )
+            self.anvil_panel.pack(fill=tk.BOTH, expand=True)
+            
+        except ImportError:
+            # Fallback to placeholder
+            placeholder = ttk.Frame(self.main_container)
+            placeholder.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+            
+            ttk.Label(placeholder, text="Phase 5: ANVIL", font=("Arial", 18, "bold")).pack(pady=10)
+            ttk.Label(placeholder, text="Finalization & Continuity", font=("Arial", 12)).pack(pady=5)
+            ttk.Label(placeholder, text="[AnvilPanel not available - check imports]", font=("Arial", 10, "italic"), foreground="red").pack(pady=20)
+            
+            nav_frame = ttk.Frame(placeholder)
+            nav_frame.pack(pady=20)
+            ttk.Button(nav_frame, text="← Back to Cartography", command=lambda: self.transition_to(AppState.PHASE_CARTOGRAPHY)).pack(side=tk.LEFT, padx=10)
+            ttk.Button(nav_frame, text="Return to Dashboard", command=lambda: self.transition_to(AppState.DASHBOARD)).pack(side=tk.LEFT, padx=10)
     
     def update_status_bar(self) -> None:
         """Update the status bar with current project info."""
