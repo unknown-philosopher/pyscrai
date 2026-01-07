@@ -10,6 +10,7 @@ setup(
     install_requires=[
         # Core data modeling and validation
         "pydantic>=2.0.0",
+        "pydantic-ai-slim[sentence-transformers]",
         # Async HTTP client (for LLM providers)
         "httpx>=0.25.0",
         # Environment variables

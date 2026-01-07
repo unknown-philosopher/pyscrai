@@ -3,7 +3,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional, Any
 from pyscrai_core import ProjectManifest
 
 
@@ -17,7 +17,8 @@ class ProjectDashboardWidget(ttk.Frame):
                  on_edit_components: Callable[[], None],
                  on_browse_db: Callable[[], None],
                  on_settings: Callable[[], None],
-                 on_browse_files: Callable[[], None]):
+                 on_browse_files: Callable[[], None],
+                 get_forge_manager: Optional[Callable[[], Any]] = None):
         """
         Initialize project dashboard.
         
@@ -30,6 +31,7 @@ class ProjectDashboardWidget(ttk.Frame):
             on_browse_db: Callback for Browse Database button
             on_settings: Callback for Project Settings button
             on_browse_files: Callback for Browse Files button
+            get_forge_manager: Optional callback to get configured ForgeManager
         """
         super().__init__(parent)
         self.project_path = project_path
@@ -39,14 +41,32 @@ class ProjectDashboardWidget(ttk.Frame):
         self.on_browse_db = on_browse_db
         self.on_settings = on_settings
         self.on_browse_files = on_browse_files
+        self.get_forge_manager = get_forge_manager
         
         self._build_ui()
     
     def _build_ui(self):
-        """Build the dashboard UI."""
+        """Build the dashboard UI with tabs."""
+        # Create notebook for tabs
+        self.notebook = ttk.Notebook(self)
+        self.notebook.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Overview tab (original dashboard content)
+        overview_frame = ttk.Frame(self.notebook)
+        self.notebook.add(overview_frame, text="📊 Overview")
+        self._build_overview_tab(overview_frame)
+        
+        # Narrative Generator tab (only if ForgeManager is available)
+        if self.get_forge_manager:
+            narrative_frame = ttk.Frame(self.notebook)
+            self.notebook.add(narrative_frame, text="📖 Narrative")
+            self._build_narrative_tab(narrative_frame)
+    
+    def _build_overview_tab(self, parent):
+        """Build the original overview content."""
         # Main container with padding
-        main_container = ttk.Frame(self)
-        main_container.pack(expand=True, fill=tk.BOTH, padx=40, pady=20)
+        main_container = ttk.Frame(parent)
+        main_container.pack(expand=True, fill=tk.BOTH, padx=20, pady=10)
         
         # Project info card
         info_frame = ttk.LabelFrame(main_container, text="Project Information", padding=15)
@@ -67,7 +87,7 @@ class ProjectDashboardWidget(ttk.Frame):
         
         # Quick action buttons
         action_frame = ttk.Frame(main_container)
-        action_frame.pack(pady=30)
+        action_frame.pack(pady=20)
         
         # Import Data button
         import_btn = ttk.Button(
@@ -100,28 +120,57 @@ class ProjectDashboardWidget(ttk.Frame):
         )
         browse_btn.pack(side=tk.LEFT, padx=15)
         
-        # Stats panel
-        stats_frame = ttk.LabelFrame(main_container, text="Quick Stats", padding=15)
-        stats_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+        # Two-column layout for project stats and recent activity  
+        bottom_frame = ttk.Frame(main_container)
+        bottom_frame.pack(fill=tk.BOTH, expand=True, pady=20)
         
-        self._load_stats(stats_frame)
+        # Left column - Project Statistics
+        stats_frame = ttk.LabelFrame(bottom_frame, text="Project Statistics", padding=15)
+        stats_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+        self._load_project_stats(stats_frame)
         
-        # Recent imports
-        recent_frame = ttk.LabelFrame(main_container, text="Recent Imports", padding=15)
-        recent_frame.pack(fill=tk.X, pady=(0, 20))
-        
-        self._load_recent_imports(recent_frame)
+        # Right column - Recent Activity
+        activity_frame = ttk.LabelFrame(bottom_frame, text="Recent Imports", padding=15)
+        activity_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
+        self._load_recent_imports(activity_frame)
         
         # Bottom actions
-        bottom_frame = ttk.Frame(main_container)
-        bottom_frame.pack(fill=tk.X)
+        bottom_action_frame = ttk.Frame(main_container)
+        bottom_action_frame.pack(fill=tk.X, pady=(10, 0))
         
-        ttk.Button(bottom_frame, text="⚙️ Project Settings",
+        ttk.Button(bottom_action_frame, text="⚙️ Project Settings",
                   command=self.on_settings).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(bottom_frame, text="📂 Browse Files",
+        ttk.Button(bottom_action_frame, text="📂 Browse Files",
                   command=self.on_browse_files).pack(side=tk.LEFT)
     
-    def _load_stats(self, parent):
+    def _build_narrative_tab(self, parent):
+        """Build the narrative generator tab."""
+        try:
+            from pyscrai_forge.src.ui.widgets.narrative_panel import NarrativeGeneratorWidget
+            
+            narrative_widget = NarrativeGeneratorWidget(
+                parent,
+                self.project_path,
+                self.manifest,
+                self.get_forge_manager
+            )
+            narrative_widget.pack(fill=tk.BOTH, expand=True)
+            
+        except Exception as e:
+            # Fallback if narrative widget can't be created
+            error_frame = ttk.Frame(parent)
+            error_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+            
+            ttk.Label(error_frame, text="📖 Narrative Generator",
+                     font=("Arial", 16, "bold")).pack(anchor='w', pady=(0, 10))
+            
+            ttk.Label(error_frame, text="❌ Narrative generation is not available.",
+                     font=("Arial", 12), foreground="red").pack(anchor='w', pady=(0, 5))
+            
+            ttk.Label(error_frame, text=f"Error: {str(e)}",
+                     font=("Arial", 10), foreground="gray").pack(anchor='w')
+    
+    def _load_project_stats(self, parent):
         """Load and display database statistics."""
         try:
             from pyscrai_forge.src import storage

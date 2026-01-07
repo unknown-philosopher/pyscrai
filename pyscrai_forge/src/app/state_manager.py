@@ -135,6 +135,48 @@ class AppStateManager:
         
         from pyscrai_forge.src.ui.widgets.project_dashboard import ProjectDashboardWidget
         
+        # Create a factory function for ForgeManager
+        def get_forge_manager():
+            """Create and return a configured ForgeManager instance."""
+            try:
+                from pyscrai_forge.agents.manager import ForgeManager
+                from pyscrai_core.llm_interface import create_provider
+                import os
+                
+                # Get provider settings from project manifest
+                manifest = self.manifest
+                provider_name = manifest.llm_provider
+                
+                # Get API key from environment
+                env_key_map = {
+                    "openrouter": "OPENROUTER_API_KEY",
+                    "cherry": "CHERRY_API_KEY", 
+                    "lm_studio": "LM_STUDIO_API_KEY",
+                    "lm_proxy": "LM_PROXY_API_KEY",
+                }
+                
+                api_key = os.getenv(env_key_map.get(provider_name, "OPENROUTER_API_KEY"))
+                if not api_key:
+                    raise ValueError(f"No API key found for {provider_name}")
+                
+                # Create provider
+                provider = create_provider(
+                    provider_name,
+                    api_key=api_key,
+                    base_url=manifest.llm_base_url,
+                    timeout=60.0
+                )
+                
+                # Set default model
+                if hasattr(provider, 'default_model'):
+                    provider.default_model = manifest.llm_default_model
+                
+                # Create ForgeManager
+                return ForgeManager(provider, self.project_path)
+            except Exception as e:
+                # Return None if ForgeManager can't be created
+                return None
+        
         dashboard = ProjectDashboardWidget(
             self.main_container,
             project_path=self.project_path,
@@ -143,7 +185,8 @@ class AppStateManager:
             on_edit_components=self.callbacks.get("edit_components"),
             on_browse_db=self.callbacks.get("browse_db"),
             on_settings=self.callbacks.get("project_settings"),
-            on_browse_files=self.callbacks.get("browse_files")
+            on_browse_files=self.callbacks.get("browse_files"),
+            get_forge_manager=get_forge_manager
         )
         dashboard.pack(fill=tk.BOTH, expand=True)
     
