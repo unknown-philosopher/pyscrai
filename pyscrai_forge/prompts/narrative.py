@@ -101,6 +101,7 @@ Does the narrative accurately reflect the Source Data?
 """
     return system_prompt, user_prompt
 
+
 # =============================================================================
 # NARRATOR SYSTEM PROMPT
 # =============================================================================
@@ -412,6 +413,16 @@ DO NOT output the JSON inside a markdown block. Just the raw JSON object.
 {
     "tool": "possess_entity",
     "params": { "entity_id": "ent_..." }
+}
+
+6. Generate Project Narrative (Create Data-Driven Stories):
+{
+    "tool": "generate_narrative",
+    "params": { 
+        "mode": "sitrep|story|dossier|summary",
+        "focus": "Focus area...",
+        "entity_filter": "actor|polity|location" // optional
+    }
 }
 
 GUIDELINES:

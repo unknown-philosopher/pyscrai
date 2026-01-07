@@ -614,6 +614,77 @@ class ForgeManager:
         
         return await self.narrator.generate_scenario(corpus_data, project_config, focus)
 
+    async def generate_project_narrative(
+        self,
+        mode: Optional[str] = None,
+        focus: Optional[str] = None,
+        entity_filter: Optional[str] = None
+    ) -> str:
+        """Generate a narrative from project entities using the fact-checking loop.
+        
+        Args:
+            mode: Narrative mode (sitrep, story, dossier, summary). Auto-detected if None.
+            focus: Focus area for the narrative  
+            entity_filter: Optional entity type filter (actor, polity, location)
+            
+        Returns:
+            Generated narrative text
+        """
+        if not self.controller:
+            raise ValueError("No project loaded. Cannot generate narrative.")
+        
+        # Load entities from database
+        entities = storage.load_all_entities(self.controller.database_path)
+        
+        # Apply entity filter if specified
+        if entity_filter:
+            entities = [e for e in entities if e.descriptor.entity_type.value == entity_filter.lower()]
+        
+        if not entities:
+            return "No entities found to generate narrative from."
+        
+        # Convert entities to lightweight dicts
+        entity_dicts = []
+        for e in entities:
+            entity_dicts.append({
+                "id": e.id,
+                "name": e.descriptor.name,
+                "type": e.descriptor.entity_type.value,
+                "resources": json.loads(e.state.resources_json or "{}")
+            })
+        
+        # Load relationships (simplified for now)
+        relationships = []  # TODO: Load from database when relationship storage is implemented
+        
+        # Determine narrative mode with intelligent fallback
+        from pyscrai_forge.prompts.narrative import NarrativeMode
+        if mode:
+            mode_map = {
+                "sitrep": NarrativeMode.SITREP,
+                "story": NarrativeMode.STORY,
+                "dossier": NarrativeMode.DOSSIER,
+                "summary": NarrativeMode.SUMMARY
+            }
+            narrative_mode = mode_map.get(mode.lower(), NarrativeMode.SUMMARY)
+        else:
+            # Auto-detect based on entity count and types
+            actor_count = len([e for e in entities if e.descriptor.entity_type.value == "actor"])
+            polity_count = len([e for e in entities if e.descriptor.entity_type.value == "polity"])
+            
+            if actor_count > polity_count and actor_count <= 3:
+                narrative_mode = NarrativeMode.STORY  # Character-focused
+            elif polity_count > 0 or len(entities) > 5:
+                narrative_mode = NarrativeMode.SITREP  # Strategic overview
+            else:
+                narrative_mode = NarrativeMode.SUMMARY  # General summary
+        
+        focus_text = focus or "General Overview"
+        context = f"Project: {self.controller.manifest.name}\nEntities: {len(entities)}"
+        
+        return await self.narrator.generate_narrative(
+            entity_dicts, relationships, narrative_mode, focus_text, context
+        )
+
     async def handle_possession(self, entity_id: str, user_input: str) -> str:
         """Handle entity possession interaction.
         
@@ -658,6 +729,8 @@ class ForgeManager:
                 return self._tool_list_entities(params)
             if tool == "possess_entity":
                 return self._tool_possess_entity(params)
+            if tool == "generate_narrative":
+                return await self._tool_generate_narrative(params)
             return f"Unknown tool: {tool}"
         except Exception as e:
             return f"Technical Error: {str(e)}"
@@ -747,6 +820,21 @@ class ForgeManager:
         sys_prompt = build_possession_system_prompt(entity_data)
         self.possession_history = [{"role": "system", "content": sys_prompt}]
         return f"POSSESSION_STARTED:{target.descriptor.name}"
+
+    async def _tool_generate_narrative(self, params: dict) -> str:
+        """Generate a project narrative using the fact-checking loop."""
+        if not self.controller:
+            return "Error: No project loaded."
+        
+        mode = params.get("mode")
+        focus = params.get("focus")
+        entity_filter = params.get("entity_filter")
+        
+        try:
+            result = await self.generate_project_narrative(mode, focus, entity_filter)
+            return f"NARRATIVE_GENERATED\n\n{result}"
+        except Exception as e:
+            return f"Error generating narrative: {e}"
 
     def _exit_possession(self):
         """Exit possession mode."""

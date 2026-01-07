@@ -1,27 +1,35 @@
-"""The Narrator Agent: Responsible for weaving data into stories with fact-checking."""
+"""The Narrator Agent: Scenario generation and entity possession.
+
+This agent handles creative writing tasks: generating scenarios from entity data
+and roleplaying as entities for interactive simulation.
+"""
 
 import json
 import logging
-from typing import TYPE_CHECKING, List, Optional, Dict, Any
-from pyscrai_core import Entity, Relationship
+from typing import TYPE_CHECKING, Dict, Any, List, Optional
+
 from pyscrai_forge.prompts.narrative import (
+    build_scenario_prompt,
+    build_possession_system_prompt,
     build_narrative_prompt,
     build_verification_prompt,
-    NarrativeMode
+    NarrativeMode,
 )
 
 if TYPE_CHECKING:
+    from pyscrai_core import Entity, Relationship
     from pyscrai_core.llm_interface import LLMProvider
 
 logger = logging.getLogger(__name__)
 
+
 class NarratorAgent:
-    """Weaves entities and relationships into cohesive narratives with fact-checking loops.
-    
-    Capabilities:
-    - Multi-mode generation (SitRep, Story, Dossier)
-    - Self-correction (verifies output against source data)
-    - Entity possession (roleplay)
+    """Narrator agent for scenario generation and entity possession.
+
+    Enhancements:
+    - generate_narrative: multi-mode generation with a self-check loop
+    - generate_scenario: compatibility wrapper that uses generate_narrative
+    - possess_entity: roleplay using `complete_simple` for consistency
     """
 
     def __init__(self, provider: "LLMProvider", model: str | None = None):
@@ -30,107 +38,122 @@ class NarratorAgent:
 
     async def generate_narrative(
         self,
-        entities: List[Entity],
-        relationships: List[Relationship],
-        mode: NarrativeMode = NarrativeMode.SITREP,
+        entities: List[Dict[str, Any]],
+        relationships: List[Dict[str, Any]],
+        mode: NarrativeMode = NarrativeMode.SUMMARY,
         focus: str = "General Overview",
         context: str = ""
     ) -> str:
-        """Generate a narrative based on the provided data, with self-correction.
-        
+        """Generate a narrative with a verify-and-refine loop.
+
         Args:
-            entities: List of entities to include
-            relationships: List of relationships connecting them
-            mode: The style of narrative (SitRep, Story, etc.)
-            focus: Specific angle or topic to focus on
-            context: Additional background context
-            
+            entities: List of entity dictionaries (lightweight)
+            relationships: List of relationship dictionaries
+            mode: NarrativeMode to control tone/format
+            focus: Focus area for the narrative
+            context: Optional background context
+
         Returns:
-            Verified and refined narrative text
+            Verified narrative text
         """
-        # 1. Prepare Data
-        # Convert to lightweight dicts for the prompt to save tokens
-        entity_data = [
-            {
-                "name": e.descriptor.name,
-                "type": e.descriptor.entity_type.value,
-                "resources": json.loads(e.state.resources_json or "{}")
-            }
-            for e in entities
-        ]
-        
-        rel_data = [
-            {
-                "source": r.source_id, # In a real app, resolve names here for better prompting
-                "target": r.target_id,
-                "type": r.relationship_type.value,
-                "desc": r.description
-            }
-            for r in relationships
-        ]
-
-        # 2. Draft Phase
+        # Build prompts
         system_prompt, user_prompt = build_narrative_prompt(
-            entity_data, rel_data, mode, focus, context
-        )
-        
-        logger.info(f"Narrator: Generating draft in mode '{mode.value}'...")
-        draft = await self.provider.complete_simple(
-            prompt=user_prompt,
-            system_prompt=system_prompt,
-            model=self.model or self.provider.default_model,
-            temperature=0.7 # Higher temp for creativity
+            entities, relationships, mode, focus, context
         )
 
-        # 3. Verification Phase (The "Editor" Loop)
-        # We verify if the draft contradicts the hard data (e.g. wrong numbers/ranks)
-        logger.info("Narrator: Verifying draft against source data...")
-        
-        verify_sys, verify_user = build_verification_prompt(draft, entity_data)
-        critique = await self.provider.complete_simple(
-            prompt=verify_user,
-            system_prompt=verify_sys,
-            model=self.model or self.provider.default_model,
-            temperature=0.1 # Low temp for strict logic
-        )
+        model = self.model or self.provider.default_model
 
-        # 4. Refinement Phase (if needed)
-        if "PASS" in critique:
-            logger.info("Narrator: Draft passed verification.")
-            return draft
-        else:
-            logger.warning(f"Narrator: Draft failed verification. Critique: {critique}")
-            logger.info("Narrator: Refining draft...")
-            
+        try:
+            logger.info("Narrator: Generating draft...")
+            draft = await self.provider.complete_simple(
+                prompt=user_prompt,
+                system_prompt=system_prompt,
+                model=model,
+                temperature=0.7,
+            )
+
+            logger.info("Narrator: Verifying draft against source data...")
+            verify_sys, verify_user = build_verification_prompt(draft, entities)
+            critique = await self.provider.complete_simple(
+                prompt=verify_user,
+                system_prompt=verify_sys,
+                model=model,
+                temperature=0.1,
+            )
+
+            if critique and "PASS" in critique.upper():
+                logger.info("Narrator: Draft passed verification.")
+                return draft
+
+            # If verification failed, ask for a refined version
+            logger.warning("Narrator: Draft failed verification. Critique found. Refining...")
             refine_prompt = (
-                f"Original Request: {user_prompt}\n\n"
+                f"Original Request:\n{user_prompt}\n\n"
                 f"Draft Generated:\n{draft}\n\n"
                 f"Critique (Fact-Check Errors):\n{critique}\n\n"
                 f"Task: Rewrite the narrative to fix the errors pointed out in the critique. "
                 f"Maintain the style of a {mode.value}."
             )
-            
+
             final_version = await self.provider.complete_simple(
                 prompt=refine_prompt,
                 system_prompt=system_prompt,
-                model=self.model or self.provider.default_model,
-                temperature=0.5
+                model=model,
+                temperature=0.5,
             )
             return final_version
 
-    async def possess_entity(self, entity: Entity, user_input: str) -> str:
-        """Roleplay as a specific entity (existing functionality)."""
-        # (Keep your existing possession logic here or import it)
-        # For this refactor, I am focusing on the generation loop.
-        # Minimal implementation for compatibility:
-        from pyscrai_forge.prompts.narrative import build_possession_system_prompt
-        
+        except Exception as e:
+            logger.exception("Narrator: Error during narrative generation")
+            return f"Error generating narrative: {e}"
+
+    async def generate_scenario(
+        self,
+        corpus_data: List[Dict[str, Any]],
+        project_config: Dict[str, Any],
+        focus: Optional[str] = None
+    ) -> str:
+        """Backward-compatible wrapper used by ForgeManager.
+
+        Converts corpus_data (list of entity dicts) into the lightweight format
+        expected by `generate_narrative` and runs the verified generation loop.
+        """
+        # Convert corpus_data to lightweight entity dicts for prompting
+        entities = []
+        relationships = []
+        for item in corpus_data:
+            ent = {
+                "id": item.get("id"),
+                "name": item.get("descriptor", {}).get("name") if isinstance(item.get("descriptor"), dict) else item.get("name"),
+                "type": item.get("descriptor", {}).get("entity_type") if isinstance(item.get("descriptor"), dict) else item.get("entity_type"),
+                "resources": json.loads(item.get("state", {}).get("resources_json", "{}")) if isinstance(item.get("state"), dict) else item.get("resources", {})
+            }
+            entities.append(ent)
+
+        mode = NarrativeMode.SUMMARY
+        focus_text = focus or "General Overview"
+        context = f"Project Config:\n{json.dumps(project_config, indent=2)}"
+
+        return await self.generate_narrative(entities, relationships, mode=mode, focus=focus_text, context=context)
+
+    async def possess_entity(
+        self,
+        entity: "Entity",
+        user_input: str,
+        context_summary: str = ""
+    ) -> str:
+        """Roleplay as a specific entity (keeps previous behavior)."""
         entity_data = json.loads(entity.model_dump_json())
-        sys_prompt = build_possession_system_prompt(entity_data)
-        
-        response = await self.provider.complete_simple(
-            prompt=user_input,
-            system_prompt=sys_prompt,
-            model=self.model or self.provider.default_model
-        )
-        return response
+        sys_prompt = build_possession_system_prompt(entity_data, context_summary)
+
+        try:
+            response = await self.provider.complete_simple(
+                prompt=user_input,
+                system_prompt=sys_prompt,
+                model=self.model or self.provider.default_model,
+                temperature=0.8,
+            )
+            return response
+        except Exception as e:
+            logger.exception("Narrator: Error in possession")
+            return f"Error in possession: {e}"
