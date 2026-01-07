@@ -270,11 +270,11 @@ class ForgeManager:
         # PHASE 2: ANALYST (Entity Extraction & Refinement)
         # =================================================================
         console.print(f"[dim]--- [Phase 2] Analyzing {len(unique_stubs)} entities ---[/dim]")
-        tasks = []
+        enriched_entities = []
         for stub in unique_stubs:
             schema = manifest.entity_schemas.get(stub.entity_type.value, {})
-            tasks.append(self.analyst.extract_from_text(stub, text, schema))
-        enriched_entities = await asyncio.gather(*tasks)
+            entity = await self.analyst.extract_from_text(stub, text, schema)
+            enriched_entities.append(entity)
         console.print("Analysis complete.")
 
         # =================================================================
@@ -753,3 +753,49 @@ class ForgeManager:
         self.possession_target = None
         self.possession_history = []
         console.print("[blue]Returned to ForgeManager mode.[/blue]")
+
+    def _reindex_ids(self, entities: List[Entity], relationships: List[Relationship]) -> tuple[List[Entity], List[Relationship]]:
+        """Re-index entity and relationship IDs to start from 001 and be contiguous.
+
+        This ensures that the output files have clean, sequential IDs starting from 001,
+        even after alias resolution has removed entities and relationships.
+
+        Args:
+            entities: List of entities to re-index
+            relationships: List of relationships to re-index
+
+        Returns:
+            Tuple of (re-indexed entities, re-indexed relationships)
+        """
+        if not entities:
+            return entities, relationships
+
+        # Create ID mapping
+        id_map = {}
+
+        # Re-index entities
+        for i, entity in enumerate(entities, start=1):
+            new_id = f"ENTITY_{i:03d}"
+            id_map[entity.id] = new_id
+            entity.id = new_id
+
+        # Re-index relationships
+        for i, rel in enumerate(relationships, start=1):
+            new_id = f"REL_{i:03d}"
+            rel.id = new_id
+            # Update references to entities
+            if rel.source_id in id_map:
+                rel.source_id = id_map[rel.source_id]
+            if rel.target_id in id_map:
+                rel.target_id = id_map[rel.target_id]
+
+        # Update entity references within entities (e.g., spatial current_location_id, region_id)
+        for entity in entities:
+            if entity.spatial:
+                if entity.spatial.region_id and entity.spatial.region_id in id_map:
+                    entity.spatial.region_id = id_map[entity.spatial.region_id]
+                if entity.spatial.current_location_id and entity.spatial.current_location_id in id_map:
+                    entity.spatial.current_location_id = id_map[entity.spatial.current_location_id]
+
+        console.print(f"[dim]Re-indexed {len(entities)} entities and {len(relationships)} relationships to start from 001[/dim]")
+        return entities, relationships

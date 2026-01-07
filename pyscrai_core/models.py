@@ -34,7 +34,7 @@ from pydantic import BaseModel, Field, field_validator
 _id_counters: dict[str, int] = {}
 _id_lock = threading.Lock()
 _id_counters_path: Path | None = None
-_id_pattern = re.compile(r"^(?P<prefix>[A-Za-z]+)_0*(?P<num>\d+)$")
+_id_pattern = re.compile(r"^(?P<prefix>[A-Za-z]+)_(?P<num>\d+)$")
 def generate_intuitive_id(prefix: str) -> str:
     with _id_lock:
         if prefix not in _id_counters:
@@ -88,12 +88,18 @@ def seed_id_counter_from_value(id_value: str) -> None:
     Accepts IDs like REL_005 or rel_005; updates the counter so future
     generate_intuitive_id calls continue sequentially. No-op on parse failures.
     """
+    if not id_value:
+        return
+
     match = _id_pattern.match(id_value)
     if not match:
         return
 
     prefix = match.group("prefix").upper()
-    num = int(match.group("num"))
+    try:
+        num = int(match.group("num"))
+    except ValueError:
+        return
 
     with _id_lock:
         current = _id_counters.get(prefix, 0)

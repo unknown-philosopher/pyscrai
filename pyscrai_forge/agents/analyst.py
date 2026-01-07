@@ -223,12 +223,31 @@ class AnalystAgent:
         if stub.entity_type == EntityType.LOCATION:
             spatial = SpatialComponent(layer=LocationLayer.TERRESTRIAL)
 
-        # Factory
+        # Handle ID generation
+        # If stub ID is temporary (stub_), we let the Entity default factory generate a new proper ID.
+        # If stub ID looks persistent (e.g. from existing data), we keep it.
+        entity_id = stub.id
+        if entity_id.startswith("stub_"):
+            # Passing None to pydantic model's id field might be tricky if it has a default factory
+            # but expects a value if provided.
+            # Best approach: Don't pass 'id' kwarg if we want default generation.
+            
+            # Use factory methods without id argument to trigger default_factory
+            if stub.entity_type == EntityType.ACTOR:
+                return Actor(descriptor=descriptor, state=state, spatial=spatial)
+            elif stub.entity_type == EntityType.POLITY:
+                return Polity(descriptor=descriptor, state=state, spatial=spatial)
+            elif stub.entity_type == EntityType.LOCATION:
+                return Location(descriptor=descriptor, state=state, spatial=spatial)
+            else:
+                return Entity(descriptor=descriptor, state=state, spatial=spatial)
+        
+        # Factory with explicit ID
         if stub.entity_type == EntityType.ACTOR:
-            return Actor(id=stub.id, descriptor=descriptor, state=state, spatial=spatial)
+            return Actor(id=entity_id, descriptor=descriptor, state=state, spatial=spatial)
         elif stub.entity_type == EntityType.POLITY:
-            return Polity(id=stub.id, descriptor=descriptor, state=state, spatial=spatial)
+            return Polity(id=entity_id, descriptor=descriptor, state=state, spatial=spatial)
         elif stub.entity_type == EntityType.LOCATION:
-            return Location(id=stub.id, descriptor=descriptor, state=state, spatial=spatial)
+            return Location(id=entity_id, descriptor=descriptor, state=state, spatial=spatial)
         else:
-            return Entity(id=stub.id, descriptor=descriptor, state=state, spatial=spatial)
+            return Entity(id=entity_id, descriptor=descriptor, state=state, spatial=spatial)

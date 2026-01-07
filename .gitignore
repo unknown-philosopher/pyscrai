@@ -2,8 +2,8 @@ _workspace
 .github
 .cursor
 .env
-world.db
-/data/projects
+# world.db
+/data/projects/archive
 user_config.json
 /cherry_test
 
