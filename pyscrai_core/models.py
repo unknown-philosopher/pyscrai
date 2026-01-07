@@ -68,6 +68,20 @@ def set_id_counters_path(path: str | Path) -> None:
             _id_counters = {}
 
 
+def reset_id_counters() -> None:
+    """Reset all ID counters to 0 and persist to file if path is configured.
+    
+    This is useful when starting a new project or importing fresh data.
+    """
+    global _id_counters, _id_counters_path
+    _id_counters = {}
+    if _id_counters_path:
+        try:
+            _id_counters_path.write_text(json.dumps(_id_counters), encoding="utf-8")
+        except Exception:
+            pass
+
+
 def seed_id_counter_from_value(id_value: str) -> None:
     """Raise the counter for a prefix based on an existing ID value.
 

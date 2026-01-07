@@ -19,7 +19,7 @@ class RecentProject(BaseModel):
 
 class UserPreferences(BaseModel):
     """User preferences."""
-    auto_load_last_project: bool = False
+    auto_load_last_project: bool = True
     theme: str = "default"
 
 

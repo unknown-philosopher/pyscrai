@@ -72,6 +72,14 @@ class LandingPageWidget(ttk.Frame):
                             cursor="hand2")
         open_btn.pack(side=tk.LEFT, padx=15)
         
+        # Load Last Project button (only if there are recent projects)
+        if self.recent_projects:
+            last_proj_btn = ttk.Button(btn_frame, text="Load Last Project",
+                                command=lambda: self.on_open_recent(Path(self.recent_projects[0].path)),
+                                width=18,
+                                cursor="hand2")
+            last_proj_btn.pack(side=tk.LEFT, padx=15)
+        
         # Recent projects section
         if self.recent_projects:
             recent_label = ttk.Label(main_frame, text="Recent Projects",

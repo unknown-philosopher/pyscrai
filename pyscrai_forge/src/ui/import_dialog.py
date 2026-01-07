@@ -48,6 +48,14 @@ class ImportDialog(tk.Toplevel):
         self.status_var = tk.StringVar(value="Ready")
         ttk.Label(action_frame, textvariable=self.status_var).pack(side=tk.LEFT)
 
+        # Checkbox for resetting ID counters
+        self.reset_counters_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            action_frame,
+            text="Reset Component ID Counters",
+            variable=self.reset_counters_var
+        ).pack(side=tk.LEFT, padx=20)
+
         ttk.Button(action_frame, text="Process", command=self._process).pack(side=tk.RIGHT)
         ttk.Button(action_frame, text="Cancel", command=self.destroy).pack(side=tk.RIGHT, padx=5)
 
@@ -112,7 +120,13 @@ class ImportDialog(tk.Toplevel):
             return
 
         if self.on_import:
-            # Pass text, metadata, and file path back to caller
-            self.on_import(self.extracted_result.text, self.extracted_result.metadata, self.current_file_path)
+            # Pass text, metadata, file path, and reset_counters flag back to caller
+            reset_counters = self.reset_counters_var.get()
+            self.on_import(
+                self.extracted_result.text,
+                self.extracted_result.metadata,
+                self.current_file_path,
+                reset_counters
+            )
 
         self.destroy()

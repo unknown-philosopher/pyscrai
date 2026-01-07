@@ -97,7 +97,22 @@ class ReviewerApp:
                 self.logger.warning(f"Failed to load initial project: {project_path}")
                 self.state_manager.transition_to(AppState.LANDING)
         else:
-            self.state_manager.transition_to(AppState.LANDING)
+            # Auto-load last project if enabled and available
+            if self.user_config.preferences.auto_load_last_project and self.user_config.recent_projects:
+                last_project = self.user_config.recent_projects[0]
+                last_project_path = Path(last_project.path)
+                if last_project_path.exists():
+                    self.logger.info(f"Auto-loading last project: {last_project_path}")
+                    if self.project_controller.load_project(last_project_path, self.root):
+                        self.state_manager.transition_to(AppState.DASHBOARD)
+                    else:
+                        self.logger.warning(f"Failed to auto-load last project: {last_project_path}")
+                        self.state_manager.transition_to(AppState.LANDING)
+                else:
+                    self.logger.warning(f"Last project path does not exist: {last_project_path}")
+                    self.state_manager.transition_to(AppState.LANDING)
+            else:
+                self.state_manager.transition_to(AppState.LANDING)
         
         # Load packet if provided
         if packet_path and packet_path.exists():
@@ -278,14 +293,33 @@ class ReviewerApp:
         
         from pyscrai_forge.src.ui.import_dialog import ImportDialog
         
-        def on_import(text, metadata, file_path, interactive=False):
+        def on_import(text, metadata, file_path, reset_counters=False):
             # Use ForgeManager to extract entities
             import asyncio
             import threading
             from pyscrai_forge.agents.manager import ForgeManager
             from pyscrai_forge.prompts.core import Genre
-            from pyscrai_core.llm_interface.provider_factory import create_provider_from_env
+            from pyscrai_core.llm_interface import create_provider
             from pathlib import Path
+            import os
+            
+            # Get provider settings from project manifest instead of .env
+            # Reload manifest from disk to ensure we have the latest settings
+            self.project_controller._load_manifest()
+            manifest = self.project_controller.manifest
+            if not manifest:
+                messagebox.showerror("Error", "No project manifest found. Please create or load a project first.")
+                return
+            
+            # Get API key from environment (only API keys should remain in .env)
+            provider_name = manifest.llm_provider
+            env_key_map = {
+                "openrouter": "OPENROUTER_API_KEY",
+                "cherry": "CHERRY_API_KEY",
+                "lm_studio": "LM_STUDIO_API_KEY",
+                "lm_proxy": "LM_PROXY_API_KEY",
+            }
+            api_key = os.getenv(env_key_map.get(provider_name, ""), "not-needed")
             
             # Create progress dialog
             progress_win = tk.Toplevel(self.root)
@@ -312,23 +346,47 @@ class ReviewerApp:
             
             async def run_extraction():
                 try:
-                    update_progress("Connecting to LLM provider...", "This requires API key configuration")
-                    provider, model = create_provider_from_env()
+                    # Store provider and model for consistent display
+                    provider_name = manifest.llm_provider
+                    model_name = manifest.llm_default_model
+                    
+                    update_progress("Connecting to LLM provider...", 
+                                  f"Provider: {provider_name} | Model: {model_name}")
+                    
+                    # Create provider from project manifest settings
+                    provider = create_provider(
+                        provider_name,
+                        api_key=api_key,
+                        base_url=manifest.llm_base_url,
+                        timeout=60.0
+                    )
+                    
+                    # Store the default model on the provider
+                    if hasattr(provider, 'default_model'):
+                        provider.default_model = model_name
+                    
+                    model = model_name
                     
                     # Use current project path if available
                     project_path = None
                     if self.project_controller.current_project:
                         project_path = self.project_controller.current_project
                     
-                    async with provider:
-                        # Create HIL callback if interactive mode is enabled
-                        hil_callback = None
-                        if interactive:
-                            from pyscrai_forge.src.app import TkinterHIL
-                            hil = TkinterHIL(self.root)
-                            hil_callback = hil.callback
+                    # Reset ID counters if requested - do this AFTER getting project path
+                    # but BEFORE creating ForgeManager (which loads the project and counters)
+                    if reset_counters:
+                        from pyscrai_core import reset_id_counters
+                        from pyscrai_core.models import set_id_counters_path
                         
-                        manager = ForgeManager(provider, project_path=project_path, hil_callback=hil_callback)
+                        # Set the counters path first so reset can write to the file
+                        if project_path:
+                            set_id_counters_path(project_path / ".id_counters.json")
+                        
+                        reset_id_counters()
+                        update_progress("ID counters reset", "Starting from ENTITY_001 and REL_001")
+                    
+                    async with provider:
+                        manager = ForgeManager(provider, project_path=project_path, hil_callback=None)
                         
                         # Get the template from the project manifest if available
                         template_name = None
@@ -336,7 +394,7 @@ class ReviewerApp:
                             template_name = manager.controller.manifest.template
                         
                         # Run extraction pipeline (creates review packet)
-                        update_progress("Running extraction pipeline...", f"Model: {model or 'default'}")
+                        update_progress("Running extraction pipeline...", f"Provider: {provider_name} | Model: {model_name}")
                         import tempfile
                         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
                             tmp_path = Path(tmp.name)
@@ -351,7 +409,6 @@ class ReviewerApp:
                                 genre=Genre.GENERIC,
                                 output_path=tmp_path,
                                 template_name=template_name,
-                                interactive=interactive,
                                 verbose=verbose
                             )
                             
@@ -542,10 +599,33 @@ class ReviewerApp:
         user_proxy = None
         try:
             from pyscrai_forge.agents.user_proxy import UserProxyAgent
-            from pyscrai_core.llm_interface.provider_factory import create_provider_from_env
+            from pyscrai_core.llm_interface import create_provider
+            import os
             
-            provider, model = create_provider_from_env()
-            user_proxy = UserProxyAgent(provider, model)
+            # Get provider settings from project manifest
+            manifest = self.project_controller.manifest
+            if manifest:
+                provider_name = manifest.llm_provider
+                env_key_map = {
+                    "openrouter": "OPENROUTER_API_KEY",
+                    "cherry": "CHERRY_API_KEY",
+                    "lm_studio": "LM_STUDIO_API_KEY",
+                    "lm_proxy": "LM_PROXY_API_KEY",
+                }
+                api_key = os.getenv(env_key_map.get(provider_name, ""), "not-needed")
+                
+                provider = create_provider(
+                    manifest.llm_provider,
+                    api_key=api_key,
+                    base_url=manifest.llm_base_url,
+                    timeout=60.0
+                )
+                
+                if hasattr(provider, 'default_model'):
+                    provider.default_model = manifest.llm_default_model
+                
+                model = manifest.llm_default_model
+                user_proxy = UserProxyAgent(provider, model)
         except Exception as e:
             self.logger.warning(f"Could not create UserProxyAgent: {e}. Chat will be limited.")
         
