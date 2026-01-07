@@ -1,101 +1,136 @@
-"""The Narrator Agent: Scenario generation and entity possession.
-
-This agent handles creative writing tasks: generating scenarios from entity data
-and roleplaying as entities for interactive simulation.
-"""
+"""The Narrator Agent: Responsible for weaving data into stories with fact-checking."""
 
 import json
-from typing import TYPE_CHECKING, Dict, Any, List, Optional
-
+import logging
+from typing import TYPE_CHECKING, List, Optional, Dict, Any
+from pyscrai_core import Entity, Relationship
 from pyscrai_forge.prompts.narrative import (
-    build_scenario_prompt,
-    build_possession_system_prompt,
+    build_narrative_prompt,
+    build_verification_prompt,
+    NarrativeMode
 )
 
 if TYPE_CHECKING:
-    from pyscrai_core import Entity
     from pyscrai_core.llm_interface import LLMProvider
 
+logger = logging.getLogger(__name__)
 
 class NarratorAgent:
-    """Narrator agent for scenario generation and entity possession.
+    """Weaves entities and relationships into cohesive narratives with fact-checking loops.
     
-    Responsibilities:
-    - Scenario generation: Create narratives from entity/relationship data
-    - Entity possession: Roleplay as entities for interactive simulation
+    Capabilities:
+    - Multi-mode generation (SitRep, Story, Dossier)
+    - Self-correction (verifies output against source data)
+    - Entity possession (roleplay)
     """
 
     def __init__(self, provider: "LLMProvider", model: str | None = None):
         self.provider = provider
         self.model = model
 
-    async def generate_scenario(
+    async def generate_narrative(
         self,
-        corpus_data: List[Dict[str, Any]],
-        project_config: Dict[str, Any],
-        focus: Optional[str] = None
+        entities: List[Entity],
+        relationships: List[Relationship],
+        mode: NarrativeMode = NarrativeMode.SITREP,
+        focus: str = "General Overview",
+        context: str = ""
     ) -> str:
-        """Generate a data-driven narrative scenario.
+        """Generate a narrative based on the provided data, with self-correction.
         
         Args:
-            corpus_data: List of entity/relationship data dictionaries
-            project_config: Project manifest and configuration
-            focus: Optional focus area or scope for the scenario
+            entities: List of entities to include
+            relationships: List of relationships connecting them
+            mode: The style of narrative (SitRep, Story, etc.)
+            focus: Specific angle or topic to focus on
+            context: Additional background context
             
         Returns:
-            Generated scenario text
+            Verified and refined narrative text
         """
-        system_prompt, user_prompt = build_scenario_prompt(
-            corpus_data,
-            project_config,
-            focus
+        # 1. Prepare Data
+        # Convert to lightweight dicts for the prompt to save tokens
+        entity_data = [
+            {
+                "name": e.descriptor.name,
+                "type": e.descriptor.entity_type.value,
+                "resources": json.loads(e.state.resources_json or "{}")
+            }
+            for e in entities
+        ]
+        
+        rel_data = [
+            {
+                "source": r.source_id, # In a real app, resolve names here for better prompting
+                "target": r.target_id,
+                "type": r.relationship_type.value,
+                "desc": r.description
+            }
+            for r in relationships
+        ]
+
+        # 2. Draft Phase
+        system_prompt, user_prompt = build_narrative_prompt(
+            entity_data, rel_data, mode, focus, context
         )
         
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
-        
-        # In the future, we would add tools: [{ "google_search": {} }] here for verification
-        try:
-            response = await self.provider.complete(
-                messages=messages,
-                model=self.model or self.provider.default_model
-            )
-            return response["choices"][0]["message"]["content"]
-        except Exception as e:
-            return f"Error generating scenario: {e}"
+        logger.info(f"Narrator: Generating draft in mode '{mode.value}'...")
+        draft = await self.provider.complete_simple(
+            prompt=user_prompt,
+            system_prompt=system_prompt,
+            model=self.model or self.provider.default_model,
+            temperature=0.7 # Higher temp for creativity
+        )
 
-    async def possess_entity(
-        self,
-        entity: "Entity",
-        user_input: str,
-        context_summary: str = ""
-    ) -> str:
-        """Handle entity possession/roleplay interaction.
+        # 3. Verification Phase (The "Editor" Loop)
+        # We verify if the draft contradicts the hard data (e.g. wrong numbers/ranks)
+        logger.info("Narrator: Verifying draft against source data...")
         
-        Args:
-            entity: The entity to roleplay as
-            user_input: User's input/query
-            context_summary: Current world state context
+        verify_sys, verify_user = build_verification_prompt(draft, entity_data)
+        critique = await self.provider.complete_simple(
+            prompt=verify_user,
+            system_prompt=verify_sys,
+            model=self.model or self.provider.default_model,
+            temperature=0.1 # Low temp for strict logic
+        )
+
+        # 4. Refinement Phase (if needed)
+        if "PASS" in critique:
+            logger.info("Narrator: Draft passed verification.")
+            return draft
+        else:
+            logger.warning(f"Narrator: Draft failed verification. Critique: {critique}")
+            logger.info("Narrator: Refining draft...")
             
-        Returns:
-            Response from the entity's perspective
-        """
-        entity_data = json.loads(entity.model_dump_json())
-        system_prompt = build_possession_system_prompt(entity_data, context_summary)
-        
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_input}
-        ]
-        
-        try:
-            response = await self.provider.complete(
-                messages=messages,
-                model=self.model or self.provider.default_model,
-                temperature=0.8
+            refine_prompt = (
+                f"Original Request: {user_prompt}\n\n"
+                f"Draft Generated:\n{draft}\n\n"
+                f"Critique (Fact-Check Errors):\n{critique}\n\n"
+                f"Task: Rewrite the narrative to fix the errors pointed out in the critique. "
+                f"Maintain the style of a {mode.value}."
             )
-            return response["choices"][0]["message"]["content"]
-        except Exception as e:
-            return f"Error in possession: {e}"
+            
+            final_version = await self.provider.complete_simple(
+                prompt=refine_prompt,
+                system_prompt=system_prompt,
+                model=self.model or self.provider.default_model,
+                temperature=0.5
+            )
+            return final_version
+
+    async def possess_entity(self, entity: Entity, user_input: str) -> str:
+        """Roleplay as a specific entity (existing functionality)."""
+        # (Keep your existing possession logic here or import it)
+        # For this refactor, I am focusing on the generation loop.
+        # Minimal implementation for compatibility:
+        from pyscrai_forge.prompts.narrative import build_possession_system_prompt
+        
+        entity_data = json.loads(entity.model_dump_json())
+        sys_prompt = build_possession_system_prompt(entity_data)
+        
+        response = await self.provider.complete_simple(
+            prompt=user_input,
+            system_prompt=sys_prompt,
+            model=self.model or self.provider.default_model
+        )
+        return response

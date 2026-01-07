@@ -8,6 +8,99 @@ import json
 from typing import Dict, Any, Optional
 from .core import BASE_SYSTEM_PROMPT
 
+"""Prompt templates for the Narrator Agent."""
+
+from enum import Enum
+import json
+from typing import List, Dict, Any
+
+class NarrativeMode(Enum):
+    SITREP = "Situation Report (Formal, Military, Objective)"
+    STORY = "Creative Narrative (Dramatic, Character-Focused)"
+    DOSSIER = "Intelligence Dossier (Factual, Bulleted, analytical)"
+    SUMMARY = "Executive Summary (Concise, High-level)"
+
+def build_narrative_prompt(
+    entities: List[Dict],
+    relationships: List[Dict],
+    mode: NarrativeMode,
+    focus: str,
+    context: str
+) -> tuple[str, str]:
+    """Builds the prompt for generating the narrative."""
+    
+    system_prompt = f"""You are the Narrator, an advanced AI storyteller and analyst.
+Your Goal: Synthesize structured data into a cohesive text in the style of: {mode.value}.
+
+GUIDELINES for {mode.name}:
+"""
+
+    if mode == NarrativeMode.SITREP:
+        system_prompt += """
+- Use military/intelligence terminology.
+- Be precise, objective, and concise.
+- Focus on status, movements, and strategic implications.
+- Format with standard headers (e.g., SITUATION, ENTITIES, ASSESSMENT).
+"""
+    elif mode == NarrativeMode.STORY:
+        system_prompt += """
+- Use dramatic flair and sensory details.
+- Focus on the characters' perspectives and actions.
+- Show, don't just tell. Weave the data points into the plot naturally.
+"""
+    elif mode == NarrativeMode.DOSSIER:
+        system_prompt += """
+- Organize by subject.
+- Use bullet points for stats.
+- Highlight red flags or anomalies.
+"""
+
+    user_prompt = f"""
+DATA CONTEXT:
+{context}
+
+ENTITIES:
+{json.dumps(entities, indent=2)}
+
+RELATIONSHIPS:
+{json.dumps(relationships, indent=2)}
+
+TASK:
+Write a {mode.value} focusing on: "{focus}".
+Ensure all specific numbers (wealth, health, ranks) from the data are preserved accurately in the text.
+
+OUTPUT:
+"""
+    return system_prompt, user_prompt
+
+def build_verification_prompt(draft: str, source_data: List[Dict]) -> tuple[str, str]:
+    """Builds the prompt for the self-correction step."""
+    
+    system_prompt = """You are the Fact-Checker.
+Your Goal: Compare a generated narrative against the Source Data JSON.
+
+RULES:
+1. Verify Numbers: If JSON says "Wealth: 12000", narrative MUST NOT say "1000".
+2. Verify Ranks/Titles: If JSON says "Captain", narrative MUST NOT say "Lieutenant".
+3. Verify Status: If JSON says "Siege", narrative MUST NOT say "Peaceful".
+
+OUTPUT FORMAT:
+- If all facts match, output ONLY the word "PASS".
+- If there are errors, list them concisely (e.g., "Error: Narrative says 100 credits, Source says 500").
+"""
+
+    user_prompt = f"""
+SOURCE DATA:
+{json.dumps(source_data, indent=2)}
+
+GENERATED NARRATIVE:
+{draft}
+
+VERIFY:
+Does the narrative accurately reflect the Source Data?
+"""
+    return system_prompt, user_prompt
+
 # =============================================================================
 # NARRATOR SYSTEM PROMPT
 # =============================================================================
