@@ -219,14 +219,24 @@ class DataManager:
             event: Event object (optional)
             entity_id: Entity ID to edit (optional, uses selection if not provided)
         """
-        if not self.entities_tree or not self.root:
+        if not self.root:
             return
         
+        # If entity_id not provided, try to get from selection
         if not entity_id:
+            if not self.entities_tree:
+                return
             sel = self.entities_tree.selection()
             if not sel:
                 return
-            entity_id = sel[0]
+            # Get entity ID from the selected item's values (first column)
+            item = sel[0]
+            values = self.entities_tree.item(item, "values")
+            if values and len(values) > 0:
+                entity_id = values[0]  # ID is first column
+            else:
+                # Fallback: use item ID as entity ID (legacy behavior)
+                entity_id = item
         
         ent = next((e for e in self.entities if e.id == entity_id), None)
         if not ent:

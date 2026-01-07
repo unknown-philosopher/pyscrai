@@ -188,9 +188,10 @@ class ForgeManager:
         output_path: Optional[Path] = None,
         template_name: Optional[str] = None,
         interactive: bool = False,
-        verbose: bool = False
+        verbose: bool = False,
+        extract_relationships: bool = True
     ) -> str:
-        """Run the full extraction pipeline: Scout → Analyst → Relationships → Save.
+        """Run the extraction pipeline: Scout → Analyst → (Relationships) → Save.
         
         Can run automated (non-interactive) or with pauses for human review (interactive).
         
@@ -201,6 +202,7 @@ class ForgeManager:
             template_name: Optional custom template directory name to use
             interactive: If True and hil_callback is available, pauses for human review
             verbose: If True, enables DEBUG level logging to show prompts and responses
+            extract_relationships: If False, skip relationship extraction (for Foundry phase)
             
         Returns:
             Path to the generated review packet JSON file
@@ -224,14 +226,15 @@ class ForgeManager:
         
         # For now, treat both interactive and non-interactive the same
         # The hil_callback is stored and can be used by _run_extraction_pipeline_impl if needed
-        return await self._run_extraction_pipeline_impl(text, genre, output_path, template_name)
+        return await self._run_extraction_pipeline_impl(text, genre, output_path, template_name, extract_relationships)
     
     async def _run_extraction_pipeline_impl(
         self,
         text: str,
         genre: Genre,
         output_path: Optional[Path],
-        template_name: Optional[str] = None
+        template_name: Optional[str] = None,
+        extract_relationships: bool = True
     ) -> str:
         """Internal extraction pipeline - automated, no pauses."""
         import asyncio
@@ -280,49 +283,59 @@ class ForgeManager:
         # =================================================================
         # PHASE 3: RELATIONSHIPS (Mapping connections between entities)
         # =================================================================
-        console.print("[dim]--- [Phase 3] Mapping Relationships ---[/dim]")
-        ent_dicts = [
-            {
-                "id": e.id,
-                "name": e.descriptor.name,
-                "entity_type": e.descriptor.entity_type.value,
-                "description": e.descriptor.bio
-            }
-            for e in enriched_entities
-        ]
-        rel_system_prompt, rel_user_prompt = get_relationship_prompt(text, ent_dicts, genre)
+        relationships = []
+        if extract_relationships:
+            console.print("[dim]--- [Phase 3] Mapping Relationships ---[/dim]")
+            ent_dicts = [
+                {
+                    "id": e.id,
+                    "name": e.descriptor.name,
+                    "entity_type": e.descriptor.entity_type.value,
+                    "description": e.descriptor.bio
+                }
+                for e in enriched_entities
+            ]
+            rel_system_prompt, rel_user_prompt = get_relationship_prompt(text, ent_dicts, genre)
 
-        # Verbose logging: Show relationship prompts
-        logger.debug("=" * 80)
-        logger.debug("RELATIONSHIP EXTRACTION")
-        logger.debug("=" * 80)
-        logger.debug(f"Model: {self.provider.default_model}")
-        logger.debug(f"Temperature: 0.1")
-        logger.debug(f"Entities: {len(ent_dicts)}")
-        logger.debug("\n--- SYSTEM PROMPT ---")
-        logger.debug(rel_system_prompt)
-        logger.debug("\n--- USER PROMPT ---")
-        logger.debug(rel_user_prompt)
-        logger.debug("\n--- Sending request to LLM ---")
+            # Verbose logging: Show relationship prompts
+            logger.debug("=" * 80)
+            logger.debug("RELATIONSHIP EXTRACTION")
+            logger.debug("=" * 80)
+            logger.debug(f"Model: {self.provider.default_model}")
+            logger.debug(f"Temperature: 0.1")
+            logger.debug(f"Entities: {len(ent_dicts)}")
+            logger.debug("\n--- SYSTEM PROMPT ---")
+            logger.debug(rel_system_prompt)
+            logger.debug("\n--- USER PROMPT ---")
+            logger.debug(rel_user_prompt)
+            logger.debug("\n--- Sending request to LLM ---")
 
-        relationships = await self._extract_relationships_with_prompts(
-            rel_system_prompt,
-            rel_user_prompt
-        )
+            relationships = await self._extract_relationships_with_prompts(
+                rel_system_prompt,
+                rel_user_prompt
+            )
 
-        # Verbose logging: Show relationship results
-        logger.debug(f"\n--- Found {len(relationships)} relationships ---")
-        for rel in relationships:
-            logger.debug(f"  {rel.source_id} --[{rel.relationship_type.value}]--> {rel.target_id}")
-        logger.debug("=" * 80)
+            # Verbose logging: Show relationship results
+            logger.debug(f"\n--- Found {len(relationships)} relationships ---")
+            for rel in relationships:
+                logger.debug(f"  {rel.source_id} --[{rel.relationship_type.value}]--> {rel.target_id}")
+            logger.debug("=" * 80)
 
-        console.print(f"Found {len(relationships)} relationships.")
+            console.print(f"Found {len(relationships)} relationships.")
 
-        # =================================================================
-        # NEW PHASE: ALIAS RESOLUTION (Merging Duplicates)
-        # =================================================================
-        console.print("[dim]--- [Phase 3.5] Resolving Aliases ---[/dim]")
-        enriched_entities = self._resolve_aliases(enriched_entities, relationships)
+            # =================================================================
+            # NEW PHASE: ALIAS RESOLUTION (Merging Duplicates)
+            # =================================================================
+            console.print("[dim]--- [Phase 3.5] Resolving Aliases ---[/dim]")
+            enriched_entities = self._resolve_aliases(enriched_entities, relationships)
+        else:
+            console.print("[dim]--- [Phase 3] Skipping Relationships (Foundry mode) ---[/dim]")
+            
+            # =================================================================
+            # NEW PHASE: ALIAS RESOLUTION (Merging Duplicates) - Also run in Foundry mode
+            # =================================================================
+            console.print("[dim]--- [Phase 3.5] Resolving Aliases (Foundry mode) ---[/dim]")
+            enriched_entities = self._resolve_aliases(enriched_entities, [])
 
         # Validate
         console.print("[dim]--- [Phase 4] Validation ---[/dim]")
@@ -358,10 +371,15 @@ class ForgeManager:
 
         return str(output_path)
     def _resolve_aliases(self, entities: List[Entity], relationships: List[Relationship]) -> List[Entity]:
-        """Merges entities that are identified as the same person/object."""
+        """Merges entities that are identified as the same person/object.
+        
+        Detects aliases through:
+        1. Relationships with alias indicators (when relationships exist)
+        2. Entity descriptions/bios that mention other entity names (always available)
+        """
         alias_map = {} # source_id -> target_id (The 'Master' entity)
 
-        # 1. Identify "Alias" relationships
+        # 1. Identify "Alias" relationships (if relationships were extracted)
         # Check for various terms that indicate entity identity/alias relationships
         alias_keywords = [
             "alias", "same as", "same person", "same entity", "same object",
@@ -369,7 +387,9 @@ class ForgeManager:
             "code name", "codename", "code-name",
             "also known as", "aka", "a.k.a.",
             "nickname", "handle", "pseudonym",
-            "identified as"  # e.g., "Viper is identified as Captain Elena Rossi"
+            "identified as",  # e.g., "Viper is identified as Captain Elena Rossi"
+            "operating under", "operating under the",  # e.g., "operating under the codename"
+            "codename for", "alias for"  # e.g., "alias for Marcus Thorne"
         ]
         
         # Track alias relationships to remove them after merging (they've served their purpose)
@@ -412,6 +432,87 @@ class ForgeManager:
                 alias_map[rel.source_id] = rel.target_id
                 alias_relationships_to_remove.append(rel)
                 logger.info(f"ForgeManager: Found alias relationship {rel.source_id} -> {rel.target_id} (description: '{rel.description}')")
+
+        # 1b. Detect aliases from entity descriptions/bios (works even without relationships)
+        # This is especially useful for Foundry mode where relationships aren't extracted
+        entity_by_name = {e.descriptor.name.lower(): e for e in entities}
+        
+        for entity in entities:
+            if entity.id in alias_map:  # Already mapped via relationship
+                continue
+                
+            bio_lower = (entity.descriptor.bio or "").lower()
+            name_lower = entity.descriptor.name.lower()
+            
+            # Check if bio mentions another entity name (indicating alias/identity)
+            # Patterns like: "identified as X", "alias for X", "codename for X", "operating under the alias/codename X"
+            for other_name, other_entity in entity_by_name.items():
+                if other_entity.id == entity.id:  # Skip self
+                    continue
+                if other_entity.id in alias_map:  # Skip if already mapped
+                    continue
+                
+                # Check if this entity's bio mentions the other entity name
+                # and contains alias keywords
+                if other_name in bio_lower:
+                    # Escape name but allow flexible whitespace (handle multi-word names)
+                    # Replace escaped spaces with \s+ pattern
+                    escaped_name = re.escape(other_name).replace('\\ ', '\\s+')
+                    
+                    # Check for alias patterns in bio
+                    patterns = [
+                        rf"identified\s+as\s+{escaped_name}",
+                        rf"alias\s+for\s+{escaped_name}",
+                        rf"alias\s+used\s+by\s+{escaped_name}",
+                        rf"alias\s+of\s+{escaped_name}",
+                        rf"codename\s+for\s+{escaped_name}",
+                        rf"codename\s+used\s+by\s+{escaped_name}",
+                        rf"codename\s+of\s+{escaped_name}",
+                        rf"codename[:\s]+{escaped_name}",
+                        rf"operating\s+under\s+(?:the\s+)?(?:alias|codename|callsign)\s+{escaped_name}",
+                        rf"call(?:s|-)?sign[:\s]+{escaped_name}",
+                        rf"also\s+known\s+as\s+{escaped_name}",
+                        rf"aka\s+{escaped_name}",
+                        rf"a\.k\.a\.\s+{escaped_name}",
+                    ]
+                    
+                    for pattern in patterns:
+                        if re.search(pattern, bio_lower, re.IGNORECASE):
+                            # The mentioned entity is the canonical one
+                            alias_map[entity.id] = other_entity.id
+                            logger.info(f"ForgeManager: Found alias from bio: '{entity.descriptor.name}' -> '{other_entity.descriptor.name}' (pattern: '{pattern}')")
+                            break
+                
+                # Also check reverse: if other entity's bio mentions this entity name
+                other_bio_lower = (other_entity.descriptor.bio or "").lower()
+                if name_lower in other_bio_lower and entity.id not in alias_map:
+                    # Escape name but allow flexible whitespace (handle multi-word names)
+                    # Replace escaped spaces with \s+ pattern
+                    escaped_name = re.escape(name_lower).replace('\\ ', '\\s+')
+                    
+                    # Check if other entity's bio indicates this entity is an alias
+                    reverse_patterns = [
+                        rf"identified\s+as\s+{escaped_name}",
+                        rf"alias\s+for\s+{escaped_name}",
+                        rf"alias\s+used\s+by\s+{escaped_name}",
+                        rf"alias\s+of\s+{escaped_name}",
+                        rf"codename\s+for\s+{escaped_name}",
+                        rf"codename\s+used\s+by\s+{escaped_name}",
+                        rf"codename\s+of\s+{escaped_name}",
+                        rf"codename[:\s]+{escaped_name}",
+                        rf"operating\s+under\s+(?:the\s+)?(?:alias|codename|callsign)\s+{escaped_name}",
+                        rf"call(?:s|-)?sign[:\s]+{escaped_name}",
+                        rf"also\s+known\s+as\s+{escaped_name}",
+                        rf"aka\s+{escaped_name}",
+                        rf"a\.k\.a\.\s+{escaped_name}",
+                    ]
+                    
+                    for pattern in reverse_patterns:
+                        if re.search(pattern, other_bio_lower, re.IGNORECASE):
+                            # This entity is the alias, other is canonical
+                            alias_map[entity.id] = other_entity.id
+                            logger.info(f"ForgeManager: Found alias from reverse bio: '{entity.descriptor.name}' -> '{other_entity.descriptor.name}'")
+                            break
 
         if not alias_map:
             console.print("[dim]No aliases detected.[/dim]")

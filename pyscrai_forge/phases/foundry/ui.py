@@ -9,7 +9,7 @@ from __future__ import annotations
 import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, Callable, Optional, List
+from typing import TYPE_CHECKING, Callable, Optional, List, Any
 
 if TYPE_CHECKING:
     from pyscrai_core import Entity, Relationship
@@ -48,13 +48,16 @@ class FoundryPanel(ttk.Frame):
         
         # Data references (will be set by parent)
         self.entities: List["Entity"] = []
-        self.relationships: List["Relationship"] = []
+        self.relationships: List["Relationship"] = []  # Not used in Foundry, but kept for compatibility
         self.validation_report: dict = {}
         
         # UI components
         self.entities_tree: Optional[ttk.Treeview] = None
-        self.relationships_tree: Optional[ttk.Treeview] = None
+        self.relationships_tree: Optional[ttk.Treeview] = None  # Not used in Foundry
         self.validation_label: Optional[ttk.Label] = None
+        
+        # Data manager reference (set by state_manager for entity editing)
+        self.data_manager: Optional[Any] = None
         
         self._build_ui()
     
@@ -88,24 +91,262 @@ class FoundryPanel(ttk.Frame):
         )
         self.validation_label.pack(side=tk.LEFT)
         
-        # Main content paned window
-        paned = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
-        paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        # Main content area with horizontal paned window
+        main_paned = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
+        main_paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
-        # Left: Entities panel
-        entities_frame = ttk.Frame(paned)
-        paned.add(entities_frame, weight=2)
+        # Left: Source Data Pool
+        source_frame = ttk.Frame(main_paned)
+        main_paned.add(source_frame, weight=1)
+        self._build_source_pool_panel(source_frame)
         
+        # Right: Entities
+        entities_frame = ttk.Frame(main_paned)
+        main_paned.add(entities_frame, weight=2)
         self._build_entities_panel(entities_frame)
-        
-        # Right: Relationships panel
-        rel_frame = ttk.Frame(paned)
-        paned.add(rel_frame, weight=1)
-        
-        self._build_relationships_panel(rel_frame)
         
         # Bottom action bar
         self._build_action_bar()
+    
+    def _build_source_pool_panel(self, parent: ttk.Frame) -> None:
+        """Build the source data pool panel."""
+        # Header
+        header_frame = ttk.Frame(parent)
+        header_frame.pack(fill=tk.X, pady=(0, 5))
+        
+        ttk.Label(
+            header_frame,
+            text="Source Data Pool",
+            font=("Segoe UI", 12, "bold")
+        ).pack(side=tk.LEFT)
+        
+        self.source_count_label = ttk.Label(
+            header_frame,
+            text="(0 sources)",
+            font=("Segoe UI", 10),
+            foreground="gray"
+        )
+        self.source_count_label.pack(side=tk.LEFT, padx=(10, 0))
+        
+        # Toolbar
+        toolbar = ttk.Frame(parent)
+        toolbar.pack(fill=tk.X, pady=(0, 5))
+        
+        ttk.Button(
+            toolbar,
+            text="Add Files...",
+            command=self._on_add_sources
+        ).pack(side=tk.LEFT, padx=2)
+        
+        ttk.Button(
+            toolbar,
+            text="Toggle Active",
+            command=self._on_toggle_source_active
+        ).pack(side=tk.LEFT, padx=2)
+        
+        ttk.Button(
+            toolbar,
+            text="Remove",
+            command=self._on_remove_source
+        ).pack(side=tk.LEFT, padx=2)
+        
+        # Source list treeview
+        tree_frame = ttk.Frame(parent)
+        tree_frame.pack(fill=tk.BOTH, expand=True)
+        
+        columns = ("filename", "chars", "status", "active")
+        self.sources_tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=8)
+        
+        self.sources_tree.heading("filename", text="Source File")
+        self.sources_tree.heading("chars", text="Chars")
+        self.sources_tree.heading("status", text="Status")
+        self.sources_tree.heading("active", text="Active")
+        
+        self.sources_tree.column("filename", width=150)
+        self.sources_tree.column("chars", width=60)
+        self.sources_tree.column("status", width=70)
+        self.sources_tree.column("active", width=50)
+        
+        # Tag for inactive sources
+        self.sources_tree.tag_configure("inactive", foreground="gray")
+        self.sources_tree.tag_configure("extracted", foreground="#4a9eff")
+        
+        self.sources_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        source_scroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.sources_tree.yview)
+        source_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.sources_tree.config(yscrollcommand=source_scroll.set)
+        
+        # Bind double-click to toggle active
+        self.sources_tree.bind("<Double-1>", lambda e: self._on_toggle_source_active())
+        
+        # Re-extract button at bottom
+        extract_frame = ttk.Frame(parent)
+        extract_frame.pack(fill=tk.X, pady=(5, 0))
+        
+        ttk.Button(
+            extract_frame,
+            text="Extract from Active Sources",
+            command=self._on_extract_from_sources
+        ).pack(fill=tk.X)
+        
+        # Load existing sources
+        self._refresh_sources_list()
+    
+    def _refresh_sources_list(self) -> None:
+        """Refresh the sources list from staging."""
+        if not self.project_path:
+            return
+        
+        try:
+            from pyscrai_forge.src.staging import StagingService
+            staging = StagingService(self.project_path)
+            sources = staging.get_all_sources()
+            
+            # Clear current items
+            for item in self.sources_tree.get_children():
+                self.sources_tree.delete(item)
+            
+            # Add sources
+            active_count = 0
+            for source in sources:
+                tags = []
+                if not source.get("active", True):
+                    tags.append("inactive")
+                elif source.get("extracted", False):
+                    tags.append("extracted")
+                else:
+                    active_count += 1
+                
+                if source.get("active", True):
+                    active_count += 1
+                
+                self.sources_tree.insert("", tk.END, iid=source["id"], values=(
+                    source.get("original_filename", source["id"]),
+                    f"{source.get('char_count', 0):,}",
+                    "Extracted" if source.get("extracted") else "Ready",
+                    "✓" if source.get("active", True) else "✗"
+                ), tags=tuple(tags))
+            
+            # Update count
+            total = len(sources)
+            active = sum(1 for s in sources if s.get("active", True))
+            self.source_count_label.config(text=f"({active}/{total} active)")
+            
+        except Exception as e:
+            print(f"Error loading sources: {e}")
+    
+    def _on_add_sources(self) -> None:
+        """Add new source files."""
+        from tkinter import filedialog
+        
+        formats = [
+            ("All Supported", "*.pdf *.html *.htm *.docx *.png *.jpg *.jpeg *.txt *.md"),
+            ("Text Files", "*.txt *.md"),
+            ("PDF Files", "*.pdf"),
+            ("Word Files", "*.docx"),
+            ("HTML Files", "*.html *.htm"),
+            ("Images", "*.png *.jpg *.jpeg"),
+            ("All Files", "*.*")
+        ]
+        
+        filenames = filedialog.askopenfilenames(parent=self, filetypes=formats)
+        if not filenames or not self.project_path:
+            return
+        
+        from pyscrai_forge.src.staging import StagingService
+        from pyscrai_forge.src.converters import create_registry, ConversionResult
+        
+        staging = StagingService(self.project_path)
+        registry = create_registry()
+        
+        added = 0
+        for filename in filenames:
+            path = Path(filename)
+            try:
+                # Convert file to text
+                if path.suffix.lower() in ('.txt', '.md'):
+                    with open(path, 'r', encoding='utf-8') as f:
+                        text = f.read()
+                    result = ConversionResult(text=text, metadata={})
+                else:
+                    result = registry.convert(path)
+                
+                if result.error:
+                    messagebox.showerror("Error", f"Failed to convert {path.name}: {result.error}")
+                    continue
+                
+                # Save to source pool
+                staging.save_source_file(
+                    file_path=path,
+                    text_content=result.text,
+                    metadata=result.metadata,
+                    active=True
+                )
+                added += 1
+                
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to add {path.name}: {e}")
+        
+        if added > 0:
+            self._refresh_sources_list()
+            messagebox.showinfo("Sources Added", f"Added {added} source file(s) to the pool.")
+    
+    def _on_toggle_source_active(self) -> None:
+        """Toggle active status for selected sources."""
+        selection = self.sources_tree.selection()
+        if not selection or not self.project_path:
+            return
+        
+        from pyscrai_forge.src.staging import StagingService
+        staging = StagingService(self.project_path)
+        
+        for source_id in selection:
+            try:
+                # Get current state
+                sources = staging.get_all_sources()
+                source = next((s for s in sources if s["id"] == source_id), None)
+                if source:
+                    new_active = not source.get("active", True)
+                    staging.set_source_active(source_id, new_active)
+            except Exception as e:
+                print(f"Error toggling source {source_id}: {e}")
+        
+        self._refresh_sources_list()
+    
+    def _on_remove_source(self) -> None:
+        """Remove selected sources from the pool."""
+        selection = self.sources_tree.selection()
+        if not selection or not self.project_path:
+            return
+        
+        if not messagebox.askyesno("Confirm Removal", 
+            f"Remove {len(selection)} source(s) from the pool?\n\nThis will not affect already-extracted entities."):
+            return
+        
+        from pyscrai_forge.src.staging import StagingService
+        staging = StagingService(self.project_path)
+        
+        for source_id in selection:
+            try:
+                staging.delete_source(source_id)
+            except Exception as e:
+                print(f"Error removing source {source_id}: {e}")
+        
+        self._refresh_sources_list()
+    
+    def _on_extract_from_sources(self) -> None:
+        """Trigger extraction from all active sources."""
+        # Use the extract_from_pool callback if available
+        extract_callback = self.callbacks.get("extract_from_pool")
+        if extract_callback:
+            extract_callback()
+        else:
+            # Fallback: show info message
+            messagebox.showinfo(
+                "Extract from Sources",
+                "Please use the 'Import File...' button to trigger extraction."
+            )
     
     def _build_entities_panel(self, parent: ttk.Frame) -> None:
         """Build the entities panel."""
@@ -148,11 +389,6 @@ class FoundryPanel(ttk.Frame):
         
         ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, padx=8, fill=tk.Y, pady=2)
         
-        ttk.Button(
-            toolbar,
-            text="Refine with AI",
-            command=self.callbacks.get("refine_components", lambda: None)
-        ).pack(side=tk.LEFT, padx=2)
         
         # Treeview
         tree_frame = ttk.Frame(parent)
@@ -188,7 +424,7 @@ class FoundryPanel(ttk.Frame):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         # Double-click to edit
-        self.entities_tree.bind("<Double-1>", lambda e: self.callbacks.get("edit_entity", lambda: None)())
+        self.entities_tree.bind("<Double-1>", self._on_double_click_entity)
         
         # Enable sorting
         try:
@@ -199,70 +435,19 @@ class FoundryPanel(ttk.Frame):
             pass
     
     def _build_relationships_panel(self, parent: ttk.Frame) -> None:
-        """Build the relationships panel."""
-        # Header
+        """Build the relationships panel.
+        
+        NOTE: This method is deprecated for Foundry phase.
+        Relationships are handled in the Loom phase (Phase 2).
+        This method is kept for compatibility but should not be called.
+        """
+        # Foundry doesn't display relationships - they're handled in Loom phase
         ttk.Label(
             parent,
-            text="Relationships",
-            font=("Segoe UI", 12, "bold")
-        ).pack(anchor=tk.W, pady=(0, 5))
-        
-        # Toolbar
-        toolbar = ttk.Frame(parent)
-        toolbar.pack(fill=tk.X, pady=(0, 5))
-        
-        ttk.Button(
-            toolbar,
-            text="Add Relationship",
-            command=self.callbacks.get("add_relationship", lambda: None)
-        ).pack(side=tk.LEFT, padx=2)
-        
-        ttk.Button(
-            toolbar,
-            text="Delete Selected",
-            command=self.callbacks.get("delete_selected_relationship", lambda: None)
-        ).pack(side=tk.LEFT, padx=2)
-        
-        # Treeview
-        tree_frame = ttk.Frame(parent)
-        tree_frame.pack(fill=tk.BOTH, expand=True)
-        
-        self.relationships_tree = ttk.Treeview(
-            tree_frame,
-            columns=("source", "target", "type", "issues"),
-            show="headings",
-            selectmode=tk.EXTENDED
-        )
-        
-        self.relationships_tree.heading("source", text="Source")
-        self.relationships_tree.heading("target", text="Target")
-        self.relationships_tree.heading("type", text="Type")
-        self.relationships_tree.heading("issues", text="Issues")
-        
-        self.relationships_tree.column("source", width=100)
-        self.relationships_tree.column("target", width=100)
-        self.relationships_tree.column("type", width=80)
-        self.relationships_tree.column("issues", width=100)
-        
-        self.relationships_tree.tag_configure("error", background="#550000", foreground="white")
-        
-        # Scrollbar
-        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.relationships_tree.yview)
-        self.relationships_tree.configure(yscrollcommand=scrollbar.set)
-        
-        self.relationships_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # Double-click to edit
-        self.relationships_tree.bind("<Double-1>", lambda e: self.callbacks.get("edit_relationship", lambda: None)())
-        
-        # Enable sorting
-        try:
-            from pyscrai_forge.src.ui.widgets.treeview_sorter import TreeviewSorter
-            self.relationships_sorter = TreeviewSorter(self.relationships_tree)
-            self.relationships_sorter.enable_sorting_for_all_columns()
-        except ImportError:
-            pass
+            text="Relationships are handled in the Loom phase",
+            font=("Segoe UI", 10),
+            foreground="gray"
+        ).pack(anchor=tk.W, pady=20)
     
     def _build_action_bar(self) -> None:
         """Build the bottom action bar with staging and navigation."""
@@ -380,7 +565,7 @@ class FoundryPanel(ttk.Frame):
     def refresh(self) -> None:
         """Refresh the UI with current data."""
         self._refresh_entities()
-        self._refresh_relationships()
+        # Foundry doesn't display relationships - they're handled in Loom phase
         self._refresh_validation()
     
     def _refresh_entities(self) -> None:
@@ -464,18 +649,17 @@ class FoundryPanel(ttk.Frame):
             return
         
         num_entities = len(self.entities)
-        num_relationships = len(self.relationships)
         critical = len(self.validation_report.get("critical_errors", []))
         warnings = len(self.validation_report.get("warnings", []))
         
         if critical > 0:
-            text = f"{num_entities} entities, {num_relationships} relationships | {critical} errors"
+            text = f"{num_entities} entities | {critical} errors"
             self.validation_label.configure(text=text, foreground="#ff5555")
         elif warnings > 0:
-            text = f"{num_entities} entities, {num_relationships} relationships | {warnings} warnings"
+            text = f"{num_entities} entities | {warnings} warnings"
             self.validation_label.configure(text=text, foreground="#ffaa00")
         elif num_entities > 0:
-            text = f"{num_entities} entities, {num_relationships} relationships | Valid"
+            text = f"{num_entities} entities | Valid"
             self.validation_label.configure(text=text, foreground="#55ff55")
         else:
             text = "No entities loaded"
@@ -504,4 +688,58 @@ class FoundryPanel(ttk.Frame):
             except ValueError:
                 pass
         return indices
+    
+    def _on_double_click_entity(self, event) -> None:
+        """Handle double-click on entity to edit."""
+        # Get the selected item
+        selection = self.entities_tree.selection()
+        if not selection:
+            return
+        
+        # Get entity ID from the first column
+        item = selection[0]
+        values = self.entities_tree.item(item, "values")
+        if not values or len(values) == 0:
+            return
+        
+        entity_id = values[0]  # ID is first column
+        
+        # Find the entity
+        entity = next((e for e in self.entities if e.id == entity_id), None)
+        if not entity:
+            return
+        
+        # Ensure data_manager has the entities_tree reference
+        if self.data_manager:
+            # Temporarily set entities_tree to FoundryPanel's treeview
+            old_tree = self.data_manager.entities_tree
+            old_entities = self.data_manager.entities
+            old_manifest = self.data_manager.manifest
+            old_project_path = self.data_manager.project_path
+            old_root = self.data_manager.root
+            
+            self.data_manager.entities_tree = self.entities_tree
+            self.data_manager.entities = self.entities
+            # Get manifest from callbacks if available
+            get_manifest = self.callbacks.get("get_manifest")
+            if get_manifest:
+                self.data_manager.manifest = get_manifest()
+            self.data_manager.project_path = self.project_path
+            self.data_manager.root = self.winfo_toplevel()
+            
+            try:
+                # Call edit_entity directly with the entity_id
+                self.data_manager.edit_entity(entity_id=entity_id)
+            finally:
+                # Restore old references
+                if old_tree:
+                    self.data_manager.entities_tree = old_tree
+                if old_entities:
+                    self.data_manager.entities = old_entities
+                if old_manifest:
+                    self.data_manager.manifest = old_manifest
+                if old_project_path:
+                    self.data_manager.project_path = old_project_path
+                if old_root:
+                    self.data_manager.root = old_root
 

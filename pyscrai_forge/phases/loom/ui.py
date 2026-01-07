@@ -6,6 +6,8 @@ combining the graph visualization with relationship editing tools.
 
 from __future__ import annotations
 
+import asyncio
+import json
 import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox, ttk
@@ -15,6 +17,7 @@ from pyscrai_forge.phases.loom.graph_viz import GraphCanvas, LayoutAlgorithm
 
 if TYPE_CHECKING:
     from pyscrai_core import Entity, Relationship
+    from pyscrai_core.llm_interface.base import LLMProvider
 
 
 class LoomPanel(ttk.Frame):
@@ -78,21 +81,29 @@ class LoomPanel(ttk.Frame):
         
         # Main content container
         content_container = ttk.Frame(self)
-        content_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        content_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=(5, 0))
         
-        # Main content - horizontal split
-        main_paned = ttk.PanedWindow(content_container, orient=tk.HORIZONTAL)
+        # Use vertical PanedWindow to properly balance content and action bar
+        main_paned = ttk.PanedWindow(content_container, orient=tk.VERTICAL)
         main_paned.pack(fill=tk.BOTH, expand=True)
         
+        # Top content area - horizontal split
+        top_frame = ttk.Frame(main_paned)
+        main_paned.add(top_frame, weight=1)
+        
+        # Horizontal split inside top frame
+        horizontal_paned = ttk.PanedWindow(top_frame, orient=tk.HORIZONTAL)
+        horizontal_paned.pack(fill=tk.BOTH, expand=True)
+        
         # Left: Graph canvas
-        graph_frame = ttk.Frame(main_paned)
-        main_paned.add(graph_frame, weight=3)
+        graph_frame = ttk.Frame(horizontal_paned)
+        horizontal_paned.add(graph_frame, weight=3)
         
         self._build_graph_panel(graph_frame)
         
         # Right: Relationship/conflict panels
-        right_paned = ttk.PanedWindow(main_paned, orient=tk.VERTICAL)
-        main_paned.add(right_paned, weight=1)
+        right_paned = ttk.PanedWindow(horizontal_paned, orient=tk.VERTICAL)
+        horizontal_paned.add(right_paned, weight=1)
         
         # Relationships list
         rel_frame = ttk.Frame(right_paned)
@@ -104,8 +115,10 @@ class LoomPanel(ttk.Frame):
         right_paned.add(conflict_frame, weight=1)
         self._build_conflicts_panel(conflict_frame)
         
-        # Bottom action bar (packed in content_container, not self)
-        self._build_action_bar(content_container)
+        # Bottom action bar
+        action_frame = ttk.Frame(main_paned)
+        main_paned.add(action_frame, weight=0)  # weight=0 means minimum fixed size
+        self._build_action_bar(action_frame)
     
     def _build_graph_panel(self, parent: ttk.Frame) -> None:
         """Build the graph visualization panel."""
@@ -364,11 +377,8 @@ class LoomPanel(ttk.Frame):
         """Handle node double-click to edit entity."""
         edit_entity = self.callbacks.get("edit_entity")
         if edit_entity:
-            # Find the entity and trigger edit
-            for entity in self.entities:
-                if entity.id == node_id:
-                    edit_entity(entity)
-                    break
+            # Pass the entity_id to the edit callback
+            edit_entity(entity_id=node_id)
     
     def _on_edge_created(self, source_id: str, target_id: str) -> None:
         """Handle edge creation via drag-connect."""
@@ -485,18 +495,233 @@ class LoomPanel(ttk.Frame):
         ttk.Button(btn_frame, text="Create", command=create).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
     
+    def _check_llm_configured(self) -> tuple[bool, "LLMProvider" | None, str | None]:
+        """Check if LLM is configured via project settings.
+        
+        Returns:
+            Tuple of (is_configured, provider, model_name)
+        """
+        import os
+        
+        # Get manifest from callbacks
+        manifest = self.callbacks.get("get_manifest")()
+        if not manifest:
+            return False, None, "No project loaded"
+        
+        # Check if LLM settings are configured
+        if not manifest.llm_provider:
+            return False, None, "No LLM provider configured in project settings"
+        
+        if not manifest.llm_default_model:
+            return False, None, "No LLM model configured in project settings"
+        
+        # Get API key from environment
+        provider_name = manifest.llm_provider
+        env_key_map = {
+            "openrouter": "OPENROUTER_API_KEY",
+            "cherry": "CHERRY_API_KEY",
+            "lm_studio": "LM_STUDIO_API_KEY",
+            "lm_proxy": "LM_PROXY_API_KEY",
+        }
+        api_key = os.getenv(env_key_map.get(provider_name, ""), "")
+        
+        # Try to create the provider
+        try:
+            from pyscrai_core.llm_interface import create_provider
+            
+            provider = create_provider(
+                provider_name,
+                api_key=api_key if api_key else None,
+                base_url=manifest.llm_base_url,
+                timeout=60.0
+            )
+            
+            if hasattr(provider, 'default_model'):
+                provider.default_model = manifest.llm_default_model
+            
+            return True, provider, manifest.llm_default_model
+            
+        except Exception as e:
+            return False, None, f"Failed to create LLM provider: {e}"
+    
     def _on_infer_relationships(self) -> None:
         """Infer relationships using LoomAgent."""
         if not self.entities:
             messagebox.showinfo("No Entities", "No entities to analyze.")
             return
         
-        # TODO: Wire to TaskQueue and LoomAgent
-        messagebox.showinfo(
-            "Infer Relationships",
-            "Relationship inference will analyze entities and suggest connections.\n\n"
-            "This feature requires LLM connection."
+        # Check if LLM is configured
+        is_configured, provider, model_name = self._check_llm_configured()
+        
+        if not is_configured:
+            messagebox.showwarning(
+                "LLM Connection Needed",
+                f"Relationship inference requires an LLM connection.\n\n"
+                f"Issue: {model_name}\n\n"  # model_name contains error message here
+                f"Please configure an LLM provider in Project Settings."
+            )
+            return
+        
+        # Show progress dialog
+        progress_win = tk.Toplevel(self)
+        progress_win.title("Inferring Relationships")
+        progress_win.geometry("400x150")
+        progress_win.transient(self)
+        progress_win.grab_set()
+        
+        ttk.Label(
+            progress_win,
+            text="Analyzing entities...",
+            font=("Segoe UI", 11)
+        ).pack(pady=20)
+        
+        progress_label = ttk.Label(
+            progress_win,
+            text="Connecting to LLM...",
+            font=("Segoe UI", 10),
+            foreground="gray"
         )
+        progress_label.pack()
+        
+        def run_inference():
+            """Run relationship inference in background."""
+            from pyscrai_forge.phases.loom.agent import LoomAgent
+            import asyncio
+            
+            async def infer():
+                async with provider:
+                    agent = LoomAgent(provider, model=model_name)
+                    return await agent.infer_relationships(
+                        self.entities,
+                        existing_relationships=self.relationships
+                    )
+            
+            return asyncio.run(infer())
+        
+        def finish_inference():
+            """Handle inference results."""
+            try:
+                progress_win.destroy()
+            except:
+                pass
+            
+            inferred = run_inference()
+            
+            if not inferred:
+                messagebox.showinfo(
+                    "No Relationships Found",
+                    "No new relationships could be inferred from the entity data.\n\n"
+                    "Try adding more detailed entity descriptions."
+                )
+                return
+            
+            # Show results dialog
+            self._show_inference_results(inferred)
+        
+        # Run in background
+        import threading
+        thread = threading.Thread(target=finish_inference, daemon=True)
+        thread.start()
+    
+    def _show_inference_results(self, inferred: list) -> None:
+        """Show inference results and allow adding relationships."""
+        dialog = tk.Toplevel(self)
+        dialog.title(f"Inferred {len(inferred)} Relationships")
+        dialog.geometry("500x400")
+        dialog.transient(self)
+        
+        # Results list
+        frame = ttk.Frame(dialog)
+        frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        tree = ttk.Treeview(
+            frame,
+            columns=("source", "type", "target", "confidence"),
+            show="headings"
+        )
+        tree.heading("source", text="Source")
+        tree.heading("type", text="Type")
+        tree.heading("target", text="Target")
+        tree.heading("confidence", text="Confidence")
+        
+        tree.column("source", width=100)
+        tree.column("type", width=80)
+        tree.column("target", width=100)
+        tree.column("confidence", width=80)
+        
+        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Build entity name lookup
+        entity_names = {}
+        for e in self.entities:
+            if hasattr(e, "descriptor") and hasattr(e.descriptor, "name"):
+                entity_names[e.id] = e.descriptor.name
+            else:
+                entity_names[e.id] = e.id
+        
+        # Populate tree
+        for rel in inferred:
+            source_name = entity_names.get(rel.source_id, rel.source_id)
+            target_name = entity_names.get(rel.target_id, rel.target_id)
+            tree.insert(
+                "", tk.END,
+                values=(source_name, rel.relationship_type, target_name, rel.confidence.value),
+                tags=(rel.source_id, rel.target_id, rel.relationship_type)
+            )
+        
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+        def add_selected():
+            """Add selected inferred relationships."""
+            selected = tree.selection()
+            if not selected:
+                messagebox.showinfo("Select Relationships", "Please select relationships to add.")
+                return
+            
+            from pyscrai_core import Relationship, RelationshipType
+            
+            added_count = 0
+            for item_id in selected:
+                tags = tree.item(item_id, "tags")
+                source_id, target_id, rel_type = tags
+                
+                # Check if already exists
+                exists = any(
+                    r.source_id == source_id and r.target_id == target_id
+                    for r in self.relationships
+                )
+                
+                if not exists:
+                    try:
+                        new_rel = Relationship(
+                            source_id=source_id,
+                            target_id=target_id,
+                            relationship_type=RelationshipType(rel_type.lower())
+                        )
+                        self.relationships.append(new_rel)
+                        added_count += 1
+                        
+                        if self.graph_canvas:
+                            self.graph_canvas.add_edge(source_id, target_id, rel_type)
+                    except:
+                        pass
+            
+            self._refresh_relationships_list()
+            
+            dialog.destroy()
+            messagebox.showinfo(
+                "Relationships Added",
+                f"Added {added_count} relationship(s) to the graph."
+            )
+        
+        ttk.Button(btn_frame, text="Add Selected", command=add_selected).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
     
     def _on_detect_conflicts(self) -> None:
         """Detect conflicts using LoomAgent."""
@@ -504,15 +729,129 @@ class LoomPanel(ttk.Frame):
             messagebox.showinfo("No Entities", "No entities to analyze.")
             return
         
-        # TODO: Wire to TaskQueue and LoomAgent
-        messagebox.showinfo(
-            "Detect Conflicts",
-            "Conflict detection will identify:\n"
-            "• Potential duplicates\n"
-            "• Contradictions\n"
-            "• Missing relationships\n\n"
-            "This feature requires LLM connection."
+        # Check if LLM is configured
+        is_configured, provider, model_name = self._check_llm_configured()
+        
+        if not is_configured:
+            messagebox.showwarning(
+                "LLM Connection Needed",
+                f"Conflict detection requires an LLM connection.\n\n"
+                f"Issue: {model_name}\n\n"  # model_name contains error message here
+                f"Please configure an LLM provider in Project Settings."
+            )
+            return
+        
+        # Show progress dialog
+        progress_win = tk.Toplevel(self)
+        progress_win.title("Detecting Conflicts")
+        progress_win.geometry("400x150")
+        progress_win.transient(self)
+        progress_win.grab_set()
+        
+        ttk.Label(
+            progress_win,
+            text="Scanning for issues...",
+            font=("Segoe UI", 11)
+        ).pack(pady=20)
+        
+        progress_label = ttk.Label(
+            progress_win,
+            text="Connecting to LLM...",
+            font=("Segoe UI", 10),
+            foreground="gray"
         )
+        progress_label.pack()
+        
+        def run_detection():
+            """Run conflict detection in background."""
+            from pyscrai_forge.phases.loom.agent import LoomAgent
+            import asyncio
+            
+            async def detect():
+                async with provider:
+                    agent = LoomAgent(provider, model=model_name)
+                    return await agent.detect_conflicts(
+                        self.entities,
+                        self.relationships
+                    )
+            
+            return asyncio.run(detect())
+        
+        def finish_detection():
+            """Handle detection results."""
+            try:
+                progress_win.destroy()
+            except:
+                pass
+            
+            conflicts = run_detection()
+            
+            if not conflicts:
+                messagebox.showinfo(
+                    "No Conflicts Found",
+                    "No conflicts or issues were detected in your entity data.\n\n"
+                    "Your world appears to be consistent!"
+                )
+                return
+            
+            # Show results
+            self._show_conflict_results(conflicts)
+        
+        # Run in background
+        import threading
+        thread = threading.Thread(target=finish_detection, daemon=True)
+        thread.start()
+    
+    def _show_conflict_results(self, conflicts: list) -> None:
+        """Show conflict detection results."""
+        dialog = tk.Toplevel(self)
+        dialog.title(f"Found {len(conflicts)} Issue(s)")
+        dialog.geometry("550x400")
+        dialog.transient(self)
+        
+        # Results list
+        frame = ttk.Frame(dialog)
+        frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        tree = ttk.Treeview(
+            frame,
+            columns=("type", "description", "entities"),
+            show="headings"
+        )
+        tree.heading("type", text="Type")
+        tree.heading("description", text="Description")
+        tree.heading("entities", text="Entities")
+        
+        tree.column("type", width=100)
+        tree.column("description", width=280)
+        tree.column("entities", width=120)
+        
+        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Populate tree
+        for conflict in conflicts:
+            entity_ids = ", ".join(conflict.entity_ids[:3])
+            if len(conflict.entity_ids) > 3:
+                entity_ids += "..."
+            
+            tree.insert(
+                "", tk.END,
+                values=(
+                    conflict.conflict_type.title(),
+                    conflict.description,
+                    entity_ids
+                )
+            )
+        
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
     
     def _on_save_staging(self) -> None:
         """Save to graph staging JSON."""

@@ -207,6 +207,7 @@ class ProjectWizardDialog(tk.Toplevel):
         # Provider
         ttk.Label(self.content_frame, text="LLM Provider:").pack(anchor=tk.W, pady=5)
         self.llm_provider_var = tk.StringVar(value=self.project_data.get("llm_provider", "openrouter"))
+        self.llm_provider_var.trace_add("write", self._on_provider_change)
         providers = ["openrouter", "cherry", "lm_studio", "lm_proxy"]
         ttk.Combobox(
             self.content_frame,
@@ -227,13 +228,30 @@ class ProjectWizardDialog(tk.Toplevel):
             font=("Arial", 8)
         ).pack(anchor=tk.W, pady=(0, 10))
 
-        # Default Model
+        # Default Model with Refresh button
         ttk.Label(self.content_frame, text="Default Model:").pack(anchor=tk.W, pady=5)
+        model_frame = ttk.Frame(self.content_frame)
+        model_frame.pack(anchor=tk.W, pady=(0, 5))
+        
         self.llm_default_model_var = tk.StringVar(value=self.project_data.get("llm_default_model", ""))
-        ttk.Entry(self.content_frame, textvariable=self.llm_default_model_var, width=50).pack(anchor=tk.W, pady=(0, 5))
+        self.default_model_combo = ttk.Combobox(
+            model_frame, 
+            textvariable=self.llm_default_model_var, 
+            width=47
+        )
+        self.default_model_combo.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        self.refresh_models_btn = ttk.Button(
+            model_frame, 
+            text="⟳", 
+            width=3,
+            command=self._refresh_models
+        )
+        self.refresh_models_btn.pack(side=tk.LEFT, padx=(5, 0))
+        
         ttk.Label(
             self.content_frame,
-            text="e.g., 'anthropic/claude-sonnet-4-20250514' for OpenRouter",
+            text="e.g., 'anthropic/claude-sonnet-4-20250514' for OpenRouter (click ⟳ to fetch)",
             foreground="gray",
             font=("Arial", 8)
         ).pack(anchor=tk.W, pady=(0, 10))
@@ -241,13 +259,30 @@ class ProjectWizardDialog(tk.Toplevel):
         # Fallback Model (optional)
         ttk.Label(self.content_frame, text="Fallback Model (optional):").pack(anchor=tk.W, pady=5)
         self.llm_fallback_model_var = tk.StringVar(value=self.project_data.get("llm_fallback_model", ""))
-        ttk.Entry(self.content_frame, textvariable=self.llm_fallback_model_var, width=50).pack(anchor=tk.W, pady=(0, 5))
+        self.fallback_model_combo = ttk.Combobox(
+            self.content_frame, 
+            textvariable=self.llm_fallback_model_var, 
+            width=50
+        )
+        self.fallback_model_combo.pack(anchor=tk.W, pady=(0, 5))
         ttk.Label(
             self.content_frame,
             text="Used if primary model is unavailable",
             foreground="gray",
             font=("Arial", 8)
-        ).pack(anchor=tk.W, pady=(0, 15))
+        ).pack(anchor=tk.W, pady=(0, 10))
+        
+        # Model status label
+        self.model_status_label = ttk.Label(
+            self.content_frame, 
+            text="Click ⟳ to load models", 
+            foreground="gray", 
+            font=("Arial", 8)
+        )
+        self.model_status_label.pack(anchor=tk.W, pady=(0, 15))
+        
+        # Initialize available models cache
+        self._available_models = []
 
         # Memory Settings Section
         ttk.Separator(self.content_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
@@ -470,3 +505,95 @@ The wizard will create:
 
         except Exception as e:
             messagebox.showerror("Create Error", f"Failed to create project:\n\n{str(e)}", parent=self)
+
+    def _on_provider_change(self, *args):
+        """Handle provider selection change."""
+        # Clear current models when provider changes
+        self._available_models = []
+        if hasattr(self, 'default_model_combo'):
+            self.default_model_combo['values'] = []
+            self.fallback_model_combo['values'] = []
+            self.model_status_label.config(text="Click ⟳ to load models", foreground="gray")
+
+    def _refresh_models(self):
+        """Refresh available models from the selected provider."""
+        provider_name = self.llm_provider_var.get()
+        if not provider_name:
+            messagebox.showwarning("No Provider", "Please select a provider first.", parent=self)
+            return
+        
+        self.model_status_label.config(text="Loading models...", foreground="blue")
+        self.refresh_models_btn.config(state="disabled")
+        
+        # Run async model fetching in a thread
+        import threading
+        thread = threading.Thread(
+            target=self._fetch_models_async, 
+            args=(provider_name,),
+            daemon=True
+        )
+        thread.start()
+
+    def _fetch_models_async(self, provider_name: str):
+        """Fetch models asynchronously from provider."""
+        import asyncio
+        import os
+        from pyscrai_core.llm_interface import create_provider
+        
+        try:
+            # Get API key from environment
+            env_key_map = {
+                "openrouter": "OPENROUTER_API_KEY",
+                "cherry": "CHERRY_API_KEY",
+                "lm_studio": "LM_STUDIO_API_KEY",
+                "lm_proxy": "LM_PROXY_API_KEY",
+            }
+            
+            env_key = env_key_map.get(provider_name, "")
+            api_key = os.getenv(env_key, "not-needed")
+            base_url = self.llm_base_url_var.get() or None
+            
+            # Create provider and fetch models
+            provider = create_provider(
+                provider_name,
+                api_key=api_key,
+                base_url=base_url,
+                timeout=30.0
+            )
+            
+            # Run async list_models in new event loop
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                models = loop.run_until_complete(provider.list_models())
+                model_ids = [m.id for m in models]
+                
+                # Update UI in main thread
+                self.after(0, lambda: self._update_model_list(model_ids))
+            finally:
+                loop.close()
+                
+        except Exception as e:
+            error_msg = str(e)
+            self.after(0, lambda msg=error_msg: self._show_model_error(msg))
+
+    def _update_model_list(self, model_ids: list[str]):
+        """Update the model dropdown with fetched models."""
+        self._available_models = model_ids
+        self.default_model_combo['values'] = model_ids
+        self.fallback_model_combo['values'] = model_ids
+        
+        count = len(model_ids)
+        self.model_status_label.config(
+            text=f"Loaded {count} model{'s' if count != 1 else ''}", 
+            foreground="green"
+        )
+        self.refresh_models_btn.config(state="normal")
+
+    def _show_model_error(self, error_msg: str):
+        """Show error message when model fetching fails."""
+        self.model_status_label.config(
+            text=f"Error: {error_msg[:50]}...", 
+            foreground="red"
+        )
+        self.refresh_models_btn.config(state="normal")

@@ -189,13 +189,12 @@ class LoomAgent:
         )
         
         try:
-            response = await self.provider.complete(
+            content = await self.provider.complete_simple(
                 prompt=prompt,
                 model=self.model,
+                temperature=0.3,
                 max_tokens=2000
             )
-            
-            content = response.content if hasattr(response, 'content') else str(response)
             
             # Parse the JSON response
             inferred = self._parse_relationships_response(content)
@@ -261,13 +260,12 @@ class LoomAgent:
         )
         
         try:
-            response = await self.provider.complete(
+            content = await self.provider.complete_simple(
                 prompt=prompt,
                 model=self.model,
+                temperature=0.3,
                 max_tokens=1500
             )
-            
-            content = response.content if hasattr(response, 'content') else str(response)
             
             conflicts = self._parse_conflicts_response(content)
             logger.info(f"LoomAgent detected {len(conflicts)} conflicts")

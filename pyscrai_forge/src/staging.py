@@ -359,6 +359,228 @@ class StagingService:
         return positions, regions, metadata
     
     # =========================================================================
+    # SOURCE DATA POOL: Raw imported files management
+    # =========================================================================
+    
+    def get_sources_path(self) -> Path:
+        """Get the path to the sources directory.
+        
+        Returns:
+            Path to the sources directory within staging
+        """
+        sources_path = self.staging_path / "sources"
+        sources_path.mkdir(exist_ok=True)
+        return sources_path
+    
+    def get_sources_manifest_path(self) -> Path:
+        """Get the path to the sources manifest file.
+        
+        Returns:
+            Path to sources_manifest.json
+        """
+        return self.staging_path / "sources_manifest.json"
+    
+    def save_source_file(
+        self,
+        file_path: Path,
+        text_content: str,
+        metadata: Optional[dict] = None,
+        active: bool = True
+    ) -> str:
+        """Save a source file to the sources pool.
+        
+        Args:
+            file_path: Original file path (used for naming)
+            text_content: Extracted text content
+            metadata: Optional file metadata
+            active: Whether the source is active for extraction
+            
+        Returns:
+            Source ID for the saved file
+        """
+        import hashlib
+        from datetime import UTC, datetime
+        
+        sources_path = self.get_sources_path()
+        
+        # Generate a unique source ID based on filename and content hash
+        content_hash = hashlib.md5(text_content.encode()).hexdigest()[:8]
+        source_id = f"{file_path.stem}_{content_hash}"
+        
+        # Save the text content
+        source_file = sources_path / f"{source_id}.txt"
+        with open(source_file, 'w', encoding='utf-8') as f:
+            f.write(text_content)
+        
+        # Update the manifest
+        manifest = self.load_sources_manifest()
+        manifest["sources"][source_id] = {
+            "id": source_id,
+            "original_filename": file_path.name,
+            "original_path": str(file_path),
+            "text_file": source_file.name,
+            "char_count": len(text_content),
+            "added_at": datetime.now(UTC).isoformat(),
+            "active": active,
+            "metadata": metadata or {},
+            "extracted": False,  # Will be True after extraction
+        }
+        manifest["updated_at"] = datetime.now(UTC).isoformat()
+        
+        self._save_sources_manifest(manifest)
+        
+        logger.info(f"Saved source file: {source_id} ({len(text_content)} chars)")
+        return source_id
+    
+    def load_sources_manifest(self) -> dict:
+        """Load the sources manifest.
+        
+        Returns:
+            Sources manifest dict with 'sources' key
+        """
+        manifest_path = self.get_sources_manifest_path()
+        
+        if not manifest_path.exists():
+            return {
+                "version": "2.0",
+                "created_at": datetime.now(UTC).isoformat(),
+                "updated_at": datetime.now(UTC).isoformat(),
+                "sources": {}
+            }
+        
+        with open(manifest_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    
+    def _save_sources_manifest(self, manifest: dict) -> None:
+        """Save the sources manifest."""
+        manifest_path = self.get_sources_manifest_path()
+        with open(manifest_path, 'w', encoding='utf-8') as f:
+            json.dump(manifest, f, indent=2)
+    
+    def get_source_text(self, source_id: str) -> str:
+        """Get the text content of a source file.
+        
+        Args:
+            source_id: Source ID
+            
+        Returns:
+            Text content of the source
+        """
+        manifest = self.load_sources_manifest()
+        source_info = manifest["sources"].get(source_id)
+        
+        if not source_info:
+            raise ValueError(f"Source not found: {source_id}")
+        
+        source_file = self.get_sources_path() / source_info["text_file"]
+        with open(source_file, 'r', encoding='utf-8') as f:
+            return f.read()
+    
+    def get_active_sources(self) -> list[dict]:
+        """Get list of active source files.
+        
+        Returns:
+            List of source info dicts for active sources
+        """
+        manifest = self.load_sources_manifest()
+        return [
+            info for info in manifest["sources"].values()
+            if info.get("active", True)
+        ]
+    
+    def get_all_sources(self) -> list[dict]:
+        """Get list of all source files.
+        
+        Returns:
+            List of all source info dicts
+        """
+        manifest = self.load_sources_manifest()
+        return list(manifest["sources"].values())
+    
+    def set_source_active(self, source_id: str, active: bool) -> None:
+        """Set a source file's active state.
+        
+        Args:
+            source_id: Source ID
+            active: Whether the source should be active
+        """
+        manifest = self.load_sources_manifest()
+        
+        if source_id not in manifest["sources"]:
+            raise ValueError(f"Source not found: {source_id}")
+        
+        manifest["sources"][source_id]["active"] = active
+        manifest["updated_at"] = datetime.now(UTC).isoformat()
+        
+        self._save_sources_manifest(manifest)
+        logger.info(f"Source {source_id} set to {'active' if active else 'inactive'}")
+    
+    def mark_source_extracted(self, source_id: str) -> None:
+        """Mark a source as having been extracted.
+        
+        Args:
+            source_id: Source ID
+        """
+        manifest = self.load_sources_manifest()
+        
+        if source_id in manifest["sources"]:
+            manifest["sources"][source_id]["extracted"] = True
+            manifest["sources"][source_id]["extracted_at"] = datetime.now(UTC).isoformat()
+            manifest["updated_at"] = datetime.now(UTC).isoformat()
+            self._save_sources_manifest(manifest)
+    
+    def delete_source(self, source_id: str) -> None:
+        """Delete a source file from the pool.
+        
+        Args:
+            source_id: Source ID
+        """
+        manifest = self.load_sources_manifest()
+        
+        if source_id not in manifest["sources"]:
+            raise ValueError(f"Source not found: {source_id}")
+        
+        source_info = manifest["sources"][source_id]
+        source_file = self.get_sources_path() / source_info["text_file"]
+        
+        # Delete the text file
+        if source_file.exists():
+            source_file.unlink()
+        
+        # Remove from manifest
+        del manifest["sources"][source_id]
+        manifest["updated_at"] = datetime.now(UTC).isoformat()
+        
+        self._save_sources_manifest(manifest)
+        logger.info(f"Deleted source: {source_id}")
+    
+    def get_combined_source_text(self, source_ids: Optional[list[str]] = None) -> str:
+        """Get combined text from multiple sources.
+        
+        Args:
+            source_ids: List of source IDs. If None, uses all active sources.
+            
+        Returns:
+            Combined text with source separators
+        """
+        if source_ids is None:
+            sources = self.get_active_sources()
+            source_ids = [s["id"] for s in sources]
+        
+        texts = []
+        for source_id in source_ids:
+            try:
+                text = self.get_source_text(source_id)
+                manifest = self.load_sources_manifest()
+                source_info = manifest["sources"].get(source_id, {})
+                filename = source_info.get("original_filename", source_id)
+                texts.append(f"--- SOURCE: {filename} ---\n{text}")
+            except Exception as e:
+                logger.warning(f"Failed to load source {source_id}: {e}")
+        
+        return "\n\n".join(texts)
+    
+    # =========================================================================
     # Utility Methods
     # =========================================================================
     

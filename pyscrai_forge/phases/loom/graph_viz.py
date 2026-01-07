@@ -40,21 +40,22 @@ class LayoutAlgorithm(Enum):
 @dataclass
 class NodeStyle:
     """Visual style for a graph node."""
-    fill: str = "#4a9eff"
-    outline: str = "#2a7edf"
+    fill: str = "#2d5aa0"
+    outline: str = "#4a7bc8"
     text_color: str = "white"
-    radius: int = 25
+    width: int = 80  # Rectangle width
+    height: int = 40  # Rectangle height
     font: tuple = ("Segoe UI", 9)
-    selected_outline: str = "#ffcc00"
-    hover_fill: str = "#6ab4ff"
+    selected_outline: str = "#ffd700"  # Gold for selection
+    hover_fill: str = "#3d6ab0"
 
 
 @dataclass
 class EdgeStyle:
     """Visual style for a graph edge."""
-    color: str = "#888888"
+    color: str = "#6c757d"  # Lighter gray for dark background
     width: int = 2
-    selected_color: str = "#ffcc00"
+    selected_color: str = "#ffd700"  # Gold for selection
     arrow_size: int = 10
 
 
@@ -94,19 +95,26 @@ class GraphCanvas(tk.Canvas):
     - Multiple layout algorithms via networkx
     """
     
-    # Node color mapping by entity type
+    # Node color mapping by entity type (optimized for dark background)
+    # Format: (fill_color, text_color, outline_color)
     TYPE_COLORS = {
-        "character": "#4a9eff",
-        "person": "#4a9eff",
-        "location": "#4aff9e",
-        "place": "#4aff9e",
-        "organization": "#ff9e4a",
-        "faction": "#ff9e4a",
-        "item": "#9e4aff",
-        "object": "#9e4aff",
-        "event": "#ff4a9e",
-        "concept": "#ffff4a",
+        "actor": ("#2d5aa0", "white", "#4a7bc8"),  # Blue for actors
+        "character": ("#2d5aa0", "white", "#4a7bc8"),
+        "person": ("#2d5aa0", "white", "#4a7bc8"),
+        "location": ("#2d7d4e", "white", "#4aaf6e"),  # Green for locations
+        "place": ("#2d7d4e", "white", "#4aaf6e"),
+        "polity": ("#b8860b", "white", "#daa520"),  # Gold for polities/organizations
+        "organization": ("#b8860b", "white", "#daa520"),
+        "faction": ("#b8860b", "white", "#daa520"),
+        "item": ("#7b2cbf", "white", "#9d4edd"),  # Purple for items
+        "object": ("#7b2cbf", "white", "#9d4edd"),
+        "event": ("#c1121f", "white", "#e63946"),  # Red for events
+        "concept": ("#f77f00", "white", "#fcbf49"),  # Orange for concepts
+        "resource": ("#6c757d", "white", "#adb5bd"),  # Gray for resources
     }
+    
+    # Default node style (blue for unknown types)
+    DEFAULT_NODE_COLOR = ("#2d5aa0", "white", "#4a7bc8")
     
     def __init__(
         self,
@@ -329,28 +337,34 @@ class GraphCanvas(tk.Canvas):
             pass  # Already drawn in drag handler
     
     def _draw_node(self, node: GraphNode) -> None:
-        """Draw a single node."""
+        """Draw a single node as a rectangle."""
         x, y = self._to_canvas_coords(node.x, node.y)
-        r = self.node_style.radius * self.zoom_level
+        w = self.node_style.width * self.zoom_level
+        h = self.node_style.height * self.zoom_level
         
-        # Get color based on entity type
-        fill = self.TYPE_COLORS.get(node.entity_type, self.node_style.fill)
+        # Get color and text color based on entity type
+        color_info = self.TYPE_COLORS.get(node.entity_type, self.DEFAULT_NODE_COLOR)
+        fill = color_info[0]
+        text_color = color_info[1]
+        default_outline = color_info[2] if len(color_info) > 2 else self.node_style.outline
         
         # Adjust for selection/hover
         if node.id == self.selected_node:
             outline = self.node_style.selected_outline
             outline_width = 3
         elif node.id == self.hovered_node:
-            fill = self.node_style.hover_fill
-            outline = self.node_style.outline
+            # Lighten the fill color for hover (add ~30% brightness)
+            # Simple approach: increase RGB values by 20%
+            fill = self._lighten_color(fill)
+            outline = default_outline
             outline_width = 2
         else:
-            outline = self.node_style.outline
+            outline = default_outline
             outline_width = 2
         
-        # Draw circle
-        node.canvas_id = self.create_oval(
-            x - r, y - r, x + r, y + r,
+        # Draw rectangle
+        node.canvas_id = self.create_rectangle(
+            x - w/2, y - h/2, x + w/2, y + h/2,
             fill=fill,
             outline=outline,
             width=outline_width,
@@ -358,11 +372,11 @@ class GraphCanvas(tk.Canvas):
         )
         
         # Draw label
-        label = node.label if len(node.label) <= 15 else node.label[:12] + "..."
+        label = node.label if len(node.label) <= 12 else node.label[:10] + "..."
         node.text_id = self.create_text(
             x, y,
             text=label,
-            fill=self.node_style.text_color,
+            fill=text_color,
             font=self.node_style.font,
             tags=("node_text", f"text_{node.id}")
         )
@@ -378,9 +392,13 @@ class GraphCanvas(tk.Canvas):
         x1, y1 = self._to_canvas_coords(source.x, source.y)
         x2, y2 = self._to_canvas_coords(target.x, target.y)
         
-        # Calculate arrow endpoint (stop at node edge)
-        r = self.node_style.radius * self.zoom_level
+        # Calculate arrow endpoint (stop at rectangle edge)
+        w = self.node_style.width * self.zoom_level / 2
+        h = self.node_style.height * self.zoom_level / 2
         angle = math.atan2(y2 - y1, x2 - x1)
+        
+        # Calculate intersection with rectangle (simplified: use larger dimension)
+        r = max(w, h)
         x2_adj = x2 - r * math.cos(angle)
         y2_adj = y2 - r * math.sin(angle)
         x1_adj = x1 + r * math.cos(angle)
@@ -419,7 +437,7 @@ class GraphCanvas(tk.Canvas):
             edge.label_id = self.create_text(
                 mid_x, mid_y,
                 text=edge.relationship_type,
-                fill="#aaaaaa",
+                fill="#b0b0b0",  # Lighter gray for better visibility on dark background
                 font=("Segoe UI", 8),
                 tags=("edge_label",)
             )
@@ -442,12 +460,15 @@ class GraphCanvas(tk.Canvas):
         """Find a node at the given canvas coordinates."""
         gx, gy = self._from_canvas_coords(x, y)
         
+        w = self.node_style.width / 2
+        h = self.node_style.height / 2
+        
         for node_id, node in self.nodes.items():
-            dx = node.x - gx
-            dy = node.y - gy
-            dist = math.sqrt(dx * dx + dy * dy)
+            dx = abs(node.x - gx)
+            dy = abs(node.y - gy)
             
-            if dist <= self.node_style.radius:
+            # Check if point is within rectangle bounds
+            if dx <= w and dy <= h:
                 return node_id
         
         return None
@@ -455,6 +476,14 @@ class GraphCanvas(tk.Canvas):
     def _on_click(self, event: tk.Event) -> None:
         """Handle left click."""
         node_id = self._find_node_at(event.x, event.y)
+        
+        # If in edge creation mode, don't change selected_node or start dragging
+        # The edge will be created on release
+        if self.creating_edge:
+            # Still allow dragging for edge preview, but don't change selected_node
+            if node_id:
+                self.drag_start = (event.x, event.y)
+            return
         
         if node_id:
             self.selected_node = node_id
@@ -485,9 +514,16 @@ class GraphCanvas(tk.Canvas):
         menu = tk.Menu(self, tearoff=0)
         
         if node_id:
-            menu.add_command(label=f"Edit {self.nodes[node_id].label}", command=lambda: self.on_node_double_click(node_id) if self.on_node_double_click else None)
+            # Use default parameter trick to properly capture node_id in lambda
+            menu.add_command(
+                label=f"Edit {self.nodes[node_id].label}",
+                command=lambda nid=node_id: self.on_node_double_click(nid) if self.on_node_double_click else None
+            )
             menu.add_separator()
-            menu.add_command(label="Start Edge From Here", command=lambda: self._start_edge_creation(node_id))
+            menu.add_command(
+                label="Create Relationship From This Node",
+                command=lambda nid=node_id: self._start_edge_creation(nid)
+            )
         else:
             menu.add_command(label="Reset Layout", command=lambda: self._calculate_layout(LayoutAlgorithm.SPRING) or self.render())
             menu.add_command(label="Circular Layout", command=lambda: self._calculate_layout(LayoutAlgorithm.CIRCULAR) or self.render())
@@ -496,7 +532,24 @@ class GraphCanvas(tk.Canvas):
     
     def _on_drag(self, event: tk.Event) -> None:
         """Handle mouse drag."""
-        if self.dragging_node and self.drag_start:
+        # If in edge creation mode, show edge preview
+        if self.creating_edge and self.selected_node:
+            # Draw edge preview from selected node to current mouse position
+            source = self.nodes.get(self.selected_node)
+            if source:
+                x1, y1 = self._to_canvas_coords(source.x, source.y)
+                
+                if self.edge_preview_id:
+                    self.delete(self.edge_preview_id)
+                
+                self.edge_preview_id = self.create_line(
+                    x1, y1, event.x, event.y,
+                    fill="#87CEEB",  # Sky blue for edge preview
+                    width=2,
+                    dash=(5, 5),
+                    arrow=tk.LAST
+                )
+        elif self.dragging_node and self.drag_start:
             # Move the node
             dx = (event.x - self.drag_start[0]) / self.zoom_level
             dy = (event.y - self.drag_start[1]) / self.zoom_level
@@ -511,23 +564,6 @@ class GraphCanvas(tk.Canvas):
             
             self.drag_start = (event.x, event.y)
             self.render()
-        
-        elif self.creating_edge and self.selected_node:
-            # Draw edge preview
-            source = self.nodes.get(self.selected_node)
-            if source:
-                x1, y1 = self._to_canvas_coords(source.x, source.y)
-                
-                if self.edge_preview_id:
-                    self.delete(self.edge_preview_id)
-                
-                self.edge_preview_id = self.create_line(
-                    x1, y1, event.x, event.y,
-                    fill="#ffcc00",
-                    width=2,
-                    dash=(5, 5),
-                    arrow=tk.LAST
-                )
     
     def _on_release(self, event: tk.Event) -> None:
         """Handle mouse release."""
@@ -536,18 +572,24 @@ class GraphCanvas(tk.Canvas):
             target_id = self._find_node_at(event.x, event.y)
             
             if target_id and target_id != self.selected_node:
+                # Create the edge
                 if self.on_edge_created:
                     self.on_edge_created(self.selected_node, target_id)
+            # If clicked on empty space or same node, cancel edge creation
+            # (user can right-click again to restart)
             
             # Clean up
             if self.edge_preview_id:
                 self.delete(self.edge_preview_id)
                 self.edge_preview_id = None
             
+            # Exit edge creation mode after creating edge or clicking elsewhere
             self.creating_edge = False
+            # Keep selected_node for visual feedback, but clear it on next click
         
         self.dragging_node = None
         self.drag_start = None
+        self.render()  # Re-render to update selection state
     
     def _on_motion(self, event: tk.Event) -> None:
         """Handle mouse motion for hover effects."""
@@ -613,9 +655,15 @@ class GraphCanvas(tk.Canvas):
         self.render()
     
     def _start_edge_creation(self, node_id: str) -> None:
-        """Start creating an edge from a node."""
+        """Start creating an edge from a node.
+        
+        Sets the node as selected and enters edge creation mode.
+        User can then click on another node to create a relationship.
+        """
         self.selected_node = node_id
         self.creating_edge = True
+        # Re-render to show visual feedback (selected node will be highlighted)
+        self.render()
     
     def set_layout(self, layout_positions: Dict[str, Tuple[float, float]]) -> None:
         """Set node positions from an external layout.
@@ -664,6 +712,31 @@ class GraphCanvas(tk.Canvas):
             if not (e.source_id == source_id and e.target_id == target_id)
         ]
         self.render()
+    
+    def _lighten_color(self, hex_color: str) -> str:
+        """Lighten a hex color by ~20% for hover effect.
+        
+        Args:
+            hex_color: Hex color string (e.g., "#2d5aa0")
+            
+        Returns:
+            Lightened hex color string
+        """
+        # Remove # if present
+        hex_color = hex_color.lstrip('#')
+        
+        # Convert to RGB
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        
+        # Lighten by 20% (but cap at 255)
+        r = min(255, int(r * 1.2))
+        g = min(255, int(g * 1.2))
+        b = min(255, int(b * 1.2))
+        
+        # Convert back to hex
+        return f"#{r:02x}{g:02x}{b:02x}"
     
     def center_view(self) -> None:
         """Center the view on the graph."""

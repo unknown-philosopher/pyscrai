@@ -84,6 +84,7 @@ class AppStateManager:
         main_container: tk.Frame,
         status_bar: ttk.Label,
         callbacks: dict[str, Callable],
+        on_state_changed: Optional[Callable[[AppState], None]] = None,
     ):
         """Initialize state manager.
         
@@ -92,11 +93,13 @@ class AppStateManager:
             main_container: Container frame for state-specific UI
             status_bar: Status bar label to update
             callbacks: Dictionary of callback functions for UI actions
+            on_state_changed: Optional callback when state changes
         """
         self.root = root
         self.main_container = main_container
         self.status_bar = status_bar
         self.callbacks = callbacks
+        self.on_state_changed = on_state_changed
         
         self.current_state: AppState = AppState.LANDING
         
@@ -173,6 +176,10 @@ class AppStateManager:
         
         # Update status bar
         self.update_status_bar()
+        
+        # Notify callback of state change
+        if self.on_state_changed:
+            self.on_state_changed(new_state)
     
     def _build_landing_page(self) -> None:
         """Build the landing page state."""
@@ -452,7 +459,12 @@ class AppStateManager:
             
             # Wire up the treeview references for data manager compatibility
             self.entities_tree = self.foundry_panel.entities_tree
-            self.relationships_tree = self.foundry_panel.relationships_tree
+            # Foundry doesn't handle relationships - they're in Loom phase
+            self.relationships_tree = None
+            
+            # Set data_manager reference in foundry_panel for entity editing
+            if hasattr(self, 'data_manager'):
+                self.foundry_panel.data_manager = self.data_manager
             
         except ImportError:
             # Fallback to legacy component editor if FoundryPanel not available
@@ -468,6 +480,8 @@ class AppStateManager:
         """
         try:
             from pyscrai_forge.phases.loom.ui import LoomPanel
+            from pyscrai_forge.src.staging import StagingService
+            from pyscrai_core import Entity
             
             self.loom_panel = LoomPanel(
                 self.main_container,
@@ -475,6 +489,32 @@ class AppStateManager:
                 callbacks=self.callbacks
             )
             self.loom_panel.pack(fill=tk.BOTH, expand=True)
+            
+            # Load entities from staging and populate the panel
+            if self.project_path:
+                staging = StagingService(self.project_path)
+                
+                # Try to load from loom staging first, then fall back to foundry
+                entity_dicts, rel_dicts, metadata = staging.load_graph_staging()
+                
+                # If loom staging is empty, try loading from foundry staging
+                if not entity_dicts and staging.artifact_exists("foundry"):
+                    entity_dicts, foundry_meta = staging.load_entities_staging()
+                    if entity_dicts:
+                        metadata = foundry_meta
+                
+                if entity_dicts:
+                    # Convert dicts to Entity objects
+                    entities = [Entity(**e) for e in entity_dicts]
+                    relationships = []
+                    if rel_dicts:
+                        from pyscrai_core import Relationship
+                        relationships = [Relationship(**r) for r in rel_dicts]
+                    
+                    self.loom_panel.set_data(entities, relationships)
+                else:
+                    # No entities in staging - panel will show empty state
+                    self.loom_panel.set_data([], [])
             
         except ImportError:
             # Fallback to placeholder if LoomPanel not available
