@@ -13,6 +13,14 @@ schemas:
     status: "Current status or state"
     affiliation: "Organization, group, or faction they belong to"
     tags: "Categories or labels (e.g., sergeant, operative)"
+    wealth:
+      type: "integer"
+      description: "Representation of monetary value; i.e cash, tokens, points, wealth, etc"
+      default_value: 0
+    health:
+      type: "integer"
+      description: "actor's health rating 0-100"
+      default_value: 100
   
   polity:
     name: "Name of the organization/group"
