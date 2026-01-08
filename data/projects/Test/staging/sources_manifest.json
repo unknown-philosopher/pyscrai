@@ -1,7 +1,7 @@
 {
   "version": "2.0",
-  "created_at": "2026-01-08T03:28:37.817248+00:00",
-  "updated_at": "2026-01-08T03:29:54.865754+00:00",
+  "created_at": "2026-01-08T12:55:15.561920+00:00",
+  "updated_at": "2026-01-08T13:21:40.371625+00:00",
   "sources": {
     "intel_report_858defd3": {
       "id": "intel_report_858defd3",
@@ -9,11 +9,11 @@
       "original_path": "C:\\Users\\Dev\\Documents\\dev\\projectus\\pyscrai-2\\pyscrai\\data\\intel_report.txt",
       "text_file": "intel_report_858defd3.txt",
       "char_count": 1002,
-      "added_at": "2026-01-08T03:28:37.817262+00:00",
+      "added_at": "2026-01-08T12:55:15.561933+00:00",
       "active": true,
       "metadata": {},
       "extracted": true,
-      "extracted_at": "2026-01-08T03:29:54.865738+00:00"
+      "extracted_at": "2026-01-08T13:21:40.371611+00:00"
     }
   }
 }

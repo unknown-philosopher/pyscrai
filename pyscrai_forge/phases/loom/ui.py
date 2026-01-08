@@ -14,6 +14,7 @@ from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING, Any, Callable, List, Optional
 
 from pyscrai_forge.phases.loom.graph_viz import GraphCanvas, LayoutAlgorithm
+from pyscrai_forge.src.ui.dialogs import ProgressDialog
 
 if TYPE_CHECKING:
     from pyscrai_core import Entity, Relationship
@@ -822,64 +823,45 @@ class LoomPanel(ttk.Frame):
             )
             return
         
-        # Show progress dialog with better UX
-        progress_win = tk.Toplevel(self)
-        progress_win.title("Inferring Relationships")
-        progress_win.geometry("400x120")
-        progress_win.transient(self)
-        progress_win.grab_set()
-        progress_win.resizable(False, False)
-        
-        # Center on parent
-        progress_win.update_idletasks()
-        x = self.winfo_x() + (self.winfo_width() - 400) // 2
-        y = self.winfo_y() + (self.winfo_height() - 120) // 2
-        progress_win.geometry(f"+{x}+{y}")
-        
-        # Progress bar style
-        style = ttk.Style()
-        style.configure("pyscrai.Horizontal.TProgressbar", thickness=20)
-        
-        ttk.Label(
-            progress_win,
-            text="Analyzing entities and inferring relationships...",
-            font=("Segoe UI", 11)
-        ).pack(pady=(15, 5))
-        
-        progress_bar = ttk.Progressbar(
-            progress_win,
-            mode="indeterminate",
-            style="pyscrai.Horizontal.TProgressbar",
-            length=300
-        )
-        progress_bar.pack(pady=5)
-        progress_bar.start(50)
+        # Get manifest for provider/model info
+        manifest = self.callbacks.get("get_manifest")()
+        provider_name = manifest.llm_provider if manifest else "unknown"
+        status_text = f"Provider: {provider_name} | Model: {model_name}"
         
         # Show cluster info if available
         cluster_info = ""
         if self.clusters:
             cluster_info = f" (using {len(self.clusters)} semantic clusters)"
+        detail_text = f"Processing {len(self.entities)} entities{cluster_info}..."
         
-        status_label = ttk.Label(
-            progress_win,
-            text=f"Processing {len(self.entities)} entities{cluster_info}...",
-            font=("Segoe UI", 9),
-            foreground="gray"
+        # Create progress dialog using reusable class
+        progress_dialog = ProgressDialog(
+            parent=self,
+            title="Inferring Relationships",
+            message="Running relationship inference...",
+            status=status_text,
+            detail=detail_text
         )
-        status_label.pack(pady=(5, 10))
         
         def run_inference():
             """Run relationship inference in background."""
             from pyscrai_forge.phases.loom.agent import LoomAgent
             import asyncio
             
+            # Get template from project manifest if available
+            template_name = None
+            manifest = self.callbacks.get("get_manifest")()
+            if manifest and hasattr(manifest, 'template') and manifest.template:
+                template_name = manifest.template
+            
             async def infer():
                 async with provider:
-                    # Pass memory_service for clustering
+                    # Pass memory_service for clustering and template_name from project
                     agent = LoomAgent(
                         provider,
                         model=model_name,
-                        memory_service=self.memory_service
+                        memory_service=self.memory_service,
+                        template_name=template_name
                     )
                     return await agent.infer_relationships(
                         self.entities,
@@ -891,13 +873,14 @@ class LoomPanel(ttk.Frame):
         
         def finish_inference():
             """Handle inference results."""
+            # Run inference first (this takes time)
+            inferred = run_inference()
+            
+            # Destroy dialog AFTER inference completes
             try:
-                progress_bar.stop()
-                progress_win.destroy()
+                progress_dialog.close()
             except:
                 pass
-            
-            inferred = run_inference()
             
             if not inferred:
                 messagebox.showinfo(
@@ -1033,55 +1016,35 @@ class LoomPanel(ttk.Frame):
             )
             return
         
-        # Show progress dialog with better UX
-        progress_win = tk.Toplevel(self)
-        progress_win.title("Detecting Conflicts")
-        progress_win.geometry("400x120")
-        progress_win.transient(self)
-        progress_win.grab_set()
-        progress_win.resizable(False, False)
+        # Get manifest for provider/model info
+        manifest = self.callbacks.get("get_manifest")()
+        provider_name = manifest.llm_provider if manifest else "unknown"
+        status_text = f"Provider: {provider_name} | Model: {model_name}"
+        detail_text = f"Analyzing {len(self.entities)} entities and {len(self.relationships)} relationships..."
         
-        # Center on parent
-        progress_win.update_idletasks()
-        x = self.winfo_x() + (self.winfo_width() - 400) // 2
-        y = self.winfo_y() + (self.winfo_height() - 120) // 2
-        progress_win.geometry(f"+{x}+{y}")
-        
-        # Progress bar style
-        style = ttk.Style()
-        style.configure("pyscrai.Horizontal.TProgressbar", thickness=20)
-        
-        ttk.Label(
-            progress_win,
-            text="Scanning entities and relationships for issues...",
-            font=("Segoe UI", 11)
-        ).pack(pady=(15, 5))
-        
-        progress_bar = ttk.Progressbar(
-            progress_win,
-            mode="indeterminate",
-            style="pyscrai.Horizontal.TProgressbar",
-            length=300
+        # Create progress dialog using reusable class
+        progress_dialog = ProgressDialog(
+            parent=self,
+            title="Detecting Conflicts",
+            message="Scanning entities and relationships for issues...",
+            status=status_text,
+            detail=detail_text
         )
-        progress_bar.pack(pady=5)
-        progress_bar.start(50)
-        
-        status_label = ttk.Label(
-            progress_win,
-            text=f"Analyzing {len(self.entities)} entities and {len(self.relationships)} relationships...",
-            font=("Segoe UI", 9),
-            foreground="gray"
-        )
-        status_label.pack(pady=(5, 10))
         
         def run_detection():
             """Run conflict detection in background."""
             from pyscrai_forge.phases.loom.agent import LoomAgent
             import asyncio
             
+            # Get template from project manifest if available
+            template_name = None
+            manifest = self.callbacks.get("get_manifest")()
+            if manifest and hasattr(manifest, 'template') and manifest.template:
+                template_name = manifest.template
+            
             async def detect():
                 async with provider:
-                    agent = LoomAgent(provider, model=model_name)
+                    agent = LoomAgent(provider, model=model_name, template_name=template_name)
                     return await agent.detect_conflicts(
                         self.entities,
                         self.relationships
@@ -1091,13 +1054,14 @@ class LoomPanel(ttk.Frame):
         
         def finish_detection():
             """Handle detection results."""
+            # Run detection first (this takes time)
+            conflicts = run_detection()
+            
+            # Destroy dialog AFTER detection completes
             try:
-                progress_bar.stop()
-                progress_win.destroy()
+                progress_dialog.close()
             except:
                 pass
-            
-            conflicts = run_detection()
             
             if not conflicts:
                 messagebox.showinfo(

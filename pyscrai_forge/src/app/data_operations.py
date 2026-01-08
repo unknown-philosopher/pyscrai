@@ -13,6 +13,7 @@ from tkinter import messagebox
 from typing import Optional
 
 from .state_manager import AppState
+from ..ui.dialogs import ProgressDialog
 
 
 class DataOperationsMixin:
@@ -69,28 +70,20 @@ class DataOperationsMixin:
             }
             api_key = os.getenv(env_key_map.get(provider_name, ""), "not-needed")
             
-            # Create progress dialog
-            progress_win = tk.Toplevel(self.root)
-            progress_win.title("Extracting Entities...")
-            progress_win.geometry("400x150")
-            progress_win.transient(self.root)
-            progress_win.grab_set()
+            # Get provider/model info for status
+            provider_name = manifest.llm_provider
+            model_name = manifest.llm_default_model
+            status_text = f"Provider: {provider_name} | Model: {model_name}"
             
-            progress_label = tk.Label(progress_win, text="Initializing LLM provider...", pady=20)
-            progress_label.pack()
-            
-            progress_status = tk.Label(progress_win, text="", fg="gray")
-            progress_status.pack()
+            # Create progress dialog using reusable class
+            progress_dialog = ProgressDialog(
+                parent=self.root,
+                title="Extracting Entities",
+                message="Initializing LLM provider...",
+                status=status_text
+            )
             
             result_container = {"entities": None, "relationships": None, "report": None, "error": None}
-            
-            def update_progress(msg, status=""):
-                try:
-                    progress_label.config(text=msg)
-                    progress_status.config(text=status)
-                    progress_win.update()
-                except:
-                    pass
             
             async def run_extraction():
                 try:
@@ -98,8 +91,7 @@ class DataOperationsMixin:
                     provider_name = manifest.llm_provider
                     model_name = manifest.llm_default_model
                     
-                    update_progress("Connecting to LLM provider...", 
-                                  f"Provider: {provider_name} | Model: {model_name}")
+                    progress_dialog.update_message("Connecting to LLM provider...")
                     
                     # Create provider from project manifest settings
                     provider = create_provider(
@@ -131,7 +123,10 @@ class DataOperationsMixin:
                             set_id_counters_path(project_path / ".id_counters.json")
                         
                         reset_id_counters()
-                        update_progress("ID counters reset", "Starting from ENTITY_001 and REL_001")
+                        progress_dialog.update_all(
+                            message="ID counters reset",
+                            detail="Starting from ENTITY_001 and REL_001"
+                        )
                     
                     async with provider:
                         manager = ForgeManager(provider, project_path=project_path, hil_callback=None)
@@ -142,7 +137,7 @@ class DataOperationsMixin:
                             template_name = manager.controller.manifest.template
                         
                         # Run extraction pipeline (creates review packet)
-                        update_progress("Running extraction pipeline...", f"Provider: {provider_name} | Model: {model_name}")
+                        progress_dialog.update_message("Running extraction pipeline...")
                         import tempfile
                         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
                             tmp_path = Path(tmp.name)
@@ -213,7 +208,7 @@ class DataOperationsMixin:
             def finish_extraction():
                 """Handle extraction results in main thread."""
                 try:
-                    progress_win.destroy()
+                    progress_dialog.close()
                 except:
                     pass
                 
@@ -369,36 +364,24 @@ class DataOperationsMixin:
         }
         api_key = os.getenv(env_key_map.get(provider_name, ""), "not-needed")
         
-        # Create progress dialog
-        progress_win = tk.Toplevel(self.root)
-        progress_win.title("Extracting Entities...")
-        progress_win.geometry("400x150")
-        progress_win.transient(self.root)
-        progress_win.grab_set()
+        # Get provider/model info for status
+        provider_name = manifest.llm_provider
+        model_name = manifest.llm_default_model
+        status_text = f"Provider: {provider_name} | Model: {model_name}"
         
-        progress_label = tk.Label(progress_win, text="Initializing LLM provider...", pady=20)
-        progress_label.pack()
-        
-        progress_status = tk.Label(progress_win, text="", fg="gray")
-        progress_status.pack()
+        # Create progress dialog using reusable class
+        progress_dialog = ProgressDialog(
+            parent=self.root,
+            title="Extracting Entities",
+            message="Initializing LLM provider...",
+            status=status_text
+        )
         
         result_container = {"entities": None, "relationships": None, "report": None, "error": None}
         
-        def update_progress(msg, status=""):
-            try:
-                progress_label.config(text=msg)
-                progress_status.config(text=status)
-                progress_win.update()
-            except:
-                pass
-        
         async def run_extraction():
             try:
-                provider_name = manifest.llm_provider
-                model_name = manifest.llm_default_model
-                
-                update_progress("Connecting to LLM provider...", 
-                              f"Provider: {provider_name} | Model: {model_name}")
+                progress_dialog.update_message("Connecting to LLM provider...")
                 
                 provider = create_provider(
                     provider_name,
@@ -421,7 +404,10 @@ class DataOperationsMixin:
                         set_id_counters_path(project_path / ".id_counters.json")
                     
                     reset_id_counters()
-                    update_progress("ID counters reset", "Starting from ENTITY_001 and REL_001")
+                    progress_dialog.update_all(
+                        message="ID counters reset",
+                        detail="Starting from ENTITY_001 and REL_001"
+                    )
                 
                 async with provider:
                     manager = ForgeManager(provider, project_path=project_path, hil_callback=None)
@@ -431,7 +417,7 @@ class DataOperationsMixin:
                     if manager.controller and manager.controller.manifest:
                         template_name = manager.controller.manifest.template
                     
-                    update_progress("Running extraction pipeline...", f"Provider: {provider_name} | Model: {model_name}")
+                    progress_dialog.update_message("Running extraction pipeline...")
                     
                     import tempfile
                     with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
@@ -499,7 +485,7 @@ class DataOperationsMixin:
         
         def finish_extraction():
             try:
-                progress_win.destroy()
+                progress_dialog.close()
             except:
                 pass
             

@@ -295,8 +295,39 @@ class AnalystAgent:
                     cleaned = match.group(1)
                 
             data = json.loads(cleaned)
-            return data.get("resources", {})
-        except (json.JSONDecodeError, AttributeError):
+            
+            # Handle case where data is a list instead of dict
+            if isinstance(data, list):
+                logger.warning(f"LLM returned a list instead of dict, converting to dict")
+                # Try to convert list to dict if it's a list of key-value pairs
+                if len(data) > 0 and isinstance(data[0], dict):
+                    # Merge all dicts in the list
+                    result = {}
+                    for item in data:
+                        if isinstance(item, dict):
+                            result.update(item)
+                    return result
+                return {}
+            
+            # Handle case where data is a dict
+            if isinstance(data, dict):
+                resources = data.get("resources", {})
+                # Ensure resources is a dict, not a list
+                if isinstance(resources, list):
+                    logger.warning(f"LLM returned resources as a list, converting to dict")
+                    if len(resources) > 0 and isinstance(resources[0], dict):
+                        # Merge all dicts in the list
+                        result = {}
+                        for item in resources:
+                            if isinstance(item, dict):
+                                result.update(item)
+                        return result
+                    return {}
+                return resources if isinstance(resources, dict) else {}
+            
+            return {}
+        except (json.JSONDecodeError, AttributeError) as e:
+            logger.debug(f"Failed to parse response: {e}")
             return {}
 
     def _extract_context_sentence(self, text: str, entity_name: str) -> str:
@@ -413,6 +444,11 @@ class AnalystAgent:
             aliases=stub.aliases,
             tags=stub.tags
         )
+        
+        # Ensure resources is a dict (handle case where it might be a list)
+        if not isinstance(resources, dict):
+            logger.warning(f"Resources is not a dict (type: {type(resources)}), converting to empty dict")
+            resources = {}
         
         # Filter out fields that duplicate DescriptorComponent data
         # These fields are already stored in descriptor, so we don't need them in resources_json

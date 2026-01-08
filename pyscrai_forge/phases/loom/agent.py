@@ -20,6 +20,9 @@ if TYPE_CHECKING:
     from pyscrai_core.llm_interface.base import LLMProvider
     from pyscrai_core.memory_service import MemoryService
 
+from pyscrai_forge.prompts.template_manager import TemplateManager
+from pyscrai_forge.prompts.core import Genre
+
 logger = logging.getLogger(__name__)
 
 
@@ -155,7 +158,10 @@ class LoomAgent:
         self,
         provider: "LLMProvider",
         model: Optional[str] = None,
-        memory_service: Optional["MemoryService"] = None
+        memory_service: Optional["MemoryService"] = None,
+        template_manager: Optional[TemplateManager] = None,
+        genre: Genre = Genre.GENERIC,
+        template_name: Optional[str] = None
     ):
         """Initialize the LoomAgent.
         
@@ -163,17 +169,24 @@ class LoomAgent:
             provider: LLM provider for inference
             model: Model name to use (defaults to provider's default)
             memory_service: Optional MemoryService for semantic clustering
+            template_manager: Optional TemplateManager for loading prompt templates
+            genre: Genre for template selection (defaults to GENERIC, used as fallback)
+            template_name: Optional template directory name from project manifest (overrides genre)
         """
         self.provider = provider
         self.model = model or getattr(provider, 'default_model', None)
         self.memory_service = memory_service
+        self.template_manager = template_manager or TemplateManager()
+        self.genre = genre
+        self.template_name = template_name
     
     async def infer_relationships(
         self,
         entities: List["Entity"],
         existing_relationships: Optional[List["Relationship"]] = None,
         max_entities: int = 20,
-        use_clustering: bool = True
+        use_clustering: bool = True,
+        source_text: Optional[str] = None
     ) -> List[InferredRelationship]:
         """Infer relationships between entities.
         
@@ -182,6 +195,7 @@ class LoomAgent:
             existing_relationships: Existing relationships to avoid duplicates
             max_entities: Maximum entities to process at once (for context limits)
             use_clustering: Whether to use semantic clustering to reduce comparisons
+            source_text: Optional original source text for context
             
         Returns:
             List of inferred relationships
@@ -210,7 +224,8 @@ class LoomAgent:
                     cluster_inferred = await self._infer_relationships_for_cluster(
                         cluster_entities_limited,
                         existing_relationships,
-                        cluster_id
+                        cluster_id,
+                        source_text
                     )
                     all_inferred.extend(cluster_inferred)
                 
@@ -226,7 +241,8 @@ class LoomAgent:
         inferred = await self._infer_relationships_for_cluster(
             entities_to_analyze,
             existing_relationships,
-            "all"
+            "all",
+            source_text
         )
         
         logger.info(f"LoomAgent inferred {len(inferred)} relationships")
@@ -236,7 +252,8 @@ class LoomAgent:
         self,
         entities: List["Entity"],
         existing_relationships: Optional[List["Relationship"]] = None,
-        cluster_id: str = "all"
+        cluster_id: str = "all",
+        source_text: Optional[str] = None
     ) -> List[InferredRelationship]:
         """Infer relationships for a cluster of entities.
         
@@ -244,6 +261,7 @@ class LoomAgent:
             entities: List of entities in the cluster
             existing_relationships: Existing relationships to avoid duplicates
             cluster_id: Identifier for the cluster (for logging)
+            source_text: Optional original source text for context
             
         Returns:
             List of inferred relationships
@@ -262,9 +280,42 @@ class LoomAgent:
             }
             entity_summaries.append(summary)
         
-        prompt = RELATIONSHIP_INFERENCE_PROMPT.format(
-            entities_json=json.dumps(entity_summaries, indent=2)
-        )
+        # Try to load template from template_manager, fallback to hardcoded prompt
+        try:
+            # Use template_name from project manifest if provided, otherwise use genre
+            if self.template_name:
+                template_genre = self.template_name
+                logger.info(f"LoomAgent: Using project template_name='{self.template_name}' as template_genre")
+                allow_fallback = False
+            else:
+                # Get genre string value (Genre is a string enum)
+                genre_str = self.genre.value if isinstance(self.genre, Genre) else str(self.genre)
+                template_genre = genre_str
+                logger.info(f"LoomAgent: Using genre-based template selection: genre={self.genre} -> template_genre='{template_genre}'")
+                allow_fallback = True
+            
+            template = self.template_manager.get_template("relationships", genre=template_genre, allow_fallback=allow_fallback)
+            logger.info(f"LoomAgent: Successfully loaded template from genre='{template_genre}'")
+            
+            # Format entities as a readable list for the template
+            entities_list = "\n".join([
+                f"- {s['name']} ({s['type']}): {s['description'][:200]}..." if len(s.get('description', '')) > 200 
+                else f"- {s['name']} ({s['type']}): {s.get('description', 'No description')}"
+                for s in entity_summaries
+            ])
+            
+            # Render template with entities_list and text (source_text)
+            system_prompt, user_prompt = template.render(
+                entities_list=entities_list,
+                text=source_text or ""
+            )
+            prompt = f"{system_prompt}\n\n{user_prompt}"
+        except (FileNotFoundError, Exception) as e:
+            logger.warning(f"Failed to load relationships template, using fallback prompt: {e}")
+            # Fallback to original hardcoded prompt
+            prompt = RELATIONSHIP_INFERENCE_PROMPT.format(
+                entities_json=json.dumps(entity_summaries, indent=2)
+            )
         
         try:
             content = await self.provider.complete_simple(
@@ -274,8 +325,8 @@ class LoomAgent:
                 max_tokens=2000
             )
             
-            # Parse the JSON response
-            inferred = self._parse_relationships_response(content)
+            # Parse the JSON response (pass entities for name-to-ID mapping)
+            inferred = self._parse_relationships_response(content, entities=entities)
             
             # Filter out existing relationships
             if existing_relationships:
@@ -355,12 +406,26 @@ class LoomAgent:
             logger.error(f"LoomAgent conflict detection failed: {e}")
             return []
     
-    def _parse_relationships_response(self, content: str) -> List[InferredRelationship]:
-        """Parse LLM response into InferredRelationship objects."""
+    def _parse_relationships_response(self, content: str, entities: Optional[List["Entity"]] = None) -> List[InferredRelationship]:
+        """Parse LLM response into InferredRelationship objects.
+        
+        Supports two formats:
+        1. Template format: {"relationships": [{"source_name": "...", "target_name": "...", ...}]}
+        2. Legacy format: [{"source_id": "...", "target_id": "...", ...}]
+        
+        Args:
+            content: LLM response content
+            entities: Optional list of entities for name-to-ID mapping (required for template format)
+        """
         try:
             # Try to extract JSON from the response
-            json_start = content.find('[')
-            json_end = content.rfind(']') + 1
+            json_start = content.find('{')
+            json_end = content.rfind('}') + 1
+            
+            # Also try array format
+            if json_start == -1:
+                json_start = content.find('[')
+                json_end = content.rfind(']') + 1
             
             if json_start == -1 or json_end <= json_start:
                 return []
@@ -368,21 +433,66 @@ class LoomAgent:
             json_str = content[json_start:json_end]
             data = json.loads(json_str)
             
+            # Handle template format: {"relationships": [...]}
+            if isinstance(data, dict) and "relationships" in data:
+                relationships_data = data["relationships"]
+            # Handle legacy format: [...]
+            elif isinstance(data, list):
+                relationships_data = data
+            else:
+                logger.warning(f"Unexpected JSON format in relationships response")
+                return []
+            
+            # Build name-to-ID mapping if entities provided
+            name_to_id = {}
+            if entities:
+                for e in entities:
+                    if hasattr(e, "descriptor") and e.descriptor:
+                        name = getattr(e.descriptor, "name", "")
+                        if name:
+                            name_to_id[name] = e.id
+            
             results = []
-            for item in data:
+            for item in relationships_data:
                 try:
-                    confidence = RelationshipConfidence(item.get("confidence", "medium").lower())
-                except ValueError:
-                    confidence = RelationshipConfidence.MEDIUM
-                
-                results.append(InferredRelationship(
-                    source_id=item.get("source_id", ""),
-                    target_id=item.get("target_id", ""),
-                    relationship_type=item.get("relationship_type", "KNOWS"),
-                    confidence=confidence,
-                    reasoning=item.get("reasoning", ""),
-                    evidence=item.get("evidence", "")
-                ))
+                    # Handle template format (source_name/target_name) or legacy format (source_id/target_id)
+                    source_id = item.get("source_id") or (name_to_id.get(item.get("source_name", "")) if name_to_id else None)
+                    target_id = item.get("target_id") or (name_to_id.get(item.get("target_name", "")) if name_to_id else None)
+                    
+                    if not source_id or not target_id:
+                        logger.warning(f"Skipping relationship - missing source_id or target_id: {item}")
+                        continue
+                    
+                    # Map strength to confidence (template format) or use confidence directly (legacy format)
+                    if "strength" in item:
+                        strength = float(item.get("strength", 0.5))
+                        if strength >= 0.8:
+                            confidence = RelationshipConfidence.HIGH
+                        elif strength >= 0.5:
+                            confidence = RelationshipConfidence.MEDIUM
+                        else:
+                            confidence = RelationshipConfidence.LOW
+                    else:
+                        try:
+                            confidence = RelationshipConfidence(item.get("confidence", "medium").lower())
+                        except ValueError:
+                            confidence = RelationshipConfidence.MEDIUM
+                    
+                    # Get reasoning/evidence (template uses "description", legacy uses "reasoning"/"evidence")
+                    reasoning = item.get("reasoning") or item.get("description", "")
+                    evidence = item.get("evidence") or item.get("description", "")
+                    
+                    results.append(InferredRelationship(
+                        source_id=source_id,
+                        target_id=target_id,
+                        relationship_type=item.get("relationship_type", "KNOWS"),
+                        confidence=confidence,
+                        reasoning=reasoning,
+                        evidence=evidence
+                    ))
+                except Exception as e:
+                    logger.warning(f"Failed to parse relationship item: {e}, item: {item}")
+                    continue
             
             return results
             
@@ -500,18 +610,19 @@ class LoomAgent:
                     )
                     continue
             
-            # Check for "knows" relationships - must have explicit evidence
-            if rel.relationship_type.upper() in ["KNOWS", "WORKS_WITH", "ALLIED_WITH"]:
-                # "knows" must be explicitly stated in the source entity's bio
-                knows_keywords = ["knows", "works with", "colleague", "ally", "partner", "friend"]
-                has_explicit_evidence = any(kw in source_bio for kw in knows_keywords)
-                
-                if not has_explicit_evidence:
-                    logger.debug(
-                        f"Skipping fabricated {rel.relationship_type}: {source_name} -> {target_name} "
-                        f"(no explicit evidence in source bio)"
-                    )
-                    continue
+            # Check for "knows" relationships - RELAXED: Commented out strict keyword check
+            # The original check was too aggressive for entities extracted without rich interaction descriptions
+            # if rel.relationship_type.upper() in ["KNOWS", "WORKS_WITH", "ALLIED_WITH"]:
+            #     # "knows" must be explicitly stated in the source entity's bio
+            #     knows_keywords = ["knows", "works with", "colleague", "ally", "partner", "friend"]
+            #     has_explicit_evidence = any(kw in source_bio for kw in knows_keywords)
+            #     
+            #     if not has_explicit_evidence:
+            #         logger.debug(
+            #             f"Skipping fabricated {rel.relationship_type}: {source_name} -> {target_name} "
+            #             f"(no explicit evidence in source bio)"
+            #         )
+            #         continue
             
             # Check for LOCATED_IN contradictions
             if rel.relationship_type.upper() == "LOCATED_IN":
