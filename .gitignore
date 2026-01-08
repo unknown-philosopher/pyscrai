@@ -1,5 +1,5 @@
 # Temporarily ignore pyscrai_engine for Gemini Context Window
-pyscrai_engine/
+# pyscrai_engine/
 
 _workspace
 .github
