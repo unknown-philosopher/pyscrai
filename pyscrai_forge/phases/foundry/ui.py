@@ -59,6 +59,11 @@ class FoundryPanel(ttk.Frame):
         # Data manager reference (set by state_manager for entity editing)
         self.data_manager: Optional[Any] = None
         
+        # FoundryAssistant for alias detection
+        self.assistant = None
+        self.memory_service = None
+        self.alias_suggestions: List[Any] = []
+        
         self._build_ui()
     
     def _build_ui(self) -> None:
@@ -100,10 +105,15 @@ class FoundryPanel(ttk.Frame):
         main_paned.add(source_frame, weight=1)
         self._build_source_pool_panel(source_frame)
         
-        # Right: Entities
+        # Center: Entities
         entities_frame = ttk.Frame(main_paned)
         main_paned.add(entities_frame, weight=2)
         self._build_entities_panel(entities_frame)
+        
+        # Right: FoundryAssistant sidebar
+        assistant_frame = ttk.Frame(main_paned)
+        main_paned.add(assistant_frame, weight=1)
+        self._build_assistant_panel(assistant_frame)
         
         # Bottom action bar
         self._build_action_bar()
@@ -434,6 +444,211 @@ class FoundryPanel(ttk.Frame):
         except ImportError:
             pass
     
+    def _build_assistant_panel(self, parent: ttk.Frame) -> None:
+        """Build the FoundryAssistant sidebar panel."""
+        # Header
+        header_frame = ttk.Frame(parent)
+        header_frame.pack(fill=tk.X, pady=(0, 5))
+        
+        ttk.Label(
+            header_frame,
+            text="Suggested Aliases",
+            font=("Segoe UI", 12, "bold")
+        ).pack(side=tk.LEFT)
+        
+        # Refresh button
+        ttk.Button(
+            header_frame,
+            text="Refresh",
+            command=self._refresh_alias_suggestions
+        ).pack(side=tk.RIGHT, padx=2)
+        
+        # Suggestions list
+        list_frame = ttk.Frame(parent)
+        list_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Use a Text widget with scrollbar for better display
+        self.assistant_text = tk.Text(
+            list_frame,
+            wrap=tk.WORD,
+            font=("Segoe UI", 9),
+            height=15,
+            state=tk.DISABLED
+        )
+        self.assistant_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        assistant_scroll = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.assistant_text.yview)
+        assistant_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.assistant_text.config(yscrollcommand=assistant_scroll.set)
+        
+        # Action buttons frame
+        action_frame = ttk.Frame(parent)
+        action_frame.pack(fill=tk.X, pady=(5, 0))
+        
+        self.accept_alias_btn = ttk.Button(
+            action_frame,
+            text="Accept Selected",
+            command=self._accept_selected_alias,
+            state=tk.DISABLED
+        )
+        self.accept_alias_btn.pack(side=tk.LEFT, padx=2, fill=tk.X, expand=True)
+        
+        self.dismiss_alias_btn = ttk.Button(
+            action_frame,
+            text="Dismiss",
+            command=self._dismiss_selected_alias,
+            state=tk.DISABLED
+        )
+        self.dismiss_alias_btn.pack(side=tk.LEFT, padx=2, fill=tk.X, expand=True)
+        
+        # Store selected suggestion index
+        self.selected_suggestion_index: Optional[int] = None
+    
+    def _refresh_alias_suggestions(self) -> None:
+        """Refresh alias suggestions using FoundryAssistant."""
+        if not self.entities or len(self.entities) < 2:
+            self._update_assistant_display("No entities to compare. Extract some entities first.")
+            return
+        
+        if not self.memory_service:
+            # Try to initialize memory service
+            try:
+                from pyscrai_core.memory_service import MemoryService
+                if self.project_path:
+                    db_path = self.project_path / "world.db"
+                    self.memory_service = MemoryService.create(db_path if db_path.exists() else None)
+                else:
+                    self.memory_service = MemoryService.create()
+            except Exception as e:
+                self._update_assistant_display(f"Memory service unavailable: {e}")
+                return
+        
+        if not self.assistant:
+            from pyscrai_forge.phases.foundry.assistant import FoundryAssistant
+            self.assistant = FoundryAssistant(self.memory_service)
+        
+        # Detect aliases for each new entity against all existing ones
+        self.alias_suggestions = []
+        
+        for i, new_entity in enumerate(self.entities):
+            existing_entities = [e for j, e in enumerate(self.entities) if j != i]
+            
+            # Get context sentence from entity bio
+            context_sentence = ""
+            if hasattr(new_entity, "descriptor") and new_entity.descriptor:
+                if hasattr(new_entity.descriptor, "bio") and new_entity.descriptor.bio:
+                    context_sentence = new_entity.descriptor.bio
+            
+            suggestions = self.assistant.detect_aliases(
+                new_entity,
+                existing_entities,
+                context_sentence
+            )
+            
+            self.alias_suggestions.extend(suggestions)
+        
+        # Update display
+        self._update_assistant_display()
+    
+    def _update_assistant_display(self, message: Optional[str] = None) -> None:
+        """Update the assistant text display."""
+        self.assistant_text.config(state=tk.NORMAL)
+        self.assistant_text.delete(1.0, tk.END)
+        
+        if message:
+            self.assistant_text.insert(tk.END, message)
+        elif not self.alias_suggestions:
+            self.assistant_text.insert(tk.END, "No alias suggestions found.\n\nClick 'Refresh' to analyze entities.")
+        else:
+            for i, suggestion in enumerate(self.alias_suggestions):
+                new_name = suggestion.new_entity.descriptor.name if suggestion.new_entity.descriptor else suggestion.new_entity.id
+                existing_name = suggestion.existing_entity.descriptor.name if suggestion.existing_entity.descriptor else suggestion.existing_entity.id
+                
+                self.assistant_text.insert(tk.END, f"[{i+1}] ", "bold")
+                self.assistant_text.insert(tk.END, f"{new_name} → {existing_name}\n")
+                self.assistant_text.insert(tk.END, f"   Similarity: {suggestion.similarity*100:.1f}%\n")
+                
+                if suggestion.is_ocr_error:
+                    self.assistant_text.insert(tk.END, f"   ⚠ Possible OCR Error\n", "warning")
+                    if suggestion.suggested_correction:
+                        self.assistant_text.insert(tk.END, f"   Suggested: {suggestion.suggested_correction}\n")
+                else:
+                    self.assistant_text.insert(tk.END, f"   {suggestion.reasoning}\n")
+                
+                if suggestion.context_sentence:
+                    context_preview = suggestion.context_sentence[:100] + "..." if len(suggestion.context_sentence) > 100 else suggestion.context_sentence
+                    self.assistant_text.insert(tk.END, f"   Context: {context_preview}\n")
+                
+                self.assistant_text.insert(tk.END, "\n")
+            
+            # Configure text tags
+            self.assistant_text.tag_configure("bold", font=("Segoe UI", 9, "bold"))
+            self.assistant_text.tag_configure("warning", foreground="orange")
+            
+            # Enable buttons
+            self.accept_alias_btn.config(state=tk.NORMAL)
+            self.dismiss_alias_btn.config(state=tk.NORMAL)
+        
+        self.assistant_text.config(state=tk.DISABLED)
+    
+    def _accept_selected_alias(self) -> None:
+        """Accept the selected alias suggestion and create a Relationship."""
+        if not self.alias_suggestions or self.selected_suggestion_index is None:
+            # Accept the first one if none selected
+            if self.alias_suggestions:
+                self.selected_suggestion_index = 0
+            else:
+                return
+        
+        suggestion = self.alias_suggestions[self.selected_suggestion_index]
+        
+        # Create ALIAS relationship
+        try:
+            from pyscrai_core import Relationship, RelationshipType
+            
+            alias_rel = Relationship(
+                source_id=suggestion.new_entity.id,
+                target_id=suggestion.existing_entity.id,
+                relationship_type=RelationshipType.CUSTOM,
+                description=f"Alias relationship (similarity: {suggestion.similarity*100:.1f}%)"
+            )
+            
+            # Add to relationships list
+            if not hasattr(self, 'relationships') or self.relationships is None:
+                self.relationships = []
+            
+            self.relationships.append(alias_rel)
+            
+            # Remove suggestion from list
+            self.alias_suggestions.pop(self.selected_suggestion_index)
+            self.selected_suggestion_index = None
+            
+            # Update display
+            self._update_assistant_display()
+            
+            # Show confirmation
+            from tkinter import messagebox
+            messagebox.showinfo("Alias Accepted", f"Created alias relationship between {suggestion.new_entity.descriptor.name if suggestion.new_entity.descriptor else suggestion.new_entity.id} and {suggestion.existing_entity.descriptor.name if suggestion.existing_entity.descriptor else suggestion.existing_entity.id}")
+            
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("Error", f"Failed to create alias relationship: {e}")
+    
+    def _dismiss_selected_alias(self) -> None:
+        """Dismiss the selected alias suggestion."""
+        if not self.alias_suggestions or self.selected_suggestion_index is None:
+            # Dismiss the first one if none selected
+            if self.alias_suggestions:
+                self.selected_suggestion_index = 0
+            else:
+                return
+        
+        self.alias_suggestions.pop(self.selected_suggestion_index)
+        self.selected_suggestion_index = None
+        
+        # Update display
+        self._update_assistant_display()
+    
     def _build_relationships_panel(self, parent: ttk.Frame) -> None:
         """Build the relationships panel.
         
@@ -561,6 +776,10 @@ class FoundryPanel(ttk.Frame):
         self.relationships = relationships
         self.validation_report = validation_report
         self.refresh()
+        
+        # Auto-refresh alias suggestions when entities change
+        if hasattr(self, 'assistant_text') and self.entities:
+            self._refresh_alias_suggestions()
     
     def refresh(self) -> None:
         """Refresh the UI with current data."""

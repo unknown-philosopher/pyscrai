@@ -1,11 +1,11 @@
 {
-  "name": "Test",
-  "description": "Test",
-  "author": "Test",
+  "name": "test",
+  "description": "test",
+  "author": "test",
   "version": "0.1.0",
   "schema_version": 1,
-  "created_at": "2026-01-07T23:43:16.498782Z",
-  "last_modified_at": "2026-01-07T23:43:16.498788Z",
+  "created_at": "2026-01-08T03:28:24.742096Z",
+  "last_modified_at": "2026-01-08T03:28:24.742101Z",
   "entity_schemas": {
     "actor": {
       "name": {
@@ -38,15 +38,13 @@
       },
       "wealth": {
         "type": "integer",
-        "required": true,
         "description": "Representation of monetary value; i.e cash, tokens, points, wealth, etc",
-        "default": "0"
+        "default_value": 0
       },
       "health": {
         "type": "integer",
-        "required": true,
         "description": "actor's health rating 0-100",
-        "default": "100"
+        "default_value": 100
       }
     },
     "polity": {

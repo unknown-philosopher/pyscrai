@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
 if TYPE_CHECKING:
     from pyscrai_core import Entity, Relationship
+    from pyscrai_core.memory_service import MemoryService
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,8 @@ class MergeConflict:
     similarity: float = 0.0  # 0.0 to 1.0
     suggested_action: MergeAction = MergeAction.CREATE
     details: dict = None
+    semantic_category: Optional[str] = None  # "correction", "event", "branch", "ambiguous"
+    reasoning: str = ""  # Explanation of categorization
     
     def __post_init__(self):
         if self.details is None:
@@ -90,6 +93,13 @@ class SmartMergeEngine:
         """
         self.similarity_threshold = similarity_threshold
         self.memory_service = memory_service
+        
+        # Initialize semantic conflict resolver
+        if memory_service:
+            from pyscrai_forge.phases.anvil.semantic_resolver import SemanticConflictResolver
+            self.semantic_resolver = SemanticConflictResolver(memory_service)
+        else:
+            self.semantic_resolver = None
     
     def analyze_merge(
         self,
@@ -144,8 +154,18 @@ class SmartMergeEngine:
                 for canon_entity in canon_by_name[staging_name]:
                     similarity = self._calculate_similarity(staging_entity, canon_entity)
                     
+                    # Use semantic resolver if available
+                    semantic_analysis = None
+                    if self.semantic_resolver:
+                        semantic_analysis = self.semantic_resolver.categorize_conflict(
+                            staging_entity,
+                            canon_entity
+                        )
+                        # Update similarity from semantic analysis (more accurate)
+                        similarity = semantic_analysis.similarity
+                    
                     if similarity >= self.similarity_threshold:
-                        conflicts.append(MergeConflict(
+                        conflict = MergeConflict(
                             conflict_type=ConflictType.DUPLICATE_NAME,
                             staging_id=staging_entity.id,
                             canon_id=canon_entity.id,
@@ -153,9 +173,20 @@ class SmartMergeEngine:
                             similarity=similarity,
                             suggested_action=MergeAction.MERGE if similarity > 0.9 else MergeAction.SKIP,
                             details=self._generate_diff(staging_entity, canon_entity)
-                        ))
+                        )
+                        if semantic_analysis:
+                            conflict.semantic_category = semantic_analysis.category.value
+                            conflict.reasoning = semantic_analysis.reasoning
+                            # Update suggested action based on category
+                            if semantic_analysis.category.value == "correction":
+                                conflict.suggested_action = MergeAction.UPDATE
+                            elif semantic_analysis.category.value == "event":
+                                conflict.suggested_action = MergeAction.UPDATE
+                            elif semantic_analysis.category.value == "branch":
+                                conflict.suggested_action = MergeAction.CREATE
+                        conflicts.append(conflict)
                     elif similarity >= 0.5:
-                        conflicts.append(MergeConflict(
+                        conflict = MergeConflict(
                             conflict_type=ConflictType.SIMILARITY_THRESHOLD,
                             staging_id=staging_entity.id,
                             canon_id=canon_entity.id,
@@ -163,7 +194,11 @@ class SmartMergeEngine:
                             similarity=similarity,
                             suggested_action=MergeAction.CREATE,  # User should review
                             details=self._generate_diff(staging_entity, canon_entity)
-                        ))
+                        )
+                        if semantic_analysis:
+                            conflict.semantic_category = semantic_analysis.category.value
+                            conflict.reasoning = semantic_analysis.reasoning
+                        conflicts.append(conflict)
         
         # Check relationships for orphaned references
         staging_entity_ids = {e.id for e in staging_entities}
@@ -208,7 +243,10 @@ class SmartMergeEngine:
             try:
                 text1 = self._entity_to_text(entity1)
                 text2 = self._entity_to_text(entity2)
-                return self.memory_service.calculate_similarity(text1, text2)
+                similarity = self.memory_service.calculate_similarity(text1, text2)
+                # Ensure we're using embeddings, not just Jaccard
+                if similarity > 0:  # If similarity was calculated
+                    return similarity
             except Exception as e:
                 logger.warning(f"Semantic similarity failed: {e}")
         
@@ -237,19 +275,31 @@ class SmartMergeEngine:
         return intersection / union if union > 0 else 0.0
     
     def _entity_to_text(self, entity: "Entity") -> str:
-        """Convert entity to text representation for comparison."""
+        """Convert entity to text representation for comparison.
+        
+        Uses full context including state information for better semantic matching.
+        """
         parts = []
         
-        if hasattr(entity, "descriptor"):
+        if hasattr(entity, "descriptor") and entity.descriptor:
             desc = entity.descriptor
-            if hasattr(desc, "name"):
+            if hasattr(desc, "name") and desc.name:
                 parts.append(desc.name)
-            if hasattr(desc, "description"):
-                parts.append(desc.description or "")
-            if hasattr(desc, "aliases"):
+            if hasattr(desc, "description") and desc.description:
+                parts.append(desc.description)
+            if hasattr(desc, "bio") and desc.bio:
+                parts.append(desc.bio)
+            if hasattr(desc, "aliases") and desc.aliases:
                 parts.extend(desc.aliases or [])
         
-        return " ".join(parts)
+        # Add state information for better context
+        if hasattr(entity, "state") and entity.state:
+            if hasattr(entity.state, "resources") and entity.state.resources:
+                for key, value in entity.state.resources.items():
+                    if isinstance(value, (str, int, float)) and len(str(value)) < 100:
+                        parts.append(f"{key}: {value}")
+        
+        return " ".join(str(p) for p in parts if p)
     
     def _generate_diff(
         self,

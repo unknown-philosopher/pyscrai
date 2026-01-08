@@ -56,10 +56,11 @@ class ForgeManager:
         # Robust path resolution
         self.project_path = Path(project_path).resolve() if project_path else None
         
-        # Initialize agents
-        self.analyst = AnalystAgent(provider)
-        self.narrator = NarratorAgent(provider)
+        # Initialize agents with shared template manager
+        # Scout has its own template_manager, we'll share it with Analyst
         self.scout = ScoutAgent(provider)
+        self.analyst = AnalystAgent(provider, template_manager=self.scout.template_manager)
+        self.narrator = NarratorAgent(provider)
         
         # State
         self.controller: Optional[CoreController] = None
@@ -276,7 +277,8 @@ class ForgeManager:
         enriched_entities = []
         for stub in unique_stubs:
             schema = manifest.entity_schemas.get(stub.entity_type.value, {})
-            entity = await self.analyst.extract_from_text(stub, text, schema)
+            # Pass genre and template_name to Analyst so it can use the correct template
+            entity = await self.analyst.extract_from_text(stub, text, schema, genre=genre, template_name=template_name)
             enriched_entities.append(entity)
         console.print("Analysis complete.")
 
@@ -286,16 +288,95 @@ class ForgeManager:
         relationships = []
         if extract_relationships:
             console.print("[dim]--- [Phase 3] Mapping Relationships ---[/dim]")
-            ent_dicts = [
-                {
-                    "id": e.id,
-                    "name": e.descriptor.name,
-                    "entity_type": e.descriptor.entity_type.value,
-                    "description": e.descriptor.bio
-                }
-                for e in enriched_entities
-            ]
-            rel_system_prompt, rel_user_prompt = get_relationship_prompt(text, ent_dicts, genre)
+            
+            # Use TemplateManager to load relationships.yaml template instead of hardcoded prompt
+            template = None
+            try:
+                # Determine template genre (same logic as Scout and Analyst)
+                if template_name:
+                    template_genre = template_name
+                    logger.info(f"ForgeManager: Using explicit template_name='{template_name}' for relationships")
+                    allow_fallback = False
+                else:
+                    genre_map = {
+                        Genre.GENERIC.value: "default",
+                        Genre.HISTORICAL.value: "historical",
+                        "historical": "historical",
+                        "espionage": "espionage",
+                        "fictional": "fictional",
+                    }
+                    template_genre = genre_map.get(genre.value if hasattr(genre, 'value') else genre, "default")
+                    logger.info(f"ForgeManager: Using genre-based template selection for relationships: genre={genre} -> template_genre='{template_genre}'")
+                    allow_fallback = True
+                
+                try:
+                    template = self.scout.template_manager.get_template(
+                        "relationships",
+                        genre=template_genre,
+                        allow_fallback=allow_fallback
+                    )
+                    logger.info(f"ForgeManager: Successfully loaded relationships template from genre='{template_genre}'")
+                except (FileNotFoundError, ValueError) as e:
+                    if not allow_fallback:
+                        error_type = "not found" if isinstance(e, FileNotFoundError) else "empty or malformed"
+                        logger.error(f"ForgeManager: Relationships template '{template_genre}' {error_type}, but template_name was explicitly provided. Falling back to hardcoded prompt.")
+                        template = None  # Will use fallback below
+                    else:
+                        logger.warning(f"ForgeManager: Relationships template '{template_genre}' not found or invalid, falling back to 'default'")
+                        try:
+                            template = self.scout.template_manager.get_template("relationships", genre="default", allow_fallback=True)
+                        except Exception:
+                            template = None  # Will use fallback below
+                
+                # Render template with variables if successfully loaded (full descriptions, no truncation)
+                if template is not None:
+                    # Format entities list for template (full descriptions, no truncation)
+                    # The template expects {entities_list} variable
+                    entities_list = []
+                    for e in enriched_entities:
+                        entities_list.append({
+                            "id": e.id,
+                            "name": e.descriptor.name,
+                            "type": e.descriptor.entity_type.value,
+                            "description": e.descriptor.bio or ""  # Full description, no truncation
+                        })
+                    
+                    # Convert to JSON string for template
+                    import json as _json
+                    entities_list_json = _json.dumps(entities_list, indent=2)
+                    
+                    # Render template with variables
+                    rel_system_prompt, rel_user_prompt = template.render(
+                        text=text,
+                        entities_list=entities_list_json,
+                        genre=genre.value if hasattr(genre, 'value') else str(genre)
+                    )
+                else:
+                    # Fallback to hardcoded prompt if template loading failed
+                    logger.warning(f"ForgeManager: Using hardcoded relationship prompt as fallback")
+                    ent_dicts = [
+                        {
+                            "id": e.id,
+                            "name": e.descriptor.name,
+                            "entity_type": e.descriptor.entity_type.value,
+                            "description": e.descriptor.bio  # Full description, no truncation
+                        }
+                        for e in enriched_entities
+                    ]
+                    rel_system_prompt, rel_user_prompt = get_relationship_prompt(text, ent_dicts, genre)
+            except Exception as e:
+                # Fallback to hardcoded prompt if template loading fails
+                logger.warning(f"ForgeManager: Failed to load relationships template, falling back to hardcoded prompt: {e}")
+                ent_dicts = [
+                    {
+                        "id": e.id,
+                        "name": e.descriptor.name,
+                        "entity_type": e.descriptor.entity_type.value,
+                        "description": e.descriptor.bio  # Full description, no truncation
+                    }
+                    for e in enriched_entities
+                ]
+                rel_system_prompt, rel_user_prompt = get_relationship_prompt(text, ent_dicts, genre)
 
             # Verbose logging: Show relationship prompts
             logger.debug("=" * 80)
@@ -303,7 +384,7 @@ class ForgeManager:
             logger.debug("=" * 80)
             logger.debug(f"Model: {self.provider.default_model}")
             logger.debug(f"Temperature: 0.1")
-            logger.debug(f"Entities: {len(ent_dicts)}")
+            logger.debug(f"Entities: {len(enriched_entities)}")
             logger.debug("\n--- SYSTEM PROMPT ---")
             logger.debug(rel_system_prompt)
             logger.debug("\n--- USER PROMPT ---")

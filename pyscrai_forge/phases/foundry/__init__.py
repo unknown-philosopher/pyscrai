@@ -10,6 +10,7 @@ Output artifact: staging/entities_staging.json
 """
 
 from pyscrai_forge.phases.foundry.ui import FoundryPanel
+from pyscrai_forge.phases.foundry.assistant import FoundryAssistant, AliasSuggestion
 
-__all__ = ["FoundryPanel"]
+__all__ = ["FoundryPanel", "FoundryAssistant", "AliasSuggestion"]
 

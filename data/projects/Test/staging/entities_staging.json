@@ -1,14 +1,14 @@
 {
   "phase": "foundry",
-  "created_at": "2026-01-07T23:48:59.397914+00:00",
+  "created_at": "2026-01-08T03:30:34.565914+00:00",
   "entity_count": 7,
   "source_text_preview": "",
   "metadata": {},
   "entities": [
     {
       "id": "ENTITY_001",
-      "created_at": "2026-01-07T23:44:14.843398Z",
-      "updated_at": "2026-01-07T23:44:14.843401Z",
+      "created_at": "2026-01-08T03:28:59.152359Z",
+      "updated_at": "2026-01-08T03:28:59.152364Z",
       "descriptor": {
         "name": "Operation Silver Talon",
         "bio": "A military operation involving the extraction of an asset and requisition of funds.",
@@ -18,7 +18,7 @@
       "cognitive": null,
       "spatial": null,
       "state": {
-        "resources_json": "{\"type\": \"Military Operation\", \"participants\": \"Captain Elena Rossi (Crimson Vanguard), Marcus Thorne (Iron Syndicate)\", \"status\": \"Active\"}",
+        "resources_json": "{}",
         "region_version": null,
         "adjacency_json": null,
         "travel_times_json": null
@@ -26,11 +26,11 @@
     },
     {
       "id": "ENTITY_003",
-      "created_at": "2026-01-07T23:44:24.823512Z",
-      "updated_at": "2026-01-07T23:44:24.823515Z",
+      "created_at": "2026-01-08T03:29:09.043207Z",
+      "updated_at": "2026-01-08T03:29:09.043210Z",
       "descriptor": {
         "name": "Elena Rossi",
-        "bio": "Captain in the Crimson Vanguard operating under the alias Viper.",
+        "bio": "Captain serving in the Crimson Vanguard, operating under the alias Viper.",
         "tags": [
           "Viper"
         ],
@@ -39,7 +39,7 @@
       "cognitive": null,
       "spatial": null,
       "state": {
-        "resources_json": "{\"rank\": \"Captain\", \"role\": \"Local Asset\", \"status\": \"Active\", \"affiliation\": \"Crimson Vanguard\", \"wealth\": 12000, \"health\": 85}",
+        "resources_json": "{}",
         "region_version": null,
         "adjacency_json": null,
         "travel_times_json": null
@@ -47,8 +47,8 @@
     },
     {
       "id": "ENTITY_004",
-      "created_at": "2026-01-07T23:44:28.460740Z",
-      "updated_at": "2026-01-07T23:44:28.460743Z",
+      "created_at": "2026-01-08T03:29:16.257262Z",
+      "updated_at": "2026-01-08T03:29:16.257266Z",
       "descriptor": {
         "name": "Crimson Vanguard",
         "bio": "A military unit or faction to which Captain Elena Rossi belongs.",
@@ -58,7 +58,7 @@
       "cognitive": null,
       "spatial": null,
       "state": {
-        "resources_json": "{\"type\": \"Military\", \"leader\": null, \"members\": \"Captain Elena Rossi\", \"status\": \"Mobilized\"}",
+        "resources_json": "{}",
         "region_version": null,
         "adjacency_json": null,
         "travel_times_json": null
@@ -66,8 +66,8 @@
     },
     {
       "id": "ENTITY_005",
-      "created_at": "2026-01-07T23:44:32.989470Z",
-      "updated_at": "2026-01-07T23:44:32.989475Z",
+      "created_at": "2026-01-08T03:29:21.584381Z",
+      "updated_at": "2026-01-08T03:29:21.584386Z",
       "descriptor": {
         "name": "High Command",
         "bio": "The supreme military authority that issued the coded order for the transfer.",
@@ -77,7 +77,7 @@
       "cognitive": null,
       "spatial": null,
       "state": {
-        "resources_json": "{\"type\": \"military\", \"leader\": null, \"members\": null, \"status\": null}",
+        "resources_json": "{}",
         "region_version": null,
         "adjacency_json": null,
         "travel_times_json": null
@@ -85,11 +85,11 @@
     },
     {
       "id": "ENTITY_007",
-      "created_at": "2026-01-07T23:44:50.209476Z",
-      "updated_at": "2026-01-07T23:44:50.209479Z",
+      "created_at": "2026-01-08T03:29:32.264972Z",
+      "updated_at": "2026-01-08T03:29:32.264977Z",
       "descriptor": {
         "name": "Marcus Thorne",
-        "bio": "Senior Lieutenant in the Iron Syndicate operating under the alias The Mule.",
+        "bio": "Senior Lieutenant within the Iron Syndicate, operating under the alias The Mule.",
         "tags": [
           "The Mule"
         ],
@@ -98,7 +98,7 @@
       "cognitive": null,
       "spatial": null,
       "state": {
-        "resources_json": "{\"rank\": \"Senior Lieutenant\", \"role\": \"Logistics officer\", \"status\": \"standby\", \"affiliation\": \"Iron Syndicate\", \"wealth\": null, \"health\": 100}",
+        "resources_json": "{}",
         "region_version": null,
         "adjacency_json": null,
         "travel_times_json": null
@@ -106,8 +106,8 @@
     },
     {
       "id": "ENTITY_008",
-      "created_at": "2026-01-07T23:44:54.054667Z",
-      "updated_at": "2026-01-07T23:44:54.054670Z",
+      "created_at": "2026-01-08T03:29:40.829460Z",
+      "updated_at": "2026-01-08T03:29:40.829465Z",
       "descriptor": {
         "name": "Iron Syndicate",
         "bio": "A faction or organization to which Marcus Thorne belongs.",
@@ -117,7 +117,7 @@
       "cognitive": null,
       "spatial": null,
       "state": {
-        "resources_json": "{\"type\": \"Unit\", \"leader\": null, \"members\": \"Marcus Thorne (Senior Lieutenant)\", \"status\": null}",
+        "resources_json": "{}",
         "region_version": null,
         "adjacency_json": null,
         "travel_times_json": null
@@ -125,11 +125,11 @@
     },
     {
       "id": "ENTITY_009",
-      "created_at": "2026-01-07T23:44:56.806021Z",
-      "updated_at": "2026-01-07T23:44:56.806040Z",
+      "created_at": "2026-01-08T03:29:44.276936Z",
+      "updated_at": "2026-01-08T03:29:44.276939Z",
       "descriptor": {
         "name": "Outpost Zeta",
-        "bio": "A location currently under siege where the vault was located.",
+        "bio": "A location currently under siege and at Security Level Black.",
         "tags": [],
         "entity_type": "location"
       },
@@ -143,7 +143,7 @@
         "capacity": null
       },
       "state": {
-        "resources_json": "{\"type\": null, \"status\": \"Siege\", \"accessibility\": \"Black\", \"capacity\": null}",
+        "resources_json": "{}",
         "region_version": null,
         "adjacency_json": null,
         "travel_times_json": null

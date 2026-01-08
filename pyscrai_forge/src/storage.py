@@ -10,12 +10,15 @@ Decoupled from UI: The forge calls these functions, not raw SQL.
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pyscrai_core import Entity, Relationship
+
+logger = logging.getLogger(__name__)
 
 
 def init_harvester_tables(db_path: Path) -> None:
@@ -106,6 +109,15 @@ def save_entity(db_path: Path, entity: Entity) -> None:
     
     conn.commit()
     conn.close()
+    
+    # Index entity in MemoryService for semantic search (RAG)
+    try:
+        from pyscrai_core.memory_service import MemoryService
+        memory_service = MemoryService.create(db_path)
+        memory_service.index_entities([entity])
+    except Exception as e:
+        # Non-critical: if indexing fails, log but don't fail the save
+        logger.warning(f"Failed to index entity {entity.id} in MemoryService: {e}")
 
 
 def save_relationship(db_path: Path, relationship: Relationship) -> None:
@@ -343,6 +355,15 @@ def commit_extraction_result(db_path: Path, entities: list[Entity], relationship
     
     for relationship in relationships:
         save_relationship(db_path, relationship)
+    
+    # Index all entities in MemoryService for semantic search (RAG)
+    try:
+        from pyscrai_core.memory_service import MemoryService
+        memory_service = MemoryService.create(db_path)
+        memory_service.index_entities(entities)
+    except Exception as e:
+        # Non-critical: if indexing fails, log but don't fail the save
+        logger.warning(f"Failed to index entities in MemoryService: {e}")
     
     return len(entities), len(relationships)
 

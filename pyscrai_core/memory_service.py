@@ -98,11 +98,21 @@ class EmbeddingModel:
     
     @property
     def model(self):
-        """Lazy-load the model."""
+        """Lazy-load the model with GPU support if available."""
         if self._model is None and self.available:
             from sentence_transformers import SentenceTransformer
-            self._model = SentenceTransformer(self.model_name)
-            logger.info(f"Loaded embedding model: {self.model_name}")
+            # Try to load model on GPU if CUDA is available
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    self._model = SentenceTransformer(self.model_name, device='cuda')
+                    logger.info(f"Loaded embedding model: {self.model_name} on GPU")
+                else:
+                    self._model = SentenceTransformer(self.model_name)
+                    logger.info(f"Loaded embedding model: {self.model_name} on CPU")
+            except ImportError:
+                self._model = SentenceTransformer(self.model_name)
+                logger.info(f"Loaded embedding model: {self.model_name}")
         return self._model
     
     def encode(self, text: str) -> Optional[List[float]]:

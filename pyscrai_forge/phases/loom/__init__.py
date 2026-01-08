@@ -13,6 +13,8 @@ Output artifact: staging/graph_staging.json
 from pyscrai_forge.phases.loom.agent import LoomAgent
 from pyscrai_forge.phases.loom.graph_viz import GraphCanvas
 from pyscrai_forge.phases.loom.ui import LoomPanel
+from pyscrai_forge.phases.loom.clustering import SemanticClusterer
+from pyscrai_forge.phases.loom.assistant import LoomAssistant
 
-__all__ = ["LoomAgent", "GraphCanvas", "LoomPanel"]
+__all__ = ["LoomAgent", "GraphCanvas", "LoomPanel", "SemanticClusterer", "LoomAssistant"]
 

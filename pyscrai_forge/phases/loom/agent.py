@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, List, Optional, Tuple
 if TYPE_CHECKING:
     from pyscrai_core import Entity, Relationship
     from pyscrai_core.llm_interface.base import LLMProvider
+    from pyscrai_core.memory_service import MemoryService
 
 logger = logging.getLogger(__name__)
 
@@ -55,21 +56,34 @@ RELATIONSHIP_INFERENCE_PROMPT = """You are analyzing entities from a worldbuildi
 
 {entities_json}
 
-## Task
+## Entity Analysis Guidelines
 
-Analyze these entities and identify relationships between them. Look for:
-1. Explicit connections mentioned in descriptions
-2. Implied relationships (same location, organization, family, etc.)
-3. Hierarchical relationships (part-of, member-of, reports-to)
-4. Social/interpersonal relationships (knows, allies, enemies)
+EXTRACT MEANINGFUL RELATIONSHIPS from the entity descriptions:
 
-For each relationship, provide:
-- source_id: The ID of the source entity
-- target_id: The ID of the target entity  
-- relationship_type: One of [KNOWS, FAMILY, ALLIED_WITH, ENEMY_OF, MEMBER_OF, LOCATED_IN, OWNS, WORKS_FOR, CREATED_BY, PART_OF]
-- confidence: "high", "medium", or "low"
-- reasoning: Why this relationship exists
-- evidence: Quote or reference from the entity data
+1. **MEMBER_OF**: For actors belonging to organizations/factions
+   - "Captain in the Crimson Vanguard" → actor → Crimson Vanguard (MEMBER_OF)
+   - "Senior Lieutenant in the Iron Syndicate" → actor → Iron Syndicate (MEMBER_OF)
+
+2. **LOCATED_IN**: For locations containing or related to other entities
+   - "Outpost Zeta under siege" → related to operation/actors present
+
+3. **CREATED_BY / PART_OF**: For operations, events created by or involving entities
+   - "Operation Silver Talon" → may involve actors or locations
+
+4. **OPPOSES / ALLIED_WITH**: For opposing factions or allied groups
+   - Only if explicitly stated or strongly implied (e.g., "enemy faction")
+
+5. **KNOWS / WORKS_WITH**: ONLY if explicitly mentioned in bios
+   - DO NOT fabricate relationships between unrelated characters
+   - "knows" requires direct evidence
+
+## CRITICAL RULES
+
+- ONLY infer relationships DIRECTLY SUPPORTED by entity bios
+- If an actor's bio says "in the X organization", infer MEMBER_OF
+- If there's NO connection mentioned, do NOT invent one
+- When in doubt, prefer fewer relationships over wrong ones
+- For "knows" relationships, you MUST have explicit evidence
 
 ## Response Format
 
@@ -79,15 +93,15 @@ Return a JSON array of relationship objects:
   {{
     "source_id": "ENTITY_001",
     "target_id": "ENTITY_002", 
-    "relationship_type": "KNOWS",
+    "relationship_type": "MEMBER_OF",
     "confidence": "high",
-    "reasoning": "Both are described as working together",
-    "evidence": "Source mentions 'colleague of John'"
+    "reasoning": "Elena Rossi's bio states she is 'A Captain in the Crimson Vanguard'",
+    "evidence": "Bio quote: 'A Captain in the Crimson Vanguard'"
   }}
 ]
 ```
 
-Only include relationships you are reasonably confident about. Return an empty array if no relationships are found.
+Return an empty array if no clear relationships are found.
 """
 
 
@@ -140,22 +154,26 @@ class LoomAgent:
     def __init__(
         self,
         provider: "LLMProvider",
-        model: Optional[str] = None
+        model: Optional[str] = None,
+        memory_service: Optional["MemoryService"] = None
     ):
         """Initialize the LoomAgent.
         
         Args:
             provider: LLM provider for inference
             model: Model name to use (defaults to provider's default)
+            memory_service: Optional MemoryService for semantic clustering
         """
         self.provider = provider
         self.model = model or getattr(provider, 'default_model', None)
+        self.memory_service = memory_service
     
     async def infer_relationships(
         self,
         entities: List["Entity"],
         existing_relationships: Optional[List["Relationship"]] = None,
-        max_entities: int = 20
+        max_entities: int = 20,
+        use_clustering: bool = True
     ) -> List[InferredRelationship]:
         """Infer relationships between entities.
         
@@ -163,6 +181,7 @@ class LoomAgent:
             entities: List of entities to analyze
             existing_relationships: Existing relationships to avoid duplicates
             max_entities: Maximum entities to process at once (for context limits)
+            use_clustering: Whether to use semantic clustering to reduce comparisons
             
         Returns:
             List of inferred relationships
@@ -170,17 +189,76 @@ class LoomAgent:
         if not entities:
             return []
         
-        # Limit entities to avoid context overflow
+        all_inferred = []
+        
+        # Use semantic clustering to group entities
+        if use_clustering and self.memory_service and len(entities) > 10:
+            try:
+                from pyscrai_forge.phases.loom.clustering import SemanticClusterer
+                clusterer = SemanticClusterer(self.memory_service)
+                clusters = clusterer.cluster_entities(entities)
+                
+                logger.info(f"LoomAgent: Clustered {len(entities)} entities into {len(clusters)} clusters")
+                
+                # Process each cluster separately
+                for cluster_id, cluster_entities in clusters.items():
+                    if len(cluster_entities) < 2:
+                        continue  # Need at least 2 entities for relationships
+                    
+                    # Process cluster (limit to max_entities per cluster)
+                    cluster_entities_limited = cluster_entities[:max_entities]
+                    cluster_inferred = await self._infer_relationships_for_cluster(
+                        cluster_entities_limited,
+                        existing_relationships,
+                        cluster_id
+                    )
+                    all_inferred.extend(cluster_inferred)
+                
+                logger.info(f"LoomAgent inferred {len(all_inferred)} relationships (clustered)")
+                return all_inferred
+                
+            except Exception as e:
+                logger.warning(f"Clustering failed, falling back to non-clustered inference: {e}")
+                # Fall through to non-clustered approach
+        
+        # Non-clustered approach (original behavior)
         entities_to_analyze = entities[:max_entities]
+        inferred = await self._infer_relationships_for_cluster(
+            entities_to_analyze,
+            existing_relationships,
+            "all"
+        )
+        
+        logger.info(f"LoomAgent inferred {len(inferred)} relationships")
+        return inferred
+    
+    async def _infer_relationships_for_cluster(
+        self,
+        entities: List["Entity"],
+        existing_relationships: Optional[List["Relationship"]] = None,
+        cluster_id: str = "all"
+    ) -> List[InferredRelationship]:
+        """Infer relationships for a cluster of entities.
+        
+        Args:
+            entities: List of entities in the cluster
+            existing_relationships: Existing relationships to avoid duplicates
+            cluster_id: Identifier for the cluster (for logging)
+            
+        Returns:
+            List of inferred relationships
+        """
+        if not entities:
+            return []
         
         # Build entity summaries for the prompt
         entity_summaries = []
-        for e in entities_to_analyze:
+        for e in entities:
             summary = {
                 "id": e.id,
-                "name": e.descriptor.name if hasattr(e, "descriptor") else "",
-                "type": e.descriptor.entity_type.value if hasattr(e.descriptor, "entity_type") else "",
-                "description": getattr(e.descriptor, "description", ""),
+                "name": e.descriptor.name if hasattr(e, "descriptor") and e.descriptor else "",
+                "type": e.descriptor.entity_type.value if hasattr(e, "descriptor") and e.descriptor and hasattr(e.descriptor, "entity_type") else "",
+                "description": getattr(e.descriptor, "description", "") if hasattr(e, "descriptor") and e.descriptor else "",
             }
             entity_summaries.append(summary)
         
@@ -210,11 +288,13 @@ class LoomAgent:
                     and (r.target_id, r.source_id) not in existing_pairs
                 ]
             
-            logger.info(f"LoomAgent inferred {len(inferred)} relationships")
+            # Validate relationships against entity bios
+            inferred = self._validate_relationships_against_entities(inferred, entities)
+            
             return inferred
             
         except Exception as e:
-            logger.error(f"LoomAgent relationship inference failed: {e}")
+            logger.error(f"LoomAgent relationship inference failed for cluster {cluster_id}: {e}")
             return []
     
     async def detect_conflicts(
@@ -363,4 +443,87 @@ class LoomAgent:
             return False, "Self-referential relationship"
         
         return True, ""
+    
+    def _validate_relationships_against_entities(
+        self,
+        relationships: List["InferredRelationship"],
+        entities: List["Entity"]
+    ) -> List["InferredRelationship"]:
+        """Validate inferred relationships against entity bios for contradictions.
+        
+        This catches inferences bad like Marcus Thorne -> High Command when
+        his bio says he's in the Iron Syndicate.
+        
+        Args:
+            relationships: List of inferred relationships
+            entities: List of entities with their bios
+            
+        Returns:
+            Filtered list of valid relationships
+        """
+        if not relationships or not entities:
+            return relationships
+        
+        # Build a map of entity_id -> bio text for quick lookup
+        entity_bios = {}
+        entity_names = {}
+        for e in entities:
+            if hasattr(e, "descriptor") and e.descriptor:
+                entity_id = e.id
+                entity_bios[entity_id] = getattr(e.descriptor, "bio", "") or ""
+                entity_bios[entity_id] += " " + (getattr(e.descriptor, "description", "") or "")
+                entity_names[entity_id] = getattr(e.descriptor, "name", "") or ""
+        
+        valid_relationships = []
+        
+        for rel in relationships:
+            source_bio = entity_bios.get(rel.source_id, "").lower()
+            target_bio = entity_bios.get(rel.target_id, "").lower()
+            source_name = entity_names.get(rel.source_id, "")
+            target_name = entity_names.get(rel.target_id, "")
+            
+            # Skip if either entity is unknown
+            if not source_bio or not target_bio:
+                logger.warning(f"Skipping relationship - missing entity data: {rel.source_id} or {rel.target_id}")
+                continue
+            
+            # Check for MEMBER_OF contradictions
+            if rel.relationship_type.upper() == "MEMBER_OF":
+                # For actor -> polity relationships, verify the polity is mentioned in actor's bio
+                # Don't create member_of from actor to a polity that doesn't appear in their bio
+                if target_name.lower() not in source_bio:
+                    # The target organization is NOT mentioned in source's bio
+                    # This is a fabricated relationship - skip it
+                    logger.debug(
+                        f"Skipping fabricated MEMBER_OF: {source_name} -> {target_name} "
+                        f"(target not in source bio)"
+                    )
+                    continue
+            
+            # Check for "knows" relationships - must have explicit evidence
+            if rel.relationship_type.upper() in ["KNOWS", "WORKS_WITH", "ALLIED_WITH"]:
+                # "knows" must be explicitly stated in the source entity's bio
+                knows_keywords = ["knows", "works with", "colleague", "ally", "partner", "friend"]
+                has_explicit_evidence = any(kw in source_bio for kw in knows_keywords)
+                
+                if not has_explicit_evidence:
+                    logger.debug(
+                        f"Skipping fabricated {rel.relationship_type}: {source_name} -> {target_name} "
+                        f"(no explicit evidence in source bio)"
+                    )
+                    continue
+            
+            # Check for LOCATED_IN contradictions
+            if rel.relationship_type.upper() == "LOCATED_IN":
+                # Verify the location relationship makes sense
+                pass  # Add additional checks if needed
+            
+            # If we passed all checks, keep the relationship
+            valid_relationships.append(rel)
+        
+        filtered_count = len(relationships) - len(valid_relationships)
+        if filtered_count > 0:
+            logger.info(f"LoomAgent filtered {filtered_count} invalid relationship(s)")
+        
+        return valid_relationships
 

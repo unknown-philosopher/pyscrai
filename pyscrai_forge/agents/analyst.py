@@ -8,7 +8,7 @@ unified agent responsible for data processing.
 import json
 import re
 import logging
-from typing import TYPE_CHECKING, Dict, Any
+from typing import TYPE_CHECKING, Dict, Any, Optional
 
 from pyscrai_core import (
     Entity, Actor, Polity, Location,
@@ -21,6 +21,8 @@ from pyscrai_forge.prompts.analysis import (
     build_refinement_prompt,
 )
 from pyscrai_forge.agents.models import EntityStub
+from pyscrai_forge.prompts.template_manager import TemplateManager
+from pyscrai_forge.prompts.core import Genre
 
 if TYPE_CHECKING:
     from pyscrai_core.llm_interface import LLMProvider
@@ -36,15 +38,20 @@ class AnalystAgent:
     - Data refinement: Clean, structure, and validate JSON data
     """
 
-    def __init__(self, provider: "LLMProvider", model: str | None = None):
+    def __init__(self, provider: "LLMProvider", model: str | None = None, template_manager: Optional[TemplateManager] = None, memory_service=None, project_path=None):
         self.provider = provider
         self.model = model
+        self.template_manager = template_manager or TemplateManager()
+        self.memory_service = memory_service
+        self.project_path = project_path
 
     async def extract_from_text(
         self,
         stub: EntityStub,
         text: str,
-        schema: dict[str, str]
+        schema: dict[str, str],
+        genre: Genre = Genre.GENERIC,
+        template_name: Optional[str] = None
     ) -> Entity:
         """Extract entity data from text (from harvester/analyst.py analyze_entity).
         
@@ -52,6 +59,8 @@ class AnalystAgent:
             stub: Entity stub with basic information
             text: Source text to analyze
             schema: Project schema defining fields to extract
+            genre: Document genre for template selection
+            template_name: Optional custom template directory name to use (overrides genre mapping)
             
         Returns:
             Full Entity with extracted resources
@@ -60,14 +69,86 @@ class AnalystAgent:
         if not schema:
             return self._build_entity(stub, {})
 
-        system_prompt, user_prompt = build_extraction_prompt(
-            text,
-            stub.name,
-            stub.entity_type.value,
-            schema,
-            stub.description
-        )
+        # Use TemplateManager to load analyst.yaml template instead of hardcoded prompt
+        template = None
+        try:
+            # Determine template genre (same logic as Scout)
+            if template_name:
+                template_genre = template_name
+                logger.info(f"Analyst: Using explicit template_name='{template_name}' as template_genre")
+                allow_fallback = False
+            else:
+                genre_map = {
+                    Genre.GENERIC.value: "default",
+                    Genre.HISTORICAL.value: "historical",
+                    "historical": "historical",
+                    "espionage": "espionage",
+                    "fictional": "fictional",
+                }
+                template_genre = genre_map.get(genre.value if hasattr(genre, 'value') else genre, "default")
+                logger.info(f"Analyst: Using genre-based template selection: genre={genre} -> template_genre='{template_genre}'")
+                allow_fallback = True
+            
+            try:
+                template = self.template_manager.get_template(
+                    "analyst",
+                    genre=template_genre,
+                    allow_fallback=allow_fallback
+                )
+                logger.info(f"Analyst: Successfully loaded template from genre='{template_genre}'")
+            except (FileNotFoundError, ValueError) as e:
+                if not allow_fallback:
+                    error_type = "not found" if isinstance(e, FileNotFoundError) else "empty or malformed"
+                    logger.error(f"Analyst: Template '{template_genre}' {error_type}, but template_name was explicitly provided. Falling back to hardcoded prompt.")
+                    template = None  # Will use fallback below
+                else:
+                    logger.warning(f"Analyst: Template '{template_genre}' not found or invalid, falling back to 'default'")
+                    try:
+                        template = self.template_manager.get_template("analyst", genre="default", allow_fallback=True)
+                    except Exception:
+                        template = None  # Will use fallback below
+            
+            # Render template with variables if successfully loaded (full description, no truncation)
+            if template is not None:
+                schema_fields = json.dumps(schema, indent=2) if schema else "{}"
+                system_prompt, user_prompt = template.render(
+                    text=text,
+                    entity_name=stub.name,
+                    entity_type=stub.entity_type.value,
+                    description=stub.description or "",  # Full description, no truncation
+                    schema_fields=schema_fields,
+                    genre=genre.value if hasattr(genre, 'value') else str(genre)
+                )
+            else:
+                # Fallback to hardcoded prompt if template loading failed
+                logger.warning(f"Analyst: Using hardcoded prompt as fallback")
+                system_prompt, user_prompt = build_extraction_prompt(
+                    text,
+                    stub.name,
+                    stub.entity_type.value,
+                    schema,
+                    stub.description  # Full description, no truncation
+                )
+        except Exception as e:
+            # Fallback to hardcoded prompt if template loading fails
+            logger.warning(f"Analyst: Failed to load template, falling back to hardcoded prompt: {e}")
+            system_prompt, user_prompt = build_extraction_prompt(
+                text,
+                stub.name,
+                stub.entity_type.value,
+                schema,
+                stub.description  # Full description, no truncation
+            )
 
+        # RAG: Retrieve historical context before calling LLM
+        context_sentence = self._extract_context_sentence(text, stub.name)
+        historical_briefing = self._get_historical_briefing(stub, text)
+        
+        if historical_briefing:
+            user_prompt = historical_briefing + "\n\n" + user_prompt
+            logger.debug("\n--- HISTORICAL CONTEXT BRIEFING ---")
+            logger.debug(historical_briefing)
+        
         # Verbose logging: Show prompts
         logger.debug("=" * 80)
         logger.debug(f"ANALYST AGENT - Extracting data for: {stub.name} ({stub.entity_type.value})")
@@ -121,7 +202,16 @@ class AnalystAgent:
                         continue
                 
                 logger.debug("=" * 80)
-                return self._build_entity(stub, resources)
+                entity = self._build_entity(stub, resources)
+                # Store context sentence for alias detection
+                if context_sentence and hasattr(entity, 'descriptor') and entity.descriptor:
+                    # Store in descriptor bio or as metadata
+                    if not entity.descriptor.bio:
+                        entity.descriptor.bio = context_sentence
+                    elif context_sentence not in entity.descriptor.bio:
+                        # Append if not already present
+                        entity.descriptor.bio = entity.descriptor.bio + " " + context_sentence
+                return entity
             except Exception as e:
                 attempts += 1
                 logger.debug(f"--- Exception occurred (Attempt {attempts}) ---")
@@ -129,12 +219,23 @@ class AnalystAgent:
                 if attempts >= max_attempts:
                     logger.error(f"Analyst extraction failed for {stub.name} after {max_attempts} attempts: {e}")
                     logger.debug("=" * 80)
-                    return self._build_entity(stub, {})
+                    entity = self._build_entity(stub, {})
+                    # Store context sentence even on failure
+                    context_sentence = self._extract_context_sentence(text, stub.name)
+                    if context_sentence and hasattr(entity, 'descriptor') and entity.descriptor:
+                        if not entity.descriptor.bio:
+                            entity.descriptor.bio = context_sentence
+                    return entity
                 # Retry on exception
                 continue
         
         # Fallback if loop exits without return
-        return self._build_entity(stub, {})
+        entity = self._build_entity(stub, {})
+        context_sentence = self._extract_context_sentence(text, stub.name)
+        if context_sentence and hasattr(entity, 'descriptor') and entity.descriptor:
+            if not entity.descriptor.bio:
+                entity.descriptor.bio = context_sentence
+        return entity
 
     async def refine_data(
         self,
@@ -198,6 +299,110 @@ class AnalystAgent:
         except (json.JSONDecodeError, AttributeError):
             return {}
 
+    def _extract_context_sentence(self, text: str, entity_name: str) -> str:
+        """Extract the sentence or paragraph where entity was mentioned.
+        
+        Args:
+            text: Full source text
+            entity_name: Name of the entity to find
+            
+        Returns:
+            Context sentence/paragraph containing the entity mention
+        """
+        if not text or not entity_name:
+            return ""
+        
+        # Find all occurrences of the entity name
+        pattern = re.escape(entity_name)
+        matches = list(re.finditer(pattern, text, re.IGNORECASE))
+        
+        if not matches:
+            return ""
+        
+        # Get the first match and extract surrounding context
+        first_match = matches[0]
+        start = first_match.start()
+        
+        # Extract sentence: find previous period/exclamation/question mark, then next one
+        sentence_start = max(0, text.rfind('.', 0, start))
+        if sentence_start == -1:
+            sentence_start = max(0, text.rfind('!', 0, start))
+        if sentence_start == -1:
+            sentence_start = max(0, text.rfind('?', 0, start))
+        if sentence_start == -1:
+            sentence_start = 0
+        else:
+            sentence_start += 1  # Skip the punctuation
+        
+        sentence_end = text.find('.', start)
+        if sentence_end == -1:
+            sentence_end = text.find('!', start)
+        if sentence_end == -1:
+            sentence_end = text.find('?', start)
+        if sentence_end == -1:
+            sentence_end = len(text)
+        else:
+            sentence_end += 1  # Include the punctuation
+        
+        context = text[sentence_start:sentence_end].strip()
+        
+        # If context is too short, try to get a larger window (paragraph)
+        if len(context) < 50:
+            # Get a larger window (up to 200 chars)
+            window_start = max(0, start - 100)
+            window_end = min(len(text), start + len(entity_name) + 100)
+            context = text[window_start:window_end].strip()
+        
+        return context
+    
+    def _get_historical_briefing(self, stub: EntityStub, text: str) -> str:
+        """Retrieve historical context from world.db using RAG.
+        
+        Args:
+            stub: Entity stub being extracted
+            text: Source text
+            
+        Returns:
+            Historical briefing string (empty if no context found)
+        """
+        if not self.memory_service or not self.project_path:
+            return ""
+        
+        from pathlib import Path
+        db_path = self.project_path / "world.db"
+        if not db_path.exists():
+            return ""
+        
+        try:
+            # Build query from entity name and key terms
+            query = f"{stub.name} {stub.description or ''}"
+            if text:
+                # Extract key terms from text (first 200 chars)
+                key_terms = text[:200]
+                query += " " + key_terms
+            
+            # Search for similar historical facts
+            historical_facts = self.memory_service.search(query, limit=5)
+            
+            if not historical_facts:
+                return ""
+            
+            # Build briefing
+            briefing = "## Historical Context\n\n"
+            briefing += "The following information was found in previous reports:\n\n"
+            
+            for i, fact in enumerate(historical_facts, 1):
+                briefing += f"{i}. {fact.text} (similarity: {fact.score:.2f})\n"
+            
+            briefing += "\nCompare the current report to the historical data above. "
+            briefing += "Note any changes in status, location, or attributes.\n\n"
+            
+            return briefing
+            
+        except Exception as e:
+            logger.warning(f"Failed to retrieve historical context: {e}")
+            return ""
+    
     def _build_entity(self, stub: EntityStub, resources: dict) -> Entity:
         """Convert Stub + Resources -> Full Entity."""
         

@@ -161,8 +161,11 @@ class GraphCanvas(tk.Canvas):
         # Dragging state
         self.dragging_node: Optional[str] = None
         self.drag_start: Optional[Tuple[float, float]] = None
-        self.creating_edge: bool = False
+        self.creating_edge: Optional[str] = None  # source_id when creating edge
         self.edge_preview_id: Optional[int] = None
+        
+        # Cluster colors (node_id -> color)
+        self.cluster_colors: Dict[str, str] = {}
         
         # Pan/zoom state
         self.pan_offset = (0.0, 0.0)
@@ -342,11 +345,16 @@ class GraphCanvas(tk.Canvas):
         w = self.node_style.width * self.zoom_level
         h = self.node_style.height * self.zoom_level
         
-        # Get color and text color based on entity type
-        color_info = self.TYPE_COLORS.get(node.entity_type, self.DEFAULT_NODE_COLOR)
-        fill = color_info[0]
-        text_color = color_info[1]
-        default_outline = color_info[2] if len(color_info) > 2 else self.node_style.outline
+        # Get color - use cluster color if set, otherwise use entity type color
+        if node.id in self.cluster_colors:
+            fill = self.cluster_colors[node.id]
+            text_color = "white"  # White text on colored background
+            default_outline = self._darken_color(fill)
+        else:
+            color_info = self.TYPE_COLORS.get(node.entity_type, self.DEFAULT_NODE_COLOR)
+            fill = color_info[0]
+            text_color = color_info[1]
+            default_outline = color_info[2] if len(color_info) > 2 else self.node_style.outline
         
         # Adjust for selection/hover
         if node.id == self.selected_node:
@@ -713,6 +721,48 @@ class GraphCanvas(tk.Canvas):
         ]
         self.render()
     
+    def _darken_color(self, hex_color: str, factor: float = 0.7) -> str:
+        """Darken a hex color.
+        
+        Args:
+            hex_color: Hex color string (e.g., "#FF6B6B")
+            factor: Darkening factor (0.0-1.0)
+            
+        Returns:
+            Darkened hex color string
+        """
+        hex_color = hex_color.lstrip("#")
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        
+        r = int(r * factor)
+        g = int(g * factor)
+        b = int(b * factor)
+        
+        return f"#{r:02x}{g:02x}{b:02x}"
+    
+    def _darken_color(self, hex_color: str, factor: float = 0.7) -> str:
+        """Darken a hex color.
+        
+        Args:
+            hex_color: Hex color string (e.g., "#FF6B6B")
+            factor: Darkening factor (0.0-1.0)
+            
+        Returns:
+            Darkened hex color string
+        """
+        hex_color = hex_color.lstrip("#")
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        
+        r = int(r * factor)
+        g = int(g * factor)
+        b = int(b * factor)
+        
+        return f"#{r:02x}{g:02x}{b:02x}"
+    
     def _lighten_color(self, hex_color: str) -> str:
         """Lighten a hex color by ~20% for hover effect.
         
@@ -760,5 +810,10 @@ class GraphCanvas(tk.Canvas):
             canvas_center_y - center_y * self.zoom_level
         )
         
+        self.render()
+    
+    def clear_node_colors(self) -> None:
+        """Clear cluster/node color overrides and restore default entity type colors."""
+        self.cluster_colors.clear()
         self.render()
 

@@ -14,6 +14,7 @@ Output: Committed changes to world.db with full provenance
 from pyscrai_forge.phases.anvil.ui import AnvilPanel
 from pyscrai_forge.phases.anvil.merger import SmartMergeEngine, MergeAction, MergeConflict
 from pyscrai_forge.phases.anvil.provenance import ProvenanceTracker
+from pyscrai_forge.phases.anvil.semantic_resolver import SemanticConflictResolver, ConflictCategory
 
-__all__ = ["AnvilPanel", "SmartMergeEngine", "MergeAction", "MergeConflict", "ProvenanceTracker"]
+__all__ = ["AnvilPanel", "SmartMergeEngine", "MergeAction", "MergeConflict", "ProvenanceTracker", "SemanticConflictResolver", "ConflictCategory"]
 

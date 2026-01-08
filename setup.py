@@ -8,6 +8,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
+        "sqlite-vec-0.1.6",
         # Core data modeling and validation
         "pydantic>=2.0.0",
         "pydantic-ai-slim[sentence-transformers]",

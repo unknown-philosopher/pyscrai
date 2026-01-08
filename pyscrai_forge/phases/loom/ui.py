@@ -11,7 +11,7 @@ import json
 import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, Callable, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, List, Optional
 
 from pyscrai_forge.phases.loom.graph_viz import GraphCanvas, LayoutAlgorithm
 
@@ -58,7 +58,34 @@ class LoomPanel(ttk.Frame):
         self.relationship_list: Optional[ttk.Treeview] = None
         self.conflict_list: Optional[ttk.Treeview] = None
         
+        # Clustering and memory service
+        self.memory_service = None
+        self.clusters: dict = {}
+        self.cluster_labels: dict = {}
+        self.show_clusters = tk.BooleanVar(value=True)
+        
+        # LoomAssistant for relationship validation and suggestions
+        self.assistant = None
+        self.relationship_suggestions: List[Any] = []
+        self.relationship_conflicts: List[Any] = []
+        
+        self._init_memory_service()
         self._build_ui()
+    
+    def _init_memory_service(self) -> None:
+        """Initialize MemoryService for semantic clustering."""
+        try:
+            from pyscrai_core.memory_service import MemoryService
+            if self.project_path:
+                db_path = self.project_path / "world.db"
+                self.memory_service = MemoryService.create(db_path if db_path.exists() else None)
+            else:
+                self.memory_service = MemoryService.create()
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to initialize MemoryService: {e}")
+            self.memory_service = None
     
     def _build_ui(self) -> None:
         """Build the Loom phase UI."""
@@ -115,6 +142,11 @@ class LoomPanel(ttk.Frame):
         right_paned.add(conflict_frame, weight=1)
         self._build_conflicts_panel(conflict_frame)
         
+        # Right: Assistant sidebar (similar to Foundry)
+        assistant_frame = ttk.Frame(horizontal_paned)
+        horizontal_paned.add(assistant_frame, weight=1)
+        self._build_assistant_panel(assistant_frame)
+        
         # Bottom action bar
         action_frame = ttk.Frame(main_paned)
         main_paned.add(action_frame, weight=0)  # weight=0 means minimum fixed size
@@ -155,6 +187,23 @@ class LoomPanel(ttk.Frame):
             text="Center View",
             command=lambda: self.graph_canvas.center_view() if self.graph_canvas else None
         ).pack(side=tk.LEFT)
+        
+        ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, padx=10, fill=tk.Y, pady=2)
+        
+        # Cluster controls
+        ttk.Checkbutton(
+            toolbar,
+            text="Show Clusters",
+            variable=self.show_clusters,
+            command=self._on_toggle_clusters
+        ).pack(side=tk.LEFT, padx=5)
+        
+        ttk.Button(
+            toolbar,
+            text="Cluster Entities",
+            command=self._on_cluster_entities,
+            width=12
+        ).pack(side=tk.LEFT, padx=5)
         
         # Graph canvas
         canvas_frame = ttk.Frame(parent)
@@ -259,6 +308,121 @@ class LoomPanel(ttk.Frame):
         self.conflict_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     
+    def _build_assistant_panel(self, parent: ttk.Frame) -> None:
+        """Build the LoomAssistant sidebar panel."""
+        # Header
+        header_frame = ttk.Frame(parent)
+        header_frame.pack(fill=tk.X, pady=(0, 5))
+        
+        ttk.Label(
+            header_frame,
+            text="Relationship Assistant",
+            font=("Segoe UI", 12, "bold")
+        ).pack(side=tk.LEFT)
+        
+        # Refresh button
+        ttk.Button(
+            header_frame,
+            text="Refresh",
+            command=self._refresh_assistant_suggestions
+        ).pack(side=tk.RIGHT, padx=2)
+        
+        # Tab notebook for different views
+        notebook = ttk.Notebook(parent)
+        notebook.pack(fill=tk.BOTH, expand=True)
+        
+        # Tab 1: Missing Relationships
+        missing_frame = ttk.Frame(notebook)
+        notebook.add(missing_frame, text="Missing")
+        self._build_missing_relationships_panel(missing_frame)
+        
+        # Tab 2: Conflicts
+        conflicts_frame = ttk.Frame(notebook)
+        notebook.add(conflicts_frame, text="Conflicts")
+        self._build_conflicts_assistant_panel(conflicts_frame)
+        
+        # Tab 3: Validation
+        validation_frame = ttk.Frame(notebook)
+        notebook.add(validation_frame, text="Validation")
+        self._build_validation_panel(validation_frame)
+    
+    def _build_missing_relationships_panel(self, parent: ttk.Frame) -> None:
+        """Build panel for missing relationship suggestions."""
+        # List with scrollbar
+        list_frame = ttk.Frame(parent)
+        list_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.missing_relationships_text = tk.Text(
+            list_frame,
+            wrap=tk.WORD,
+            font=("Segoe UI", 9),
+            height=15,
+            state=tk.DISABLED
+        )
+        self.missing_relationships_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.missing_relationships_text.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.missing_relationships_text.config(yscrollcommand=scrollbar.set)
+        
+        # Action buttons
+        action_frame = ttk.Frame(parent)
+        action_frame.pack(fill=tk.X, pady=(5, 0))
+        
+        self.add_suggestion_btn = ttk.Button(
+            action_frame,
+            text="Add Selected",
+            command=self._add_selected_suggestion,
+            state=tk.DISABLED
+        )
+        self.add_suggestion_btn.pack(side=tk.LEFT, padx=2, fill=tk.X, expand=True)
+    
+    def _build_conflicts_assistant_panel(self, parent: ttk.Frame) -> None:
+        """Build panel for relationship conflicts."""
+        list_frame = ttk.Frame(parent)
+        list_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.conflicts_text = tk.Text(
+            list_frame,
+            wrap=tk.WORD,
+            font=("Segoe UI", 9),
+            height=15,
+            state=tk.DISABLED
+        )
+        self.conflicts_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.conflicts_text.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.conflicts_text.config(yscrollcommand=scrollbar.set)
+    
+    def _build_validation_panel(self, parent: ttk.Frame) -> None:
+        """Build panel for relationship validation."""
+        list_frame = ttk.Frame(parent)
+        list_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.validation_text = tk.Text(
+            list_frame,
+            wrap=tk.WORD,
+            font=("Segoe UI", 9),
+            height=15,
+            state=tk.DISABLED
+        )
+        self.validation_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.validation_text.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.validation_text.config(yscrollcommand=scrollbar.set)
+        
+        # Validate button
+        action_frame = ttk.Frame(parent)
+        action_frame.pack(fill=tk.X, pady=(5, 0))
+        
+        ttk.Button(
+            action_frame,
+            text="Validate All",
+            command=self._validate_all_relationships
+        ).pack(fill=tk.X)
+    
     def _build_action_bar(self, parent: ttk.Frame) -> None:
         """Build the bottom action bar."""
         action_frame = ttk.Frame(parent)
@@ -317,9 +481,34 @@ class LoomPanel(ttk.Frame):
                 self.relationships,
                 layout=LayoutAlgorithm(self.layout_var.get())
             )
+            
+            # Reapply cluster colors if enabled
+            if self.show_clusters.get() and self.clusters:
+                self._apply_cluster_colors()
         
         # Refresh relationships list
         self._refresh_relationships_list()
+        
+        # Auto-cluster if we have entities but no clusters
+        if self.entities and not self.clusters and len(self.entities) >= 5:
+            # Auto-cluster in background
+            import threading
+            def auto_cluster():
+                try:
+                    from pyscrai_forge.phases.loom.clustering import SemanticClusterer
+                    if self.memory_service:
+                        clusterer = SemanticClusterer(self.memory_service)
+                        self.clusters = clusterer.cluster_entities(self.entities)
+                        self.cluster_labels = clusterer.get_cluster_labels(self.clusters)
+                        # Update UI in main thread
+                        self.after(0, lambda: self._apply_cluster_colors() if self.show_clusters.get() else None)
+                except Exception:
+                    pass  # Silent fail for auto-cluster
+            threading.Thread(target=auto_cluster, daemon=True).start()
+        
+        # Auto-refresh assistant suggestions
+        if hasattr(self, 'assistant') and self.entities and self.relationships:
+            self._refresh_assistant_suggestions()
     
     def _refresh_relationships_list(self) -> None:
         """Refresh the relationships list."""
@@ -352,6 +541,77 @@ class LoomPanel(ttk.Frame):
                 tk.END,
                 values=(source_name, rel_type, target_name)
             )
+    
+    def _on_cluster_entities(self) -> None:
+        """Cluster entities using semantic similarity."""
+        if not self.entities or len(self.entities) < 2:
+            messagebox.showinfo("Need Entities", "Need at least 2 entities to cluster.")
+            return
+        
+        if not self.memory_service:
+            messagebox.showwarning(
+                "Memory Service Unavailable",
+                "Semantic clustering requires MemoryService.\n\n"
+                "This feature uses embeddings to group entities by context."
+            )
+            return
+        
+        try:
+            from pyscrai_forge.phases.loom.clustering import SemanticClusterer
+            
+            clusterer = SemanticClusterer(self.memory_service)
+            self.clusters = clusterer.cluster_entities(self.entities)
+            self.cluster_labels = clusterer.get_cluster_labels(self.clusters)
+            
+            # Update graph with cluster colors
+            if self.graph_canvas:
+                self._apply_cluster_colors()
+            
+            # Show cluster info
+            cluster_info = "\n".join([
+                f"{label}: {len(entities)} entities"
+                for cluster_id, entities in self.clusters.items()
+                for label in [self.cluster_labels.get(cluster_id, cluster_id)]
+            ])
+            
+            messagebox.showinfo(
+                "Clustering Complete",
+                f"Clustered {len(self.entities)} entities into {len(self.clusters)} groups:\n\n{cluster_info}"
+            )
+            
+        except Exception as e:
+            messagebox.showerror("Clustering Error", f"Failed to cluster entities: {e}")
+    
+    def _on_toggle_clusters(self) -> None:
+        """Toggle cluster visualization."""
+        if self.show_clusters.get() and self.clusters:
+            self._apply_cluster_colors()
+        elif self.graph_canvas:
+            # Remove cluster colors
+            self.graph_canvas.clear_node_colors()
+    
+    def _apply_cluster_colors(self) -> None:
+        """Apply cluster colors to graph nodes."""
+        if not self.graph_canvas or not self.clusters:
+            return
+        
+        # Color palette for clusters
+        colors = [
+            "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
+            "#F7DC6F", "#BB8FCE", "#85C1E2", "#F8B739", "#52BE80"
+        ]
+        
+        cluster_colors = {}
+        for i, (cluster_id, entities) in enumerate(self.clusters.items()):
+            color = colors[i % len(colors)]
+            cluster_colors[cluster_id] = color
+            
+            # Color all entities in this cluster
+            for entity in entities:
+                if hasattr(self.graph_canvas, 'set_node_color'):
+                    self.graph_canvas.set_node_color(entity.id, color)
+                elif hasattr(self.graph_canvas, 'color_node'):
+                    self.graph_canvas.color_node(entity.id, color)
     
     def _on_layout_change(self, event) -> None:
         """Handle layout algorithm change."""
@@ -595,9 +855,14 @@ class LoomPanel(ttk.Frame):
         progress_bar.pack(pady=5)
         progress_bar.start(50)
         
+        # Show cluster info if available
+        cluster_info = ""
+        if self.clusters:
+            cluster_info = f" (using {len(self.clusters)} semantic clusters)"
+        
         status_label = ttk.Label(
             progress_win,
-            text=f"Processing {len(self.entities)} entities with {len(self.relationships)} existing relationships...",
+            text=f"Processing {len(self.entities)} entities{cluster_info}...",
             font=("Segoe UI", 9),
             foreground="gray"
         )
@@ -610,10 +875,16 @@ class LoomPanel(ttk.Frame):
             
             async def infer():
                 async with provider:
-                    agent = LoomAgent(provider, model=model_name)
+                    # Pass memory_service for clustering
+                    agent = LoomAgent(
+                        provider,
+                        model=model_name,
+                        memory_service=self.memory_service
+                    )
                     return await agent.infer_relationships(
                         self.entities,
-                        existing_relationships=self.relationships
+                        existing_relationships=self.relationships,
+                        use_clustering=True  # Enable clustering by default
                     )
             
             return asyncio.run(infer())
@@ -974,4 +1245,95 @@ class LoomPanel(ttk.Frame):
         go_to_chronicle = self.callbacks.get("go_to_chronicle")
         if go_to_chronicle:
             go_to_chronicle()
+    
+    def _refresh_assistant_suggestions(self) -> None:
+        """Refresh the assistant suggestions panel."""
+        # Update the Missing Relationships text
+        if hasattr(self, 'missing_relationships_text') and self.missing_relationships_text:
+            self.missing_relationships_text.config(state=tk.NORMAL)
+            self.missing_relationships_text.delete(1.0, tk.END)
+            
+            if self.relationship_suggestions:
+                text = "Suggested Missing Relationships:\n\n"
+                for suggestion in self.relationship_suggestions:
+                    text += f"• {suggestion}\n"
+                self.missing_relationships_text.insert(tk.END, text)
+                if hasattr(self, 'add_suggestion_btn') and self.add_suggestion_btn:
+                    self.add_suggestion_btn.config(state=tk.NORMAL)
+            else:
+                self.missing_relationships_text.insert(tk.END, "No suggestions available.\n\nRun 'Infer Relationships' to generate suggestions.")
+                if hasattr(self, 'add_suggestion_btn') and self.add_suggestion_btn:
+                    self.add_suggestion_btn.config(state=tk.DISABLED)
+            
+            self.missing_relationships_text.config(state=tk.DISABLED)
+        
+        # Update conflicts text
+        if hasattr(self, 'conflicts_text') and self.conflicts_text:
+            self.conflicts_text.config(state=tk.NORMAL)
+            self.conflicts_text.delete(1.0, tk.END)
+            
+            if self.relationship_conflicts:
+                text = "Detected Conflicts:\n\n"
+                for conflict in self.relationship_conflicts:
+                    text += f"• {conflict}\n"
+                self.conflicts_text.insert(tk.END, text)
+            else:
+                self.conflicts_text.insert(tk.END, "No conflicts detected.\n\nRun 'Detect Conflicts' to scan for issues.")
+            
+            self.conflicts_text.config(state=tk.DISABLED)
+    
+    def _add_selected_suggestion(self) -> None:
+        """Add the selected suggestion to relationships."""
+        messagebox.showinfo(
+            "Add Suggestion",
+            "Select a relationship from the Infer dialog to add it."
+        )
+    
+    def _validate_all_relationships(self) -> None:
+        """Validate all relationships."""
+        if not hasattr(self, 'validation_text') or not self.validation_text:
+            return
+        
+        self.validation_text.config(state=tk.NORMAL)
+        self.validation_text.delete(1.0, tk.END)
+        
+        if not self.relationships:
+            self.validation_text.insert(tk.END, "No relationships to validate.")
+            self.validation_text.config(state=tk.DISABLED)
+            return
+        
+        valid_count = 0
+        invalid_count = 0
+        issues = []
+        
+        # Build entity lookup
+        entity_ids = {e.id for e in self.entities}
+        
+        for rel in self.relationships:
+            if rel.source_id not in entity_ids:
+                invalid_count += 1
+                issues.append(f"Source '{rel.source_id}' not found")
+            elif rel.target_id not in entity_ids:
+                invalid_count += 1
+                issues.append(f"Target '{rel.target_id}' not found")
+            elif rel.source_id == rel.target_id:
+                invalid_count += 1
+                issues.append("Self-referential relationship")
+            else:
+                valid_count += 1
+        
+        # Display results
+        text = f"Validation Results:\n\n"
+        text += f"Valid: {valid_count}\n"
+        text += f"Issues: {invalid_count}\n\n"
+        
+        if issues:
+            text += "Issues Found:\n"
+            for issue in issues[:10]:  # Show first 10
+                text += f"  • {issue}\n"
+            if len(issues) > 10:
+                text += f"  ... and {len(issues) - 10} more"
+        
+        self.validation_text.insert(tk.END, text)
+        self.validation_text.config(state=tk.DISABLED)
 
