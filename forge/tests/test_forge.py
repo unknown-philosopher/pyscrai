@@ -70,8 +70,11 @@ def test_imports():
     print("  ✓ Agents system")
     
     # Advisors
-    from forge.agents.advisors import EntityAdvisor, RelationshipAdvisor
-    print("  ✓ Advisors")
+    from forge.agents.advisors import (
+        OSINTAdvisor, HUMINTAdvisor, SIGINTAdvisor,
+        SYNTHAdvisor, GEOINTAdvisor, ANVILAdvisor
+    )
+    print("  ✓ Advisors (OSINT, HUMINT, SIGINT, SYNTH, GEOINT, ANVIL)")
     
     # Prompts
     from forge.agents.prompts import PromptManager
@@ -92,7 +95,6 @@ def test_imports():
     print("  ✓ App layer")
     
     print("\n✅ All imports successful!")
-    return True
 
 
 def test_entity_creation():
@@ -137,7 +139,6 @@ def test_entity_creation():
     print(f"  ✓ Created polity: {polity.name}")
     
     print("\n✅ Entity creation tests passed!")
-    return True
 
 
 def test_relationship_creation():
@@ -164,7 +165,6 @@ def test_relationship_creation():
     print(f"  ✓ Created relationship: {agent.name} --[{rel.relationship_type.value}]--> {mi6.name}")
     
     print("\n✅ Relationship creation tests passed!")
-    return True
 
 
 def test_database_operations():
@@ -204,7 +204,6 @@ def test_database_operations():
         print("  ✓ Deleted entity")
     
     print("\n✅ Database operation tests passed!")
-    return True
 
 
 def test_id_generation():
@@ -249,7 +248,6 @@ def test_id_generation():
     print("  ✓ ID validation works")
     
     print("\n✅ ID generation tests passed!")
-    return True
 
 
 def test_text_chunker():
@@ -278,7 +276,6 @@ def test_text_chunker():
         print(f"    Chunk {i+1}: {chunk.char_count} chars, {chunk.word_count} words")
     
     print("\n✅ Text chunker tests passed!")
-    return True
 
 
 def test_prefab_system():
@@ -311,33 +308,58 @@ def test_prefab_system():
     print("  ✓ Schema validation works")
     
     print("\n✅ Prefab system tests passed!")
-    return True
 
 
 def test_prompt_manager():
-    """Test the prompt manager."""
+    """Test the prompt manager with externalized YAML prompts."""
     print("\nTesting prompt manager...")
     
-    from forge.agents.prompts.manager import PromptManager, create_default_manager
+    from forge.agents.prompts import get_prompt_manager, PromptManager
     
-    manager = create_default_manager()
+    manager = get_prompt_manager()
     
-    # List prompts
+    # List prompts - should include YAML-loaded prompts
     prompts = manager.list_prompts()
-    assert "extraction_system" in prompts
-    assert "extraction_user" in prompts
-    print(f"  ✓ Default prompts: {prompts}")
     
-    # Render prompt
+    # Check extraction prompts loaded from extraction.yaml
+    assert "extraction.system_prompt" in prompts
+    assert "extraction.user_prompt_template" in prompts
+    print(f"  ✓ Extraction prompts loaded")
+    
+    # Check analysis prompts loaded from analysis.yaml
+    assert "analysis.system_prompt" in prompts
+    assert "analysis.analyze_entity_prompt" in prompts
+    print(f"  ✓ Analysis prompts loaded")
+    
+    # Check review prompts loaded from review.yaml
+    assert "review.system_prompt" in prompts
+    assert "review.review_entity_prompt" in prompts
+    print(f"  ✓ Review prompts loaded")
+    
+    # Check advisor prompts loaded from advisors/*.yaml
+    assert "osint.system_prompt" in prompts
+    assert "humint.system_prompt" in prompts
+    assert "sigint.system_prompt" in prompts
+    assert "synth.system_prompt" in prompts
+    assert "geoint.system_prompt" in prompts
+    assert "anvil.system_prompt" in prompts
+    print(f"  ✓ Advisor prompts loaded (6 advisors)")
+    
+    # Test Jinja2 rendering
     rendered = manager.render(
-        "extraction_user",
-        document="This is a test document about John Smith, a CIA operative."
+        "extraction.user_prompt_template",
+        source_name="test.txt",
+        chunk_info="CHUNK: 1",
+        text_content="John Smith met with the CIA director.",
+        context="Intelligence report"
     )
     assert "John Smith" in rendered
-    print("  ✓ Prompt rendering works")
+    assert "CIA director" in rendered
+    print("  ✓ Jinja2 template rendering works")
+    
+    print(f"  ✓ Total prompts loaded: {len(prompts)}")
     
     print("\n✅ Prompt manager tests passed!")
-    return True
 
 
 def test_event_system():
@@ -373,48 +395,121 @@ def test_event_system():
     print(f"  ✓ State change event: {state_event.field_name}")
     
     print("\n✅ Event system tests passed!")
-    return True
 
 
-def run_all_tests():
-    """Run all test functions."""
-    print("=" * 60)
-    print("FORGE 3.0 TEST SUITE")
-    print("=" * 60)
+def test_advisor_system():
+    """Test the phase-specific advisor system."""
+    print("\nTesting advisor system...")
     
-    tests = [
-        test_imports,
-        test_entity_creation,
-        test_relationship_creation,
-        test_database_operations,
-        test_id_generation,
-        test_text_chunker,
-        test_prefab_system,
-        test_prompt_manager,
-        test_event_system,
+    from forge.agents.advisors import (
+        OSINTAdvisor, HUMINTAdvisor, SIGINTAdvisor,
+        SYNTHAdvisor, GEOINTAdvisor, ANVILAdvisor
+    )
+    from forge.agents.prompts import get_prompt_manager
+    
+    manager = get_prompt_manager()
+    
+    # Test each advisor has its system prompt
+    advisors = [
+        ("OSINT", "osint.system_prompt", "p0_extraction"),
+        ("HUMINT", "humint.system_prompt", "p1_entities"),
+        ("SIGINT", "sigint.system_prompt", "p2_relationships"),
+        ("SYNTH", "synth.system_prompt", "p3_narrative"),
+        ("GEOINT", "geoint.system_prompt", "p4_map"),
+        ("ANVIL", "anvil.system_prompt", "p5_finalize"),
     ]
     
-    passed = 0
-    failed = 0
+    for name, prompt_key, phase in advisors:
+        prompt = manager.get(prompt_key)
+        assert prompt is not None, f"{name} system prompt not found"
+        assert len(prompt) > 100, f"{name} prompt too short"
+        print(f"  ✓ {name} advisor prompt loaded ({phase})")
     
-    for test in tests:
-        try:
-            if test():
-                passed += 1
-        except Exception as e:
-            print(f"\n❌ {test.__name__} FAILED: {e}")
-            import traceback
-            traceback.print_exc()
-            failed += 1
+    # Verify advisor classes can be instantiated (type check)
+    assert OSINTAdvisor is not None
+    assert HUMINTAdvisor is not None
+    assert SIGINTAdvisor is not None
+    assert SYNTHAdvisor is not None
+    assert GEOINTAdvisor is not None
+    assert ANVILAdvisor is not None
+    print("  ✓ All advisor classes available")
     
-    print("\n" + "=" * 60)
-    print(f"RESULTS: {passed} passed, {failed} failed")
-    print("=" * 60)
-    
-    return failed == 0
+    print("\n✅ Advisor system tests passed!")
 
 
-if __name__ == "__main__":
-    import sys
-    success = run_all_tests()
-    sys.exit(0 if success else 1)
+def test_llm_models():
+    """Test LLM message and conversation models."""
+    print("\nTesting LLM models...")
+    
+    from forge.systems.llm.models import LLMMessage, MessageRole, Conversation
+    
+    # Test message creation
+    msg = LLMMessage(
+        role=MessageRole.USER,
+        content="Hello, world!",
+        tokens_used=5
+    )
+    assert msg.role == MessageRole.USER
+    assert msg.content == "Hello, world!"
+    print("  ✓ LLMMessage creation")
+    
+    # Test API format conversion
+    api_format = msg.to_api_format()
+    assert api_format["role"] == "user"
+    assert api_format["content"] == "Hello, world!"
+    print("  ✓ Message to API format")
+    
+    # Test dict serialization
+    msg_dict = msg.to_dict()
+    restored = LLMMessage.from_dict(msg_dict)
+    assert restored.role == msg.role
+    assert restored.content == msg.content
+    print("  ✓ Message serialization/deserialization")
+    
+    # Test conversation
+    conv = Conversation(
+        id="conv_001",
+        title="Test Conversation",
+        system_prompt="You are a helpful assistant.",
+    )
+    conv.add_message(msg)
+    conv.add_message(LLMMessage(role=MessageRole.ASSISTANT, content="Hi there!"))
+    
+    assert len(conv.messages) == 2
+    assert conv.total_tokens == 5
+    print(f"  ✓ Conversation with {len(conv.messages)} messages")
+    
+    # Test API messages with system prompt
+    api_messages = conv.get_messages_for_api()
+    assert api_messages[0]["role"] == "system"
+    assert len(api_messages) == 3
+    print("  ✓ Conversation to API format (with system prompt)")
+    
+    print("\n✅ LLM models tests passed!")
+
+
+def test_file_manager():
+    """Test file I/O operations."""
+    print("\nTesting file manager...")
+    
+    from forge.systems.storage.file_io import FileManager
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fm = FileManager(tmpdir)
+        fm.ensure_directories()
+        
+        # Check directories created
+        assert fm.staging_path.exists()
+        assert fm.sources_path.exists()
+        assert fm.logs_path.exists()
+        print("  ✓ Directory structure created")
+        
+        # Write staging JSON
+        test_data = {"entities": [{"name": "John", "type": "actor"}]}
+        path = fm.write_staging_json("test_entities.json", test_data)
+        assert path.exists()
+        print(f"  ✓ Written staging JSON: {path.name}")
+        
+        # Read staging JSON
+        loaded = fm.read_staging_json("test_entities.json")
+        assert loaded["entities"][0]["name"] == "John"

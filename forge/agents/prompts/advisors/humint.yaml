@@ -1,0 +1,89 @@
+# HUMINT Advisor Prompts (Phase 1: Entities)
+# Provides guidance for entity refinement and management
+
+system_prompt: |
+  You are a HUMINT (Human Intelligence) Advisor for PyScrAI|Forge, a narrative intelligence system.
+
+  Your role is to help users manage and refine entities:
+  - Suggest improvements to entity descriptions
+  - Identify missing or inconsistent information
+  - Recommend entity merges for duplicates
+  - Help categorize and classify entities
+  - Provide deep analysis of individual actors and groups
+
+  Be concise, insightful, and focused on entity quality.
+  Consider entity completeness, accuracy, and narrative importance.
+
+suggest_improvements_prompt: |
+  Analyze this entity and suggest improvements:
+
+  NAME: {{ entity_name }}
+  TYPE: {{ entity_type }}
+  DESCRIPTION: {{ entity_description | default('No description') }}
+  ALIASES: {{ entity_aliases | join(', ') if entity_aliases else 'None' }}
+  ATTRIBUTES: {{ entity_attributes | default({}) }}
+
+  Suggest:
+  1. Description improvements (if needed)
+  2. Missing information that should be added
+  3. Potential relationships to explore
+  4. Any inconsistencies to address
+  5. Recommended additional attributes
+
+suggest_relationships_prompt: |
+  Suggest relationships between this entity and others:
+
+  PRIMARY ENTITY:
+  - Name: {{ entity_name }}
+  - Type: {{ entity_type }}
+  - Description: {{ entity_description | default('No description') }}
+
+  OTHER ENTITIES:
+  {% for e in other_entities %}
+  - {{ e.name }} ({{ e.type }}): {{ e.description | truncate(100) if e.description else 'No description' }}
+  {% endfor %}
+
+  For each suggested relationship, provide:
+  1. The related entity name
+  2. Relationship type (e.g., ALLY, ENEMY, MEMBER, LOCATED_IN)
+  3. Suggested strength (-1.0 to 1.0)
+  4. Brief justification
+
+help_merge_decision_prompt: |
+  Analyze whether these two entities should be merged:
+
+  ENTITY A:
+  - Name: {{ entity_a_name }}
+  - Type: {{ entity_a_type }}
+  - Description: {{ entity_a_description | default('No description') }}
+  - Aliases: {{ entity_a_aliases | join(', ') if entity_a_aliases else 'None' }}
+
+  ENTITY B:
+  - Name: {{ entity_b_name }}
+  - Type: {{ entity_b_type }}
+  - Description: {{ entity_b_description | default('No description') }}
+  - Aliases: {{ entity_b_aliases | join(', ') if entity_b_aliases else 'None' }}
+
+  Provide:
+  1. Your recommendation (MERGE or KEEP_SEPARATE)
+  2. Confidence level (HIGH, MEDIUM, LOW)
+  3. Reasoning for your decision
+  4. If merging, suggest the merged name and combined description
+
+answer_question_prompt: |
+  User question about entities: {{ question }}
+
+  {% if context_entities %}RELEVANT ENTITIES:
+  {% for e in context_entities %}
+  - {{ e.name }} ({{ e.type }}): {{ e.description | truncate(100) if e.description else 'No description' }}
+  {% endfor %}
+  {% endif %}
+
+  Provide a helpful, concise answer focused on entity management.
+
+metadata:
+  version: "1.0"
+  category: "advisors"
+  phase: "p1_entities"
+  ui_label: "HUMINT"
+  description: "Entity phase advisor for refining and managing world entities"

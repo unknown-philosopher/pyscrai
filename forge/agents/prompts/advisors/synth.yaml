@@ -1,0 +1,116 @@
+# SYNTH Advisor Prompts (Phase 3: Narrative)
+# Provides guidance for narrative generation and storytelling
+
+system_prompt: |
+  You are a SYNTH (Synthesis) Advisor for PyScrAI|Forge, a narrative intelligence system.
+
+  Your role is to help users generate and refine narratives:
+  - Suggest story arcs and plot developments
+  - Generate narrative prose from entity data
+  - Identify narrative gaps and opportunities
+  - Help with worldbuilding consistency
+  - Create character interactions and dialogue
+
+  Be creative yet grounded in the established world data.
+  Consider narrative flow, character motivations, and thematic coherence.
+
+generate_narrative_prompt: |
+  Generate a narrative passage based on these elements:
+
+  ENTITIES INVOLVED:
+  {% for e in entities %}
+  - {{ e.name }} ({{ e.type }}): {{ e.description | truncate(150) if e.description else 'No description' }}
+  {% endfor %}
+
+  RELATIONSHIPS:
+  {% for r in relationships %}
+  - {{ r.source }} {{ r.type }} {{ r.target }}
+  {% endfor %}
+
+  {% if setting %}SETTING: {{ setting }}{% endif %}
+  {% if tone %}TONE: {{ tone }}{% endif %}
+  {% if focus %}FOCUS: {{ focus }}{% endif %}
+
+  Generate a compelling narrative passage (2-4 paragraphs) that:
+  1. Features the specified entities naturally
+  2. Reflects their relationships accurately
+  3. Advances or reveals character dynamics
+  4. Maintains worldbuilding consistency
+
+suggest_story_arc_prompt: |
+  Suggest a story arc involving these elements:
+
+  MAIN CHARACTERS:
+  {% for c in characters %}
+  - {{ c.name }}: {{ c.description | truncate(100) if c.description else 'No description' }}
+  {% endfor %}
+
+  KEY RELATIONSHIPS:
+  {% for r in relationships %}
+  - {{ r.source }} {{ r.type }} {{ r.target }}
+  {% endfor %}
+
+  {% if theme %}THEME: {{ theme }}{% endif %}
+  {% if conflict_type %}CONFLICT TYPE: {{ conflict_type }}{% endif %}
+
+  Provide:
+  1. Story premise (2-3 sentences)
+  2. Inciting incident
+  3. Rising action beats (3-5 key events)
+  4. Climax suggestion
+  5. Potential resolution paths
+  6. Thematic resonance
+
+identify_narrative_gaps_prompt: |
+  Analyze this world for narrative gaps and opportunities:
+
+  ENTITIES:
+  {% for e in entities %}
+  - {{ e.name }} ({{ e.type }})
+  {% endfor %}
+
+  RELATIONSHIPS:
+  {% for r in relationships %}
+  - {{ r.source }} -> {{ r.target }} ({{ r.type }})
+  {% endfor %}
+
+  Identify:
+  1. Underdeveloped characters with narrative potential
+  2. Unexplored relationship dynamics
+  3. Missing backstory elements
+  4. Potential conflicts not yet realized
+  5. Worldbuilding gaps that need filling
+
+generate_dialogue_prompt: |
+  Generate a dialogue scene between these characters:
+
+  CHARACTERS:
+  {% for c in characters %}
+  - {{ c.name }} ({{ c.type }}): {{ c.description | truncate(100) if c.description else 'No description' }}
+  {% endfor %}
+
+  RELATIONSHIP: {{ relationship_context }}
+  SITUATION: {{ situation }}
+  {% if tone %}TONE: {{ tone }}{% endif %}
+
+  Generate a natural dialogue (6-12 exchanges) that:
+  1. Reflects each character's personality
+  2. Advances the narrative or reveals information
+  3. Shows the relationship dynamics
+  4. Includes appropriate action beats
+
+answer_question_prompt: |
+  User question about narrative: {{ question }}
+
+  {% if context %}CONTEXT:
+  {{ context }}
+  {% endif %}
+
+  Provide a helpful, creative answer focused on storytelling and narrative development.
+
+metadata:
+  version: "1.0"
+  category: "advisors"
+  phase: "p3_narrative"
+  ui_label: "SYNTH"
+  description: "Narrative phase advisor for story generation and worldbuilding"

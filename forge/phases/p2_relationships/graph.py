@@ -41,7 +41,7 @@ class NodeData:
         return cls(
             entity_id=entity.id,
             name=entity.name,
-            entity_type=entity.type,
+            entity_type=entity.entity_type,
             description=entity.description,
             attributes=entity.attributes.copy(),
         )
@@ -61,7 +61,7 @@ class EdgeData:
     def from_relationship(cls, relationship: Relationship) -> "EdgeData":
         return cls(
             relationship_id=relationship.id,
-            relation_type=relationship.type,
+            relation_type=relationship.relationship_type,
             description=relationship.description,
             strength=relationship.strength,
             attributes=relationship.attributes.copy(),

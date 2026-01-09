@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from forge.core.models.entity import generate_id
 
@@ -135,8 +135,7 @@ class Relationship(BaseModel):
         default_factory=lambda: datetime.now(UTC)
     )
     
-    class Config:
-        frozen = False
+    model_config = ConfigDict(frozen=False)
     
     def __str__(self) -> str:
         label = self.label or self.relationship_type.value

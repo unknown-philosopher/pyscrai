@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from forge.core.events.base import BaseEvent, EventType
 
@@ -31,8 +31,7 @@ class StateChangeEvent(BaseEvent):
     old_value: Optional[Any] = Field(default=None, description="Previous value")
     new_value: Any = Field(description="New value")
     
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class MovementEvent(BaseEvent):
@@ -43,8 +42,7 @@ class MovementEvent(BaseEvent):
     to_location_id: str = Field(description="Destination location")
     actor_id: str = Field(description="Moving entity")
     
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class TransferEvent(BaseEvent):
@@ -56,8 +54,7 @@ class TransferEvent(BaseEvent):
     resource_type: str = Field(description="Type of resource")
     amount: float = Field(description="Amount transferred")
     
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 # ============================================================================
@@ -75,8 +72,7 @@ class RelationshipMutationEvent(BaseEvent):
     old_strength: Optional[float] = Field(default=None)
     new_strength: Optional[float] = Field(default=None)
     
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 # ============================================================================
@@ -99,8 +95,7 @@ class RetconEvent(BaseEvent):
         description="Data to apply as correction"
     )
     
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class CorrectionEvent(BaseEvent):
@@ -119,8 +114,7 @@ class CorrectionEvent(BaseEvent):
     new_value: Any = Field(description="Corrected value")
     reason: str = Field(default="", description="Correction reason")
     
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 # ============================================================================
@@ -137,8 +131,7 @@ class ExtractionEvent(BaseEvent):
     relationships_extracted: int = Field(default=0, description="Count of relationships extracted")
     chunk_index: Optional[int] = Field(default=None, description="Chunk number if chunked")
     
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class MergeApprovedEvent(BaseEvent):
@@ -151,8 +144,7 @@ class MergeApprovedEvent(BaseEvent):
     relationships_added: int = Field(default=0)
     relationships_updated: int = Field(default=0)
     
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class MergeRejectedEvent(BaseEvent):
@@ -162,8 +154,7 @@ class MergeRejectedEvent(BaseEvent):
     reason: Optional[str] = Field(default=None, description="Rejection reason")
     entities_rejected: int = Field(default=0)
     
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class RollbackEvent(BaseEvent):
@@ -173,8 +164,7 @@ class RollbackEvent(BaseEvent):
     target_event_id: str = Field(description="Event being rolled back to")
     events_reverted: int = Field(default=0, description="Number of events undone")
     
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 # ============================================================================

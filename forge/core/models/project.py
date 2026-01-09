@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 # ============================================================================
@@ -152,8 +152,7 @@ class ProjectManifest(BaseModel):
             return cls._normalize_schemas(value)
         return value
     
-    class Config:
-        frozen = False
+    model_config = ConfigDict(frozen=False)
     
     def to_json(self) -> str:
         """Serialize manifest to JSON string."""

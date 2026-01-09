@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 from forge.core.models.entity import Entity, EntityType
 from forge.core.models.relationship import Relationship, RelationType
+from forge.agents.prompts import get_prompt_manager
 from forge.utils.logging import get_logger
 
 if TYPE_CHECKING:
@@ -21,87 +22,9 @@ if TYPE_CHECKING:
 
 logger = get_logger("p0_extraction.extractor")
 
+# Get the default prompt manager
+_prompt_manager = get_prompt_manager()
 
-# ============================================================================
-# Extraction Prompts
-# ============================================================================
-
-
-EXTRACTION_SYSTEM_PROMPT = """You are an expert intelligence analyst specializing in entity and relationship extraction from narrative documents.
-
-Your task is to extract structured information from the given text chunk, identifying:
-1. ENTITIES: People, organizations, locations, factions, items, events, and concepts
-2. RELATIONSHIPS: Connections between entities (alliances, conflicts, memberships, locations, etc.)
-
-GUIDELINES:
-- Extract only entities and relationships explicitly mentioned or strongly implied in the text
-- Use canonical names (full names for people, official names for organizations)
-- Note aliases and alternative names in the aliases field
-- Estimate relationship strengths: -1.0 (hostile) to 1.0 (allied/supportive)
-- Include confidence scores (0.0-1.0) for extractions
-- Preserve source attribution for provenance tracking
-
-OUTPUT FORMAT:
-Respond with valid JSON matching this schema:
-{
-  "entities": [
-    {
-      "name": "string",
-      "type": "ACTOR|POLITY|LOCATION|REGION|FACTION|ITEM|EVENT|CONCEPT",
-      "description": "string",
-      "aliases": ["string"],
-      "attributes": {},
-      "confidence": 0.0-1.0
-    }
-  ],
-  "relationships": [
-    {
-      "source_name": "string (entity name)",
-      "target_name": "string (entity name)",
-      "type": "ALLY|ENEMY|MEMBER|LOCATED_IN|OWNS|CONTROLS|PARTICIPATES|KNOWS|SUPPORTS|OPPOSES|RELATED",
-      "description": "string",
-      "strength": -1.0 to 1.0,
-      "confidence": 0.0-1.0
-    }
-  ]
-}"""
-
-
-def build_extraction_prompt(chunk: "TextChunk", context: str = "") -> str:
-    """Build the extraction prompt for a text chunk.
-    
-    Args:
-        chunk: The text chunk to extract from
-        context: Optional context about the project/document
-        
-    Returns:
-        User prompt string
-    """
-    prompt_parts = [
-        f"Extract entities and relationships from the following text.",
-        "",
-        f"SOURCE: {chunk.source_name}" if chunk.source_name else "",
-        f"CHUNK: {chunk.index + 1} (characters {chunk.start_char}-{chunk.end_char})",
-        "",
-    ]
-    
-    if context:
-        prompt_parts.extend([
-            "CONTEXT:",
-            context,
-            "",
-        ])
-    
-    prompt_parts.extend([
-        "TEXT:",
-        "---",
-        chunk.content,
-        "---",
-        "",
-        "Extract all entities and relationships from this text. Respond with valid JSON only.",
-    ])
-    
-    return "\n".join(prompt_parts)
 
 
 # ============================================================================
@@ -238,10 +161,23 @@ class EntityExtractor:
         )
         
         try:
+            # Get prompts from manager
+            system_prompt = _prompt_manager.get("extraction.system_prompt")
+            
+            # Build user prompt with Jinja2 rendering
+            user_prompt_template = _prompt_manager.get("extraction.user_prompt_template")
+            user_prompt = _prompt_manager.render(
+                "extraction.user_prompt_template",
+                source_name=chunk.source_name,
+                chunk_info=f"CHUNK: {chunk.index + 1} (characters {chunk.start_char}-{chunk.end_char})",
+                text_content=chunk.content,
+                context=context,
+            )
+            
             # Build messages
             messages = [
-                LLMMessage(role="system", content=EXTRACTION_SYSTEM_PROMPT),
-                LLMMessage(role="user", content=build_extraction_prompt(chunk, context)),
+                LLMMessage(role="system", content=system_prompt),
+                LLMMessage(role="user", content=user_prompt),
             ]
             
             # Call LLM

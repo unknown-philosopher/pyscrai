@@ -38,14 +38,19 @@ class PromptManager:
     
     Supports:
     - Plain text templates with $variable substitution
-    - YAML-based prompt definitions
-    - Jinja2 templates (if installed)
+    - YAML-based prompt definitions with nested keys
+    - Jinja2 templates with custom filters
     
     Usage:
         manager = PromptManager()
         manager.load_directory("prompts/extraction")
         
-        prompt = manager.render("extract_entities", document=doc_text)
+        # Get a specific prompt from a YAML file
+        prompt = manager.get("extraction.system_prompt")
+        
+        # Render with variables
+        prompt = manager.render("analysis.analyze_entity_prompt", 
+                              entity_name="John Doe", entity_type="ACTOR")
     """
     
     def __init__(self, base_path: str | Path | None = None):
@@ -65,8 +70,43 @@ class PromptManager:
                     loader=FileSystemLoader(str(self.base_path)),
                     autoescape=select_autoescape(['html', 'xml']),
                 )
+                # Register custom filters
+                self._register_filters()
         else:
             self.base_path = None
+    
+    def _register_filters(self) -> None:
+        """Register custom Jinja2 filters for template rendering."""
+        if not HAS_JINJA or not self._jinja_env:
+            return
+        
+        # Truncate filter
+        def truncate(text, length=1000):
+            """Truncate text to specified length."""
+            if isinstance(text, str) and len(text) > length:
+                return text[:length] + "..."
+            return text
+        
+        # Format entity filter
+        def format_entity(entity):
+            """Format entity data for display in prompts."""
+            if isinstance(entity, dict):
+                lines = [
+                    f"Name: {entity.get('name', 'N/A')}",
+                    f"Type: {entity.get('type', 'N/A')}",
+                ]
+                if entity.get('description'):
+                    lines.append(f"Description: {entity.get('description')}")
+                if entity.get('aliases'):
+                    lines.append(f"Aliases: {', '.join(entity.get('aliases', []))}")
+                return "\n".join(lines)
+            return str(entity)
+        
+        # Register filters
+        self._jinja_env.filters['truncate'] = truncate
+        self._jinja_env.filters['format_entity'] = format_entity
+        
+        logger.debug("Registered custom Jinja2 filters")
     
     def register(
         self,
@@ -77,7 +117,7 @@ class PromptManager:
         """Register a prompt template.
         
         Args:
-            name: Template name
+            name: Template name (supports dot notation for nested keys, e.g., "extraction.system_prompt")
             template: Template content
             metadata: Optional metadata (description, version, etc.)
         """
@@ -90,7 +130,7 @@ class PromptManager:
         """Get a raw template by name.
         
         Args:
-            name: Template name
+            name: Template name (supports dot notation, e.g., "extraction.system_prompt")
             
         Returns:
             Template string or None
@@ -101,7 +141,7 @@ class PromptManager:
         """Render a template with variables.
         
         Args:
-            name: Template name
+            name: Template name (supports dot notation, e.g., "extraction.system_prompt")
             **kwargs: Variables to substitute
             
         Returns:
@@ -121,17 +161,22 @@ class PromptManager:
                 template = self._jinja_env.from_string(template_str)
                 return template.render(**kwargs)
             except Exception as e:
-                logger.warning(f"Jinja2 render failed, falling back: {e}")
+                logger.warning(f"Jinja2 render failed for '{name}', falling back: {e}")
         
         # Fall back to string.Template
         try:
             return Template(template_str).safe_substitute(**kwargs)
         except Exception as e:
-            logger.error(f"Template render failed: {e}")
+            logger.error(f"Template render failed for '{name}': {e}")
             return template_str
     
     def load_file(self, file_path: str | Path) -> bool:
         """Load a prompt template from a file.
+        
+        For YAML files, supports nested keys (e.g., extraction.yaml creates:
+        - extraction.system_prompt
+        - extraction.user_prompt_template
+        etc.)
         
         Args:
             file_path: Path to template file
@@ -147,35 +192,52 @@ class PromptManager:
         
         try:
             suffix = file_path.suffix.lower()
-            name = file_path.stem
+            base_name = file_path.stem
             
             if suffix in (".yaml", ".yml"):
                 data = self._load_yaml(file_path)
                 if isinstance(data, dict):
-                    template = data.get("template", data.get("prompt", ""))
-                    metadata = {k: v for k, v in data.items() if k not in ("template", "prompt")}
-                    self.register(name, template, metadata)
+                    # Extract metadata
+                    metadata = data.pop("metadata", {})
+                    
+                    # Register each key as a separate prompt with dot notation
+                    # e.g., system_prompt becomes "extraction.system_prompt"
+                    for key, value in data.items():
+                        if isinstance(value, str):
+                            prompt_name = f"{base_name}.{key}"
+                            self.register(prompt_name, value, metadata)
+                        else:
+                            logger.warning(f"Skipping non-string value for {key} in {file_path.name}")
+                    
+                    logger.info(f"Loaded {len(data)} prompts from {file_path.name}")
                 else:
-                    self.register(name, str(data))
+                    logger.warning(f"YAML file does not contain a dict: {file_path}")
+                    return False
                     
             elif suffix == ".json":
                 data = self._load_json(file_path)
                 if isinstance(data, dict):
-                    template = data.get("template", data.get("prompt", ""))
-                    metadata = {k: v for k, v in data.items() if k not in ("template", "prompt")}
-                    self.register(name, template, metadata)
+                    metadata = data.pop("metadata", {})
+                    for key, value in data.items():
+                        if isinstance(value, str):
+                            prompt_name = f"{base_name}.{key}"
+                            self.register(prompt_name, value, metadata)
+                        else:
+                            logger.warning(f"Skipping non-string value for {key} in {file_path.name}")
+                    logger.info(f"Loaded {len(data)} prompts from {file_path.name}")
                 else:
-                    self.register(name, str(data))
+                    logger.warning(f"JSON file does not contain a dict: {file_path}")
+                    return False
                     
             elif suffix in (".txt", ".jinja", ".jinja2", ".j2"):
                 content = file_path.read_text(encoding="utf-8")
-                self.register(name, content)
+                self.register(base_name, content)
+                logger.info(f"Loaded prompt from {file_path.name}: {base_name}")
                 
             else:
                 logger.warning(f"Unsupported prompt file format: {suffix}")
                 return False
             
-            logger.info(f"Loaded prompt from {file_path.name}: {name}")
             return True
             
         except Exception as e:

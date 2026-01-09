@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from forge.agents.base import Agent, AgentRole, AgentResponse
+from forge.agents.prompts import get_prompt_manager
 from forge.utils.logging import get_logger
 
 if TYPE_CHECKING:
@@ -18,31 +19,8 @@ if TYPE_CHECKING:
 
 logger = get_logger("agents.reviewer")
 
-
-REVIEWER_SYSTEM_PROMPT = """You are a quality assurance specialist reviewing extracted intelligence data.
-
-Your role is to:
-1. Verify extraction accuracy and completeness
-2. Identify potential errors or inconsistencies
-3. Suggest improvements to entity descriptions
-4. Flag entities that may need merging
-5. Recommend relationship corrections
-
-REVIEW CRITERIA:
-- Accuracy: Is the extracted information correct?
-- Completeness: Are important details missing?
-- Consistency: Do related entities have consistent information?
-- Clarity: Are descriptions clear and useful?
-- Relationships: Are connections properly captured?
-
-OUTPUT FORMAT:
-Provide structured feedback with:
-- Overall quality score (0-100)
-- Specific issues found
-- Recommended corrections
-- Merge suggestions
-- Priority for review (HIGH/MEDIUM/LOW)
-"""
+# Get the default prompt manager
+_prompt_manager = get_prompt_manager()
 
 
 @dataclass
@@ -76,7 +54,8 @@ class ReviewerAgent(Agent):
     role = AgentRole.REVIEWER
     
     def get_system_prompt(self) -> str:
-        return REVIEWER_SYSTEM_PROMPT
+        """Get the system prompt from the prompt manager."""
+        return _prompt_manager.get("review.system_prompt")
     
     async def review_entity(
         self,
@@ -92,30 +71,15 @@ class ReviewerAgent(Agent):
         Returns:
             Review response
         """
-        entity_text = self._format_entity(entity)
-        
-        prompt = f"""Review the following extracted entity for quality issues:
-
-ENTITY:
-{entity_text}
-
-{f"ORIGINAL SOURCE TEXT: {source_text[:1000]}" if source_text else ""}
-
-Provide your review with:
-1. Quality score (0-100)
-2. Issues found (list each issue)
-3. Recommended corrections
-4. Overall assessment
-5. Priority for human review (HIGH/MEDIUM/LOW)
-
-Respond in JSON format:
-{{
-    "quality_score": <0-100>,
-    "issues": ["issue1", "issue2"],
-    "corrections": ["correction1", "correction2"],
-    "priority": "HIGH|MEDIUM|LOW",
-    "notes": "additional notes"
-}}"""
+        # Render prompt template with variables
+        prompt = _prompt_manager.render(
+            "review.review_entity_prompt",
+            entity_name=entity.name,
+            entity_type=entity.type.value,
+            entity_description=entity.description,
+            entity_aliases=entity.aliases,
+            source_text=source_text,
+        )
 
         response = await self._generate_structured(prompt)
         
@@ -139,36 +103,21 @@ Respond in JSON format:
         Returns:
             Batch review response
         """
-        entities_text = "\n\n".join(
-            f"{i+1}. {self._format_entity(e)}"
-            for i, e in enumerate(entities[:15])
-        )
+        # Format entities for rendering
+        entity_data = [
+            {
+                "name": e.name,
+                "type": e.type.value,
+                "description": e.description
+            }
+            for e in entities[:15]
+        ]
         
-        prompt = f"""Review the following batch of extracted entities for quality and consistency:
-
-ENTITIES:
-{entities_text}
-
-Review for:
-1. Individual entity quality
-2. Consistency between related entities
-3. Potential duplicate entities that should be merged
-4. Missing relationships that seem obvious
-5. Overall extraction quality
-
-Provide your review in JSON format:
-{{
-    "overall_score": <0-100>,
-    "entity_scores": {{"entity_name": score, ...}},
-    "consistency_issues": ["issue1", "issue2"],
-    "merge_suggestions": [
-        {{"entity1": "name1", "entity2": "name2", "reason": "why"}}
-    ],
-    "missing_relationships": [
-        {{"source": "name", "target": "name", "type": "relationship type"}}
-    ],
-    "summary": "overall assessment"
-}}"""
+        # Render prompt template
+        prompt = _prompt_manager.render(
+            "review.review_batch_prompt",
+            entities=entity_data,
+        )
 
         response = await self._generate_structured(prompt)
         
@@ -191,35 +140,24 @@ Provide your review in JSON format:
         Returns:
             Consistency check response
         """
-        main_text = self._format_entity(entity)
-        related_text = "\n\n".join(
-            self._format_entity(e) for e in related_entities[:5]
-        )
+        # Format related entities for rendering
+        related_data = [
+            {
+                "name": e.name,
+                "type": e.type.value,
+                "description": e.description
+            }
+            for e in related_entities[:5]
+        ]
         
-        prompt = f"""Check the following entity for consistency with related entities:
-
-MAIN ENTITY:
-{main_text}
-
-RELATED ENTITIES:
-{related_text}
-
-Check for:
-1. Contradictory information
-2. Inconsistent naming or references
-3. Timeline inconsistencies
-4. Relationship mismatches
-5. Missing cross-references
-
-Provide findings in JSON format:
-{{
-    "is_consistent": true|false,
-    "inconsistencies": [
-        {{"type": "type", "description": "what's inconsistent", "severity": "HIGH|MEDIUM|LOW"}}
-    ],
-    "recommendations": ["recommendation1", "recommendation2"],
-    "confidence": <0.0-1.0>
-}}"""
+        # Render prompt template
+        prompt = _prompt_manager.render(
+            "review.check_consistency_prompt",
+            main_entity_name=entity.name,
+            main_entity_type=entity.type.value,
+            main_entity_description=entity.description,
+            related_entities=related_data,
+        )
 
         response = await self._generate_structured(prompt)
         
@@ -240,26 +178,14 @@ Provide findings in JSON format:
         Returns:
             Improvement suggestions
         """
-        prompt = f"""Suggest improvements for the following entity:
-
-CURRENT ENTITY:
-{self._format_entity(entity)}
-
-Suggest:
-1. Description improvements (clearer, more informative)
-2. Additional attributes that might be useful
-3. Better categorization or type assignment
-4. Alias additions
-5. Relationship suggestions based on description
-
-Provide in JSON format:
-{{
-    "improved_description": "suggested new description",
-    "suggested_attributes": {{"key": "value"}},
-    "suggested_aliases": ["alias1", "alias2"],
-    "type_suggestion": "suggested type if different",
-    "notes": "additional suggestions"
-}}"""
+        # Render prompt template
+        prompt = _prompt_manager.render(
+            "review.suggest_improvements_prompt",
+            entity_name=entity.name,
+            entity_type=entity.type.value,
+            entity_description=entity.description,
+            entity_aliases=entity.aliases,
+        )
 
         response = await self._generate_structured(prompt)
         
@@ -289,42 +215,26 @@ Provide in JSON format:
             import random
             sample = random.sample(all_entities, sample_size)
         
-        entities_text = "\n\n".join(
-            f"{i+1}. {self._format_entity(e)}"
-            for i, e in enumerate(sample)
-        )
+        # Format entities for rendering
+        sample_data = [
+            {
+                "name": e.name,
+                "type": e.type.value,
+                "description": e.description
+            }
+            for e in sample
+        ]
         
         stats = self.state.db.get_stats()
         
-        prompt = f"""Generate a quality report for this intelligence project.
-
-PROJECT STATISTICS:
-- Total Entities: {stats.get('entity_count', 0)}
-- Total Relationships: {stats.get('relationship_count', 0)}
-
-SAMPLE ENTITIES (reviewing {len(sample)} of {len(all_entities)}):
-{entities_text}
-
-Generate a comprehensive quality report with:
-1. Overall data quality assessment
-2. Common issues found
-3. Strengths of the data
-4. Areas needing improvement
-5. Recommendations for data cleanup
-6. Priority actions
-
-Provide in JSON format:
-{{
-    "overall_quality": <0-100>,
-    "strengths": ["strength1", "strength2"],
-    "weaknesses": ["weakness1", "weakness2"],
-    "common_issues": ["issue1", "issue2"],
-    "priority_actions": [
-        {{"action": "description", "priority": "HIGH|MEDIUM|LOW"}}
-    ],
-    "recommendations": ["rec1", "rec2"],
-    "summary": "executive summary"
-}}"""
+        # Render prompt template
+        prompt = _prompt_manager.render(
+            "review.quality_report_prompt",
+            total_entities=stats.get('entity_count', 0),
+            total_relationships=stats.get('relationship_count', 0),
+            sample_entities=sample_data,
+            sample_count=len(sample),
+        )
 
         response = await self._generate_structured(prompt)
         

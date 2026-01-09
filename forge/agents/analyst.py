@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from forge.agents.base import Agent, AgentRole, AgentResponse
+from forge.agents.prompts import get_prompt_manager
 from forge.utils.logging import get_logger
 
 if TYPE_CHECKING:
@@ -17,37 +18,8 @@ if TYPE_CHECKING:
 
 logger = get_logger("agents.analyst")
 
-
-ANALYST_SYSTEM_PROMPT = """You are an expert intelligence analyst specializing in narrative and network analysis.
-
-Your capabilities:
-1. ENTITY ANALYSIS: Deep analysis of individuals, organizations, and concepts
-2. RELATIONSHIP ANALYSIS: Understanding connections, power dynamics, and influence
-3. PATTERN RECOGNITION: Identifying trends, anomalies, and hidden connections
-4. STRATEGIC ASSESSMENT: Evaluating capabilities, intentions, and likely actions
-
-GUIDELINES:
-- Be objective and evidence-based
-- Note confidence levels for assessments
-- Identify gaps in available information
-- Consider multiple hypotheses
-- Structure analysis clearly
-
-When analyzing entities, consider:
-- Background and history
-- Capabilities and resources
-- Motivations and goals
-- Relationships and alliances
-- Vulnerabilities and weaknesses
-- Recent activities and trends
-
-When analyzing relationships, consider:
-- Nature of the connection
-- Power balance
-- Historical context
-- Current status
-- Strategic implications
-"""
+# Get the default prompt manager
+_prompt_manager = get_prompt_manager()
 
 
 class AnalystAgent(Agent):
@@ -70,7 +42,8 @@ class AnalystAgent(Agent):
     role = AgentRole.ANALYST
     
     def get_system_prompt(self) -> str:
-        return ANALYST_SYSTEM_PROMPT
+        """Get the system prompt from the prompt manager."""
+        return _prompt_manager.get("analysis.system_prompt")
     
     async def analyze_entity(
         self,
@@ -93,24 +66,16 @@ class AnalystAgent(Agent):
         relationships = self.state.db.get_relationships_for_entity(entity.id)
         rel_text = self._format_relationships(entity.id, relationships)
         
-        prompt = f"""Analyze the following entity in detail:
-
-{entity_text}
-
-RELATIONSHIPS:
-{rel_text if rel_text else "No known relationships."}
-
-{f"ADDITIONAL CONTEXT: {context}" if context else ""}
-
-Provide a comprehensive analysis including:
-1. Summary assessment
-2. Key characteristics
-3. Network position and influence
-4. Potential motivations
-5. Risk assessment
-6. Information gaps
-
-Be thorough but concise."""
+        # Render prompt template with variables
+        prompt = _prompt_manager.render(
+            "analysis.analyze_entity_prompt",
+            entity_name=entity.name,
+            entity_type=entity.type.value,
+            entity_description=entity.description,
+            entity_aliases=entity.aliases,
+            relationships=rel_text,
+            additional_context=context,
+        )
 
         response = await self._generate_structured(prompt)
         
@@ -137,28 +102,20 @@ Be thorough but concise."""
         Returns:
             Analysis response
         """
-        prompt = f"""Analyze the following relationship:
-
-SOURCE ENTITY:
-{self._format_entity(source)}
-
-TARGET ENTITY:
-{self._format_entity(target)}
-
-RELATIONSHIP:
-- Type: {relationship.type.value}
-- Description: {relationship.description or "Not specified"}
-- Strength: {relationship.strength} (-1.0 hostile to 1.0 allied)
-
-{f"ADDITIONAL CONTEXT: {context}" if context else ""}
-
-Provide analysis including:
-1. Nature of the relationship
-2. Power dynamics
-3. Historical context (if apparent)
-4. Strategic implications
-5. Potential developments
-6. Confidence assessment"""
+        # Render prompt template with variables
+        prompt = _prompt_manager.render(
+            "analysis.analyze_relationship_prompt",
+            source_name=source.name,
+            source_type=source.type.value,
+            source_description=source.description,
+            target_name=target.name,
+            target_type=target.type.value,
+            target_description=target.description,
+            relationship_type=relationship.type.value,
+            relationship_description=relationship.description or "Not specified",
+            relationship_strength=relationship.strength,
+            additional_context=context,
+        )
 
         response = await self._generate_structured(prompt)
         
@@ -179,22 +136,21 @@ Provide analysis including:
         Returns:
             Comparison analysis
         """
-        entities_text = "\n\n".join(
-            f"ENTITY {i+1}:\n{self._format_entity(e)}"
-            for i, e in enumerate(entities)
-        )
+        # Format entities for rendering
+        entity_data = [
+            {
+                "name": e.name,
+                "type": e.type.value,
+                "description": e.description
+            }
+            for e in entities
+        ]
         
-        prompt = f"""Compare and contrast the following entities:
-
-{entities_text}
-
-Provide analysis including:
-1. Key similarities
-2. Key differences
-3. Relative capabilities/influence
-4. Relationship dynamics
-5. Strategic positioning
-6. Comparison summary table"""
+        # Render prompt template
+        prompt = _prompt_manager.render(
+            "analysis.compare_entities_prompt",
+            entities=entity_data,
+        )
 
         response = await self._generate_structured(prompt)
         
@@ -218,25 +174,22 @@ Provide analysis including:
         Returns:
             Strategic assessment
         """
-        entities_text = "\n\n".join(
-            self._format_entity(e) for e in entities[:10]
-        )
+        # Format entities for rendering
+        entity_data = [
+            {
+                "name": e.name,
+                "type": e.type.value,
+                "description": e.description
+            }
+            for e in entities[:10]
+        ]
         
-        prompt = f"""Generate a strategic intelligence assessment based on these entities:
-
-{entities_text}
-
-{f"FOCUS AREA: {focus_area}" if focus_area else ""}
-
-Provide a structured assessment including:
-1. EXECUTIVE SUMMARY: Key findings in 2-3 sentences
-2. KEY ACTORS: Most significant entities and their roles
-3. NETWORK DYNAMICS: Major relationships and power structures
-4. TRENDS: Emerging patterns and developments
-5. RISKS: Potential threats and vulnerabilities
-6. OPPORTUNITIES: Potential leverage points
-7. INTELLIGENCE GAPS: What we need to know more about
-8. RECOMMENDATIONS: Suggested actions or monitoring priorities"""
+        # Render prompt template
+        prompt = _prompt_manager.render(
+            "analysis.strategic_assessment_prompt",
+            entities=entity_data,
+            focus_area=focus_area,
+        )
 
         response = await self._generate_structured(prompt)
         
@@ -259,24 +212,24 @@ Provide a structured assessment including:
         Returns:
             Answer response
         """
-        context = ""
+        # Format entities for rendering
+        entity_data = []
         if relevant_entities:
-            context = "RELEVANT ENTITIES:\n" + "\n\n".join(
-                self._format_entity(e) for e in relevant_entities[:5]
-            )
+            entity_data = [
+                {
+                    "name": e.name,
+                    "type": e.type.value,
+                    "description": e.description
+                }
+                for e in relevant_entities[:5]
+            ]
         
-        prompt = f"""Answer the following analytical question:
-
-QUESTION: {question}
-
-{context}
-
-Provide:
-1. Direct answer to the question
-2. Supporting evidence/reasoning
-3. Confidence level
-4. Alternative interpretations if applicable
-5. Recommendations for further investigation"""
+        # Render prompt template
+        prompt = _prompt_manager.render(
+            "analysis.answer_question_prompt",
+            question=question,
+            relevant_entities=entity_data,
+        )
 
         response = await self._generate_structured(prompt)
         

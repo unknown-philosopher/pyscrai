@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from forge.core.models.entity import generate_id
 
@@ -115,8 +115,7 @@ class BaseEvent(BaseModel):
         description="Whether this event has been undone"
     )
     
-    class Config:
-        frozen = True  # Events are immutable
+    model_config = ConfigDict(frozen=True)  # Events are immutable
     
     def __str__(self) -> str:
         return f"Event({self.event_type.value}: {self.description[:50]})"

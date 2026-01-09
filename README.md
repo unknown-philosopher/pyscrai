@@ -34,6 +34,8 @@ forge
 The main Forge engine organized by phase:
 
 - **`agents/`** — LLM-powered agents for analysis, review, and validation
+  - `advisors/` — Phase-specific AI assistants (OSINT, HUMINT, SIGINT, SYNTH, GEOINT, ANVIL)
+  - `prompts/` — Centralized YAML/Jinja2 prompt templates for all agents
 - **`app/`** — Application layer: config, state management, and UI entry points
 - **`core/`** — Domain models: entities, relationships, events, and projects
 - **`phases/`** — Pipeline stages:
@@ -106,12 +108,37 @@ Run individual tests:
 python -m pytest forge/tests/test_forge.py::test_entity_creation -v
 ```
 
+| Test | Description |
+|------|-------------|
+| `test_imports` | Verifies all core modules can be imported |
+| `test_entity_creation` | Tests Entity model creation with factory functions |
+| `test_relationship_creation` | Tests Relationship model creation |
+| `test_database_operations` | Tests CRUD operations on SQLite database |
+| `test_id_generation` | Tests ID utilities (generate, parse, validate) |
+| `test_text_chunker` | Tests document chunking for extraction |
+| `test_prefab_system` | Tests schema prefab system and registry |
+| `test_prompt_manager` | Tests YAML prompt loading and Jinja2 rendering |
+| `test_event_system` | Tests event creation and state change events |
+| `test_advisor_system` | Tests 6 advisor prompts (OSINT-ANVIL) |
+| `test_llm_models` | Tests LLMMessage, Conversation serialization |
+| `test_file_manager` | Tests staging JSON read/write operations |
+| `test_forge_config` | Tests LLMConfig, ExtractionConfig, UIConfig |
+| `test_project_manifest` | Tests ProjectManifest Pydantic model |
+| `test_vector_memory_serialization` | Tests float32 vector serialization |
+| `test_sentinel_merge_candidate` | Tests Sentinel merge candidate system |
+| `test_graph_manager` | Tests NodeData/EdgeData graph structures |
+| `test_forge_state_creation` | Tests ForgeState lazy initialization |
+
 ## Development Notes
 
 - Async-first: Use `async/await` for LLM and I/O operations
 - Events: All significant state changes logged to the event log for auditability
 - Embeddings: Entity vectors stored in SQLite (with sqlite-vec); semantic search enabled
-- Prompts: Template system in `forge/agents/prompts/` for customizable LLM instructions
+- Prompts: Centralized YAML/Jinja2 templates in `forge/agents/prompts/` for customizable LLM instructions
+  - `extraction.yaml` — Entity extraction prompts
+  - `analysis.yaml` — Deep analysis prompts  
+  - `review.yaml` — QA and review prompts
+  - `advisors/` — Phase-specific advisor prompts (osint.yaml, humint.yaml, sigint.yaml, synth.yaml, geoint.yaml, anvil.yaml)
 
 ## PyScrAI|Forge 3.0 Blueprint
 [Blueprint](blueprint.md)

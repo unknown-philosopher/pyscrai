@@ -21,7 +21,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 # ============================================================================
@@ -224,8 +224,7 @@ class Entity(BaseModel):
         default_factory=lambda: datetime.now(UTC)
     )
     
-    class Config:
-        frozen = False
+    model_config = ConfigDict(frozen=False)
     
     def __str__(self) -> str:
         return f"Entity({self.name or self.id[:8]}, type={self.entity_type.value})"
