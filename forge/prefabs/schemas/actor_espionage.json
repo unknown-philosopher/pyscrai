@@ -1,0 +1,72 @@
+{
+  "name": "actor_espionage",
+  "entity_type": "actor",
+  "label": "Espionage Actor",
+  "description": "Actor schema specialized for intelligence and espionage narratives.",
+  "inherits": "actor",
+  "fields": [
+    {
+      "name": "codename",
+      "type": "string",
+      "required": false,
+      "label": "Codename/Alias",
+      "description": "Operational codename or alias used in the field"
+    },
+    {
+      "name": "handler",
+      "type": "reference",
+      "required": false,
+      "label": "Handler",
+      "description": "The agent's handler or case officer"
+    },
+    {
+      "name": "cover_identity",
+      "type": "string",
+      "required": false,
+      "label": "Cover Identity",
+      "description": "The agent's cover identity or legend"
+    },
+    {
+      "name": "clearance_level",
+      "type": "enum",
+      "required": false,
+      "label": "Security Clearance",
+      "description": "Security clearance level",
+      "enum_values": ["UNCLASSIFIED", "CONFIDENTIAL", "SECRET", "TOP_SECRET", "COSMIC"]
+    },
+    {
+      "name": "specializations",
+      "type": "list",
+      "required": false,
+      "label": "Specializations",
+      "description": "Areas of expertise (e.g., HUMINT, SIGINT, surveillance, exfiltration)"
+    },
+    {
+      "name": "turned",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "label": "Double Agent",
+      "description": "Whether the agent has been turned"
+    },
+    {
+      "name": "network",
+      "type": "reference",
+      "required": false,
+      "label": "Network",
+      "description": "The intelligence network or ring the agent belongs to"
+    },
+    {
+      "name": "operational_status",
+      "type": "enum",
+      "required": false,
+      "label": "Status",
+      "description": "Current operational status",
+      "enum_values": ["ACTIVE", "DORMANT", "COMPROMISED", "BURNED", "RETIRED", "DECEASED"]
+    }
+  ],
+  "metadata": {
+    "genre": "espionage",
+    "version": "1.0"
+  }
+}
