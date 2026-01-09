@@ -95,8 +95,10 @@ class ForgeState:
         """
         from forge.core.models.project import ProjectManager
         
-        pm = ProjectManager(self.config.projects_dir)
-        self.project = pm.load_project(project_name)
+        # ProjectManager needs the full path to the specific project
+        project_path = self.config.projects_dir / project_name
+        pm = ProjectManager(project_path)
+        self.project = pm.load_project()
         
         # Reset system instances for new project
         self._db = None

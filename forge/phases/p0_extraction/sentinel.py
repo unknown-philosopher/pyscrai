@@ -181,15 +181,18 @@ class Sentinel:
             entity: Entity to ingest
         """
         # Check for near-duplicates using vector similarity
+        # Create text representation of entity for similarity search
+        entity_text = f"{entity.name} {entity.description}"
         duplicates = self.memory.find_near_duplicates(
-            entity,
+            text=entity_text,
             threshold=self.similarity_threshold,
-            top_k=5,
         )
         
         if duplicates:
             # Check highest similarity match
-            best_match_id, similarity = duplicates[0]
+            best_match = duplicates[0]
+            best_match_id = best_match.entity_id
+            similarity = best_match.similarity
             
             if best_match_id in self._entities:
                 existing = self._entities[best_match_id]
