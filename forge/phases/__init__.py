@@ -6,6 +6,9 @@ UI "lore" labels (OSINT, HUMINT, SIGINT, etc.) to users.
 """
 
 # Phase mapping for UI display
+from forge.phases.p2_relationships.orchestrator import RelationshipsOrchestrator
+
+
 PHASE_LABELS = {
     "p0_extraction": ("OSINT", "Phase 0: Extraction"),
     "p1_entities": ("HUMINT", "Phase 1: Entities"),
@@ -17,16 +20,16 @@ PHASE_LABELS = {
 
 # Lazy imports to avoid circular dependencies
 def get_extraction_orchestrator():
-    from forge.phases.extraction import ExtractionOrchestrator
+    from forge.phases.p0_extraction import ExtractionOrchestrator
     return ExtractionOrchestrator
 
-def get_anvil_orchestrator():
-    from forge.phases.anvil import AnvilOrchestrator
-    return AnvilOrchestrator
+def get_finalize_orchestrator():
+    from forge.phases.p5_finalize.orchestrator import FinalizeOrchestrator
+    return FinalizeOrchestrator
 
-def get_loom_orchestrator():
-    from forge.phases.loom import LoomOrchestrator
-    return LoomOrchestrator
+def get_relationships_orchestrator():
+    from forge.phases.p2_relationships import RelationshipsOrchestrator
+    return RelationshipsOrchestrator
 
 __all__ = [
     "PHASE_LABELS",

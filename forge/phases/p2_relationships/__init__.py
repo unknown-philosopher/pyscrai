@@ -9,11 +9,11 @@ Provides:
 """
 
 from forge.phases.p2_relationships.graph import GraphManager
-from forge.phases.loom.analysis import GraphAnalyzer
-from forge.phases.loom.orchestrator import LoomOrchestrator
+from forge.phases.p2_relationships.analysis import GraphAnalyzer
+from forge.phases.p2_relationships.orchestrator import RelationshipsOrchestrator
 
 __all__ = [
     "GraphManager",
     "GraphAnalyzer",
-    "LoomOrchestrator",
+    "RelationshipsOrchestrator",
 ]

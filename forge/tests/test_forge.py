@@ -46,21 +46,21 @@ def test_imports():
     print("  ✓ Storage system")
     
     # Phases
-    from forge.phases.extraction.chunker import TextChunker
-    from forge.phases.extraction.extractor import EntityExtractor
-    from forge.phases.extraction.sentinel import Sentinel
-    from forge.phases.extraction.orchestrator import ExtractionOrchestrator
+    from forge.phases.p0_extraction.chunker import TextChunker
+    from forge.phases.p0_extraction.extractor import EntityExtractor
+    from forge.phases.p0_extraction.sentinel import Sentinel
+    from forge.phases.p0_extraction.orchestrator import ExtractionOrchestrator
     print("  ✓ Extraction phase")
     
-    from forge.phases.anvil.manager import EntityManager
-    from forge.phases.anvil.merger import EntityMerger
-    from forge.phases.anvil.orchestrator import AnvilOrchestrator
-    print("  ✓ Anvil phase")
+    from forge.phases.p5_finalize.manager import EntityManager
+    from forge.phases.p5_finalize.merger import EntityMerger
+    from forge.phases.p5_finalize.orchestrator import FinalizeOrchestrator
+    print("  ✓ Finalize phase (Anvil)")
     
-    from forge.phases.loom.graph import GraphManager
-    from forge.phases.loom.analysis import GraphAnalyzer
-    from forge.phases.loom.orchestrator import LoomOrchestrator
-    print("  ✓ Loom phase")
+    from forge.phases.p2_relationships.graph import GraphManager
+    from forge.phases.p2_relationships.analysis import GraphAnalyzer
+    from forge.phases.p2_relationships.orchestrator import RelationshipsOrchestrator
+    print("  ✓ Relationships phase (Loom)")
     
     # Agents
     from forge.agents.base import Agent, AgentRole
@@ -256,7 +256,7 @@ def test_text_chunker():
     """Test text chunking for extraction."""
     print("\nTesting text chunker...")
     
-    from forge.phases.extraction.chunker import TextChunker
+    from forge.phases.p0_extraction.chunker import TextChunker
     
     chunker = TextChunker(chunk_size=100, overlap=20)
     
