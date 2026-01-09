@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="pyscrai-forge",
+    name="PyScrAI_Forge",
     version="3.0.0",
     description="PyScrAI|Forge - Worldbuilding and entity extraction toolkit",
-    author="Your Name",
+    author="TylerHamilton",
     packages=find_packages(),
     include_package_data=True,
     install_requires=[

@@ -1,5 +1,5 @@
 """
-Entity Merger for Anvil Phase.
+Entity Merger for Phase 5: Finalize (UI: ANVIL).
 
 Handles merging of duplicate entities with attribute reconciliation.
 """
@@ -17,7 +17,7 @@ from forge.utils.logging import get_logger
 if TYPE_CHECKING:
     from forge.app.state import ForgeState
 
-logger = get_logger("anvil.merger")
+logger = get_logger("p5_finalize.merger")
 
 
 @dataclass

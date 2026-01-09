@@ -195,6 +195,20 @@ class ProjectManager:
     def __init__(self, project_path: str | Path):
         self.project_path = Path(project_path)
         self._manifest: Optional[ProjectManifest] = None
+
+    def list_projects(self) -> list[str]:
+        """List project directories in the configured projects root.
+        
+        Returns directories that contain a manifest file.
+        """
+        base = self.project_path
+        if not base.exists() or base.is_file():
+            return []
+        return [
+            p.name
+            for p in base.iterdir()
+            if p.is_dir() and (p / self.MANIFEST_FILE).exists()
+        ]
     
     @property
     def manifest_path(self) -> Path:

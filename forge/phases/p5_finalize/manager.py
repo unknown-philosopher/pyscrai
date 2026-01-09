@@ -1,5 +1,5 @@
 """
-Entity Manager for Anvil Phase.
+Entity Manager for Phase 5: Finalize (UI: ANVIL).
 
 Provides CRUD operations and search for entities.
 """
@@ -20,7 +20,7 @@ from forge.utils.logging import get_logger
 if TYPE_CHECKING:
     from forge.app.state import ForgeState
 
-logger = get_logger("anvil.manager")
+logger = get_logger("p5_finalize.manager")
 
 
 class EntityManager:
