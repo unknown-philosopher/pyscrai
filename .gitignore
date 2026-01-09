@@ -1,5 +1,6 @@
 # Temporarily ignore pyscrai_engine for Gemini Context Window
 cuda/
+forge/tests
 
 _workspace
 .github
