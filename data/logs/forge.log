@@ -1,0 +1,15 @@
+[2026-01-09 21:17:29] INFO     [app                 ] Initializing Forge 3.0...
+[2026-01-09 21:17:29] INFO     [app.state           ] Initialized Forge state (session: SESS_1767993449_001)
+[2026-01-09 21:17:29] INFO     [app                 ] Starting Forge UI...
+[2026-01-09 21:17:29] WARNING  [app                 ] UI not yet implemented - running in demo mode
+[2026-01-09 21:17:29] INFO     [app.demo            ] ==================================================
+[2026-01-09 21:17:29] INFO     [app.demo            ] Forge 3.0 Demo
+[2026-01-09 21:17:29] INFO     [app.demo            ] ==================================================
+[2026-01-09 21:17:29] INFO     [app.demo            ] Data directory: C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\data
+[2026-01-09 21:17:29] INFO     [app.demo            ] Projects directory: C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\data\projects
+[2026-01-09 21:17:29] INFO     [app.demo            ] LLM provider: openrouter
+[2026-01-09 21:17:29] INFO     [app.demo            ] LLM model: openai/gpt-4.1-mini
+[2026-01-09 21:17:29] INFO     [app.demo            ] Available projects: []
+[2026-01-09 21:17:29] INFO     [app.demo            ] ==================================================
+[2026-01-09 21:17:29] INFO     [app.demo            ] Demo complete
+[2026-01-09 21:17:29] INFO     [app.demo            ] ==================================================
