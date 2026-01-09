@@ -112,3 +112,6 @@ python -m pytest forge/tests/test_forge.py::test_entity_creation -v
 - Events: All significant state changes logged to the event log for auditability
 - Embeddings: Entity vectors stored in SQLite (with sqlite-vec); semantic search enabled
 - Prompts: Template system in `forge/agents/prompts/` for customizable LLM instructions
+
+## PyScrAI|Forge 3.0 Blueprint
+[Blueprint](blueprint.md)
