@@ -12,9 +12,9 @@ from enum import Enum
 from typing import TYPE_CHECKING, Callable, Any
 from pathlib import Path
 
-from forge.phases.extraction.chunker import TextChunker, TextChunk
-from forge.phases.extraction.extractor import EntityExtractor, ExtractionResult
-from forge.phases.extraction.sentinel import Sentinel, SentinelStats
+from forge.phases.p0_extraction.chunker import TextChunker, TextChunk
+from forge.phases.p0_extraction.extractor import EntityExtractor, ExtractionResult
+from forge.phases.p0_extraction.sentinel import Sentinel, SentinelStats
 from forge.utils.logging import get_logger
 
 if TYPE_CHECKING:
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from forge.core.models.entity import Entity
     from forge.core.models.relationship import Relationship
 
-logger = get_logger("extraction")
+logger = get_logger("p0_extraction")
 
 
 # ============================================================================

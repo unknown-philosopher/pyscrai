@@ -19,10 +19,10 @@ from forge.core.models.relationship import Relationship
 from forge.utils.logging import get_logger
 
 if TYPE_CHECKING:
-    from forge.phases.extraction.extractor import ExtractionResult
+    from forge.phases.p0_extraction.extractor import ExtractionResult
     from forge.systems.memory.vector_memory import VectorMemory
 
-logger = get_logger("extraction.sentinel")
+logger = get_logger("p0_extraction.sentinel")
 
 
 # ============================================================================

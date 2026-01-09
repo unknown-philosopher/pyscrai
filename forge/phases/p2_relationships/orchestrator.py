@@ -1,5 +1,5 @@
 """
-Loom Phase Orchestrator.
+Relationships Phase Orchestrator.
 
 Coordinates graph visualization and analysis operations.
 """
@@ -10,19 +10,19 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
-from forge.phases.loom.graph import GraphManager
-from forge.phases.loom.analysis import GraphAnalyzer, GraphMetrics, CentralityScores
+from forge.phases.p2_relationships.graph import GraphManager
+from forge.phases.p2_relationships.analysis import GraphAnalyzer, GraphMetrics, CentralityScores
 from forge.core.models.entity import EntityType
 from forge.utils.logging import get_logger
 
 if TYPE_CHECKING:
     from forge.app.state import ForgeState
 
-logger = get_logger("loom")
+logger = get_logger("p2_relationships")
 
 
-class LoomView(str, Enum):
-    """Current view mode in Loom."""
+class RelationshipsView(str, Enum):
+    """Current view mode in Relationships."""
     FULL_GRAPH = "full_graph"
     SUBGRAPH = "subgraph"
     TYPE_FILTER = "type_filter"
@@ -30,10 +30,10 @@ class LoomView(str, Enum):
 
 
 @dataclass
-class LoomContext:
-    """Context for Loom operations."""
+class RelationshipsContext:
+    """Context for Relationships operations."""
     
-    view: LoomView = LoomView.FULL_GRAPH
+    view: RelationshipsView = RelationshipsView.FULL_GRAPH
     center_entity_id: str | None = None
     depth: int = 2
     filter_types: list[EntityType] = field(default_factory=list)
@@ -43,8 +43,8 @@ class LoomContext:
     show_edge_labels: bool = False
 
 
-class LoomOrchestrator:
-    """Orchestrates the Loom graph visualization phase.
+class RelationshipsOrchestrator:
+    """Orchestrates the Relationships graph visualization phase.
     
     Provides:
     - Graph building and refresh
@@ -54,19 +54,19 @@ class LoomOrchestrator:
     - Export capabilities
     
     Usage:
-        loom = LoomOrchestrator(state)
-        loom.build_graph()
+        relationships = RelationshipsOrchestrator(state)
+        relationships.build_graph()
         
         # Get full graph data for visualization
-        data = loom.get_visualization_data()
+        data = relationships.get_visualization_data()
         
         # Focus on an entity
-        loom.focus_on_entity("ACT_123", depth=2)
-        data = loom.get_visualization_data()
+        relationships.focus_on_entity("ACT_123", depth=2)
+        data = relationships.get_visualization_data()
         
         # Analyze
-        top_nodes = loom.get_top_central_nodes()
-        metrics = loom.get_metrics()
+        top_nodes = relationships.get_top_central_nodes()
+        metrics = relationships.get_metrics()
     """
     
     def __init__(self, state: "ForgeState"):
@@ -78,7 +78,7 @@ class LoomOrchestrator:
         self.state = state
         self.graph_mgr = GraphManager(state)
         self.analyzer = GraphAnalyzer(self.graph_mgr)
-        self.context = LoomContext()
+        self.context = RelationshipsContext()
         self._communities: list[set[str]] | None = None
     
     def build_graph(self) -> None:
@@ -97,7 +97,7 @@ class LoomOrchestrator:
     
     # ========== View Management ==========
     
-    def set_view(self, view: LoomView) -> None:
+    def set_view(self, view: RelationshipsView) -> None:
         """Set the current view mode."""
         self.context.view = view
     
@@ -112,7 +112,7 @@ class LoomOrchestrator:
             entity_id: Entity to center on
             depth: Number of hops to include
         """
-        self.context.view = LoomView.SUBGRAPH
+        self.context.view = RelationshipsView.SUBGRAPH
         self.context.center_entity_id = entity_id
         self.context.depth = depth
     
@@ -122,7 +122,7 @@ class LoomOrchestrator:
         Args:
             entity_types: Types to include
         """
-        self.context.view = LoomView.TYPE_FILTER
+        self.context.view = RelationshipsView.TYPE_FILTER
         self.context.filter_types = entity_types
     
     def show_community(self, community_index: int) -> None:
@@ -131,12 +131,12 @@ class LoomOrchestrator:
         Args:
             community_index: Index of community to show
         """
-        self.context.view = LoomView.COMMUNITY
+        self.context.view = RelationshipsView.COMMUNITY
         self.context.selected_community = community_index
     
     def reset_view(self) -> None:
         """Reset to full graph view."""
-        self.context = LoomContext()
+        self.context = RelationshipsContext()
     
     # ========== Visualization Data ==========
     
@@ -147,14 +147,14 @@ class LoomOrchestrator:
             Dict with nodes, edges, and layout
         """
         # Get appropriate subgraph based on view
-        if self.context.view == LoomView.SUBGRAPH and self.context.center_entity_id:
+        if self.context.view == RelationshipsView.SUBGRAPH and self.context.center_entity_id:
             G = self.graph_mgr.get_subgraph_around(
                 self.context.center_entity_id,
                 self.context.depth,
             )
-        elif self.context.view == LoomView.TYPE_FILTER and self.context.filter_types:
+        elif self.context.view == RelationshipsView.TYPE_FILTER and self.context.filter_types:
             G = self.graph_mgr.get_subgraph_for_types(self.context.filter_types)
-        elif self.context.view == LoomView.COMMUNITY and self.context.selected_community is not None:
+        elif self.context.view == RelationshipsView.COMMUNITY and self.context.selected_community is not None:
             communities = self.get_communities()
             if 0 <= self.context.selected_community < len(communities):
                 node_ids = communities[self.context.selected_community]
@@ -308,7 +308,7 @@ class LoomOrchestrator:
     # ========== Stats ==========
     
     def get_stats(self) -> dict[str, Any]:
-        """Get Loom statistics.
+        """Get Relationships statistics.
         
         Returns:
             Statistics dict

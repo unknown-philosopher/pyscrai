@@ -1,5 +1,6 @@
 """
-Anvil Phase Orchestrator.
+Phase 5: Finalize (UI: ANVIL) - Entity Management and Editing. 
+Orchestrator for the Finalize phase.
 
 Coordinates entity management operations.
 """
@@ -11,18 +12,18 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable
 
 from forge.core.models.entity import Entity, EntityType
-from forge.phases.anvil.manager import EntityManager
-from forge.phases.anvil.merger import EntityMerger, MergePreview
+from forge.phases.p5_finalize.manager import EntityManager
+from forge.phases.p5_finalize.merger import EntityMerger, MergePreview
 from forge.utils.logging import get_logger
 
 if TYPE_CHECKING:
     from forge.app.state import ForgeState
 
-logger = get_logger("anvil")
+logger = get_logger("p5_finalize")
 
 
-class AnvilMode(str, Enum):
-    """Current mode of the Anvil phase."""
+class FinalizeMode(str, Enum):
+    """Current mode of the Finalize phase."""
     BROWSE = "browse"
     EDIT = "edit"
     MERGE = "merge"
@@ -30,18 +31,18 @@ class AnvilMode(str, Enum):
 
 
 @dataclass
-class AnvilContext:
-    """Context for Anvil operations."""
+class FinalizeContext:
+    """Context for Finalize operations."""
     
-    mode: AnvilMode = AnvilMode.BROWSE
+    mode: FinalizeMode = FinalizeMode.BROWSE
     selected_entity_id: str | None = None
     filter_type: EntityType | None = None
     search_query: str = ""
     merge_candidates: list[tuple[Entity, Entity, float]] = field(default_factory=list)
 
 
-class AnvilOrchestrator:
-    """Orchestrates the Anvil phase.
+class FinalizeOrchestrator:
+    """Orchestrates the Finalize phase.
     
     Provides a unified interface for:
     - Entity browsing and filtering
@@ -50,18 +51,18 @@ class AnvilOrchestrator:
     - Search operations
     
     Usage:
-        anvil = AnvilOrchestrator(state)
+        finalize = FinalizeOrchestrator(state)
         
         # Browse entities
-        actors = anvil.get_entities(EntityType.ACTOR)
+        actors = finalize.get_entities(EntityType.ACTOR)
         
         # Search
-        results = anvil.search("John")
+        results = finalize.search("John")
         
         # Get merge suggestions
-        suggestions = anvil.get_merge_suggestions()
+        suggestions = finalize.get_merge_suggestions()
         for a, b, score in suggestions:
-            anvil.merge(a, b)
+            finalize.merge(a, b)
     """
     
     def __init__(self, state: "ForgeState"):
@@ -73,14 +74,14 @@ class AnvilOrchestrator:
         self.state = state
         self.manager = EntityManager(state)
         self.merger = EntityMerger(state)
-        self.context = AnvilContext()
+        self.context = FinalizeContext()
     
     # ========== Mode Management ==========
     
-    def set_mode(self, mode: AnvilMode) -> None:
-        """Set the current Anvil mode."""
+    def set_mode(self, mode: FinalizeMode) -> None:
+        """Set the current Finalize mode."""
         self.context.mode = mode
-        logger.debug(f"Anvil mode: {mode.value}")
+        logger.debug(f"Finalize mode: {mode.value}")
     
     def select_entity(self, entity_id: str) -> Entity | None:
         """Select an entity for viewing/editing.
@@ -265,7 +266,7 @@ class AnvilOrchestrator:
     # ========== Stats ==========
     
     def get_stats(self) -> dict[str, Any]:
-        """Get Anvil statistics.
+        """Get Finalize statistics.
         
         Returns:
             Statistics dict

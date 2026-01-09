@@ -15,11 +15,11 @@ from forge.core.models.relationship import Relationship, RelationType
 from forge.utils.logging import get_logger
 
 if TYPE_CHECKING:
-    from forge.phases.extraction.chunker import TextChunk
+    from forge.phases.p0_extraction.chunker import TextChunk
     from forge.systems.llm.base import LLMProvider
     from forge.systems.llm.models import LLMMessage
 
-logger = get_logger("extraction.extractor")
+logger = get_logger("p0_extraction.extractor")
 
 
 # ============================================================================

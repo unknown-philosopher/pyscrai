@@ -1,5 +1,5 @@
 """
-Graph Analysis for Loom Phase.
+Graph Analysis for Relationships Phase.
 
 Provides network analysis metrics and algorithms.
 """
@@ -19,9 +19,9 @@ except ImportError:
 from forge.utils.logging import get_logger
 
 if TYPE_CHECKING:
-    from forge.phases.loom.graph import GraphManager
+    from forge.phases.p2_relationships.graph import GraphManager
 
-logger = get_logger("loom.analysis")
+logger = get_logger("p2_relationships.analysis")
 
 
 @dataclass
