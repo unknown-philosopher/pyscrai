@@ -12,9 +12,9 @@ pip install -e .
 
 **Optional arguments:**
 - `pip install -e ".[dev]"` — Install test dependencies
-- `pip install -e ".[ui]"` — Install Textual TUI support (future UI)
+- `pip install -e ".[cuda]"` — Install TensorFlow and PyTorch with CUDA support
 - `pip install -e ".[all]"` — Install all optional dependencies
-- `pip install -e ".[dev,ui]"` — Combine multiple extras
+- `pip install -e ".[dev,cuda]"` — Combine multiple extras
 
 ### Run
 

@@ -22,6 +22,7 @@ setup(
         
         # Sentence embeddings (for memory vectorization)
         "sentence-transformers>=2.2.0",
+        # sentence-transformers defaults to PyTorch; TensorFlow is not required
         
         # Graph analysis (for Loom phase)
         "networkx>=3.0",
@@ -48,32 +49,23 @@ setup(
         "dev": [
             "pytest>=7.0.0",
             "pytest-asyncio>=0.21.0",
+            "pytest-cov>=4.0.0",
         ],
-        "ui": [
-            # Textual TUI (for future UI implementation)
-            "textual>=0.40.0",
+        "cuda": [
+            "torch>=2.0.0",
+            "torchvision>=0.15.0",
+            "torchaudio>=2.0.0",
         ],
-        "legacy": [
-            # Legacy dependencies for pyscrai_forge compatibility
-            "pydantic-ai-slim[sentence-transformers]",
-            "chromadb>=0.4.0",
-            "dearpygui>=1.10.0",
-            "fastapi>=0.100.0",
-            "uvicorn>=0.23.0",
-            "langchain-core>=0.1.0",
-            "sv-ttk>=2.6.0",
-        ],
+
         "all": [
+            # Dev dependencies
             "pytest>=7.0.0",
             "pytest-asyncio>=0.21.0",
-            "textual>=0.40.0",
-            "pydantic-ai-slim[sentence-transformers]",
-            "chromadb>=0.4.0",
-            "dearpygui>=1.10.0",
-            "fastapi>=0.100.0",
-            "uvicorn>=0.23.0",
-            "langchain-core>=0.1.0",
-            "sv-ttk>=2.6.0",
+            "pytest-cov>=4.0.0",
+            # CUDA dependencies
+            "torch>=2.0.0",
+            "torchvision>=0.15.0",
+            "torchaudio>=2.0.0",
         ],
     },
     entry_points={
