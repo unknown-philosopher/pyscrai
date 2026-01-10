@@ -129,7 +129,7 @@ def run_ui(state: "ForgeState") -> int:
     
     try:
         # Launch NiceGUI frontend
-        from forge.frontend import launch_ui
+        from forge.legacy_nicegui import launch_ui
         return launch_ui(state)
         
     except ImportError as e:

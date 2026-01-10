@@ -23,8 +23,15 @@ setup(
         # Sentence embeddings (for memory vectorization)
         "sentence-transformers>=2.2.0",
         
-        # Graph analysis (for Loom phase)
-        "networkx>=3.0",
+        # Graph analysis (for Relationships phase)
+        "networkx>=3.2",
+        
+        # UI and visualization
+        "flet>=0.24.0",
+        "plotly>=5.18.0",
+
+        # Analytical database
+        "duckdb>=0.10.0",
         
         # CLI and rich output
         "typer>=0.9.0",
@@ -44,9 +51,9 @@ setup(
         "pytesseract>=0.3.10",
         "Pillow>=8.0.0",
         
-        # NiceGUI frontend (native desktop mode)
-        "nicegui>=1.4.0",
-        "pywebview>=4.4.0",
+        # # NiceGUI frontend (native desktop mode)
+        # "nicegui>=1.4.0",
+        # "pywebview>=4.4.0",
     ],
     extras_require={
         "dev": [

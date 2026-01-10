@@ -15,7 +15,7 @@ from typing import Callable
 
 from nicegui import ui
 
-from forge.frontend.state import get_ui_context, is_project_loaded, set_active_page
+from forge.legacy_nicegui.state import get_ui_context, is_project_loaded, set_active_page
 from forge.utils.logging import get_logger
 
 logger = get_logger("frontend.theme")
@@ -79,7 +79,7 @@ def create_header(sidebar: ui.element | None = None, assistant_drawer: ui.elemen
         sidebar: Optional sidebar element to toggle when clicking PyScrAI logo
         assistant_drawer: Optional assistant drawer element to toggle
     """
-    from forge.frontend.state import get_session
+    from forge.legacy_nicegui.state import get_session
     
     with ui.header().classes("forge-header items-center px-4 py-2"):
         # Logo - clickable to toggle sidebar
@@ -160,7 +160,7 @@ def create_sidebar(active_page: str, collapsed: bool = False) -> ui.element:
 
 def create_assistant_drawer() -> ui.element:
     """Create the right drawer containing the terminal-style AI Assistant."""
-    from forge.frontend.components.assistant import AssistantPanel
+    from forge.legacy_nicegui.components.assistant import AssistantPanel
     
     with ui.right_drawer(value=False).classes("forge-sidebar p-0").props("width=380 bordered") as drawer:
         # Assistant panel content
@@ -183,7 +183,7 @@ def create_assistant_drawer() -> ui.element:
 
 def create_footer() -> None:
     """Create the status bar footer."""
-    from forge.frontend.state import get_session, is_project_loaded
+    from forge.legacy_nicegui.state import get_session, is_project_loaded
     
     with ui.footer().classes("forge-footer px-4 py-2 items-center"):
         # Project info

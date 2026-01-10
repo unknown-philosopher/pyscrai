@@ -14,8 +14,8 @@ from typing import Any
 
 from nicegui import ui
 
-from forge.frontend.components.file_picker import FilePicker
-from forge.frontend.state import get_session, is_project_loaded
+from forge.legacy_nicegui.components.file_picker import FilePicker
+from forge.legacy_nicegui.state import get_session, is_project_loaded
 from forge.utils.logging import get_logger
 
 logger = get_logger("frontend.osint")

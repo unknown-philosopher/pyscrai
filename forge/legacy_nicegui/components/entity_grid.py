@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from nicegui import ui
 
-from forge.frontend.state import get_session, set_selected_entities
+from forge.legacy_nicegui.state import get_session, set_selected_entities
 from forge.utils.logging import get_logger
 
 if TYPE_CHECKING:

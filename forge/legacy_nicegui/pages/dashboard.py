@@ -14,9 +14,9 @@ from typing import Any
 
 from nicegui import ui
 
-from forge.frontend.components.activity_feed import create_activity_feed
-from forge.frontend.components.ui_components import ForgeButton, ForgeMetricCard
-from forge.frontend.state import get_session, is_project_loaded
+from forge.legacy_nicegui.components.activity_feed import create_activity_feed
+from forge.legacy_nicegui.components.ui_components import ForgeButton, ForgeMetricCard
+from forge.legacy_nicegui.state import get_session, is_project_loaded
 from forge.utils.logging import get_logger
 
 logger = get_logger("frontend.dashboard")

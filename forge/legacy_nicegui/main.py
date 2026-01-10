@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING
 
 from nicegui import app, ui
 
-from forge.frontend.state import get_session
-from forge.frontend.theme import create_layout
+from forge.legacy_nicegui.state import get_session
+from forge.legacy_nicegui.theme import create_layout
 from forge.utils.logging import get_logger
 
 if TYPE_CHECKING:
@@ -22,7 +22,7 @@ logger = get_logger("frontend.main")
 
 def setup_routes() -> None:
     """Register all UI page routes."""
-    from forge.frontend.pages import (
+    from forge.legacy_nicegui.pages import (
         anvil,
         dashboard,
         geoint,
@@ -83,7 +83,7 @@ def launch_ui(state: "ForgeState | None" = None) -> int:
     Returns:
         Exit code (0 for success)
     """
-    from forge.frontend.state import initialize_session
+    from forge.legacy_nicegui.state import initialize_session
     
     logger.info("Launching Forge UI in native mode")
     

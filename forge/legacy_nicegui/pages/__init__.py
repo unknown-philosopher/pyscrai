@@ -12,7 +12,7 @@ Each page corresponds to a phase in the Intelligence Pipeline:
 - ANVIL: Finalization & export
 """
 
-from forge.frontend.pages import (
+from forge.legacy_nicegui.pages import (
     anvil,
     dashboard,
     geoint,

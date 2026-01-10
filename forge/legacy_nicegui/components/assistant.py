@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 
 from nicegui import ui
 
-from forge.frontend.state import get_session, get_ui_context
+from forge.legacy_nicegui.state import get_session, get_ui_context
 from forge.utils.logging import get_logger
 
 if TYPE_CHECKING:

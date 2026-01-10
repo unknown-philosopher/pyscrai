@@ -13,7 +13,7 @@ from datetime import datetime
 
 from nicegui import ui
 
-from forge.frontend.state import get_session, is_project_loaded
+from forge.legacy_nicegui.state import get_session, is_project_loaded
 from forge.utils.logging import get_logger
 
 logger = get_logger("frontend.anvil")
