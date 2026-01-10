@@ -22,7 +22,6 @@ setup(
         
         # Sentence embeddings (for memory vectorization)
         "sentence-transformers>=2.2.0",
-        # sentence-transformers defaults to PyTorch; TensorFlow is not required
         
         # Graph analysis (for Loom phase)
         "networkx>=3.0",
@@ -34,7 +33,7 @@ setup(
         # YAML support for prefabs/prompts
         "pyyaml>=6.0.0",
         
-        # Jinja2 for prompt templates (optional but recommended)
+        # Jinja2 for prompt templates 
         "jinja2>=3.0.0",
         
         # Document processing
