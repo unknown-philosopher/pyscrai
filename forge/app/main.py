@@ -125,16 +125,16 @@ def run_ui(state: "ForgeState") -> int:
     from forge.utils.logging import get_logger
     
     logger = get_logger("app")
-    logger.info("Starting Forge UI...")
+    logger.info("Starting Forge UI (Flet)...")
     
     try:
-        # Launch NiceGUI frontend
-        from forge.legacy_nicegui import launch_ui
+        # Launch Flet frontend
+        from forge.frontend.main import launch_ui
         return launch_ui(state)
         
     except ImportError as e:
-        logger.warning(f"NiceGUI not available: {e}")
-        logger.warning("Falling back to demo mode. Install with: pip install nicegui pywebview")
+        logger.warning(f"Flet not available: {e}")
+        logger.warning("Falling back to demo mode. Install with: pip install flet")
         _run_demo(state)
         return 0
         

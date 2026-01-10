@@ -1,17 +1,206 @@
-[2026-01-10 05:33:37] INFO     [app                 ] Initializing Forge 3.0...
-[2026-01-10 05:33:37] INFO     [app.state           ] Initialized Forge state (session: SESS_1768023217_001)
-[2026-01-10 05:33:37] INFO     [app                 ] Starting Forge UI...
-[2026-01-10 05:33:38] INFO     [frontend.main       ] Launching Forge UI in native mode
-[2026-01-10 05:33:38] INFO     [frontend.state      ] Frontend session initialized (session_id=SESS_1768023217_001)
-[2026-01-10 05:34:00] INFO     [app.state           ] Loaded project: test
-[2026-01-10 05:34:43] ERROR    [frontend.sigint     ] Community detection failed: 'RelationshipsOrchestrator' object has no attribute 'analyze_graph'
-[2026-01-10 05:34:43] ERROR    [frontend.sigint     ] Key actor analysis failed: 'RelationshipsOrchestrator' object has no attribute 'find_key_actors'
-[2026-01-10 05:35:45] ERROR    [frontend.anvil      ] Failed to get validation issues: 'FinalizeOrchestrator' object has no attribute 'get_validation_issues'
-[2026-01-10 06:08:28] INFO     [app                 ] Initializing Forge 3.0...
-[2026-01-10 06:08:28] INFO     [app.state           ] Initialized Forge state (session: SESS_1768025308_001)
-[2026-01-10 06:08:28] INFO     [app                 ] Starting Forge UI...
-[2026-01-10 06:08:29] INFO     [frontend.main       ] Launching Forge UI in native mode
-[2026-01-10 06:08:29] INFO     [frontend.state      ] Frontend session initialized (session_id=SESS_1768025308_001)
-[2026-01-10 06:08:34] INFO     [app.state           ] Loaded project: test
-[2026-01-10 06:24:24] ERROR    [frontend.anvil      ] Failed to get validation issues: 'FinalizeOrchestrator' object has no attribute 'get_validation_issues'
-[2026-01-10 06:24:41] INFO     [frontend.main       ] Forge UI closed
+[2026-01-10 16:04:10] INFO     [app                 ] Initializing Forge 3.0...
+[2026-01-10 16:04:10] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061050_001)
+[2026-01-10 16:04:10] INFO     [app                 ] Starting Forge UI (Flet)...
+[2026-01-10 16:04:14] INFO     [frontend.main       ] Initializing Forge Frontend (Flet)
+[2026-01-10 16:04:14] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061054_002)
+[2026-01-10 16:04:14] INFO     [frontend.main       ] ForgeState initialized (session: SESS_1768061054_002)
+[2026-01-10 16:04:14] INFO     [frontend.state      ] FletX state initialized
+[2026-01-10 16:04:14] INFO     [frontend.main       ] FletX state initialized
+[2026-01-10 16:04:14] ERROR    [frontend.main       ] Failed to initialize app shell: module 'flet.controls.alignment' has no attribute 'top_right'
+[2026-01-10 16:04:17] INFO     [frontend.main       ] Forge UI closed
+[2026-01-10 16:05:01] INFO     [app                 ] Initializing Forge 3.0...
+[2026-01-10 16:05:01] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061101_001)
+[2026-01-10 16:05:01] INFO     [app                 ] Starting Forge UI (Flet)...
+[2026-01-10 16:05:03] INFO     [frontend.main       ] Initializing Forge Frontend (Flet)
+[2026-01-10 16:05:03] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061103_002)
+[2026-01-10 16:05:03] INFO     [frontend.main       ] ForgeState initialized (session: SESS_1768061103_002)
+[2026-01-10 16:05:03] INFO     [frontend.state      ] FletX state initialized
+[2026-01-10 16:05:03] INFO     [frontend.main       ] FletX state initialized
+[2026-01-10 16:05:03] ERROR    [frontend.main       ] Failed to initialize app shell: VerticalDivider.__init__() got an unexpected keyword argument 'height'
+[2026-01-10 16:05:04] INFO     [frontend.main       ] Forge UI closed
+[2026-01-10 16:05:49] INFO     [app                 ] Initializing Forge 3.0...
+[2026-01-10 16:05:49] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061149_001)
+[2026-01-10 16:05:49] INFO     [app                 ] Starting Forge UI (Flet)...
+[2026-01-10 16:05:50] INFO     [frontend.main       ] Initializing Forge Frontend (Flet)
+[2026-01-10 16:05:50] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061150_002)
+[2026-01-10 16:05:50] INFO     [frontend.main       ] ForgeState initialized (session: SESS_1768061150_002)
+[2026-01-10 16:05:50] INFO     [frontend.state      ] FletX state initialized
+[2026-01-10 16:05:50] INFO     [frontend.main       ] FletX state initialized
+[2026-01-10 16:05:50] ERROR    [frontend.main       ] Failed to initialize app shell: Button.__init__() got an unexpected keyword argument 'text'
+[2026-01-10 16:05:52] INFO     [frontend.main       ] Forge UI closed
+[2026-01-10 16:05:55] INFO     [app                 ] Initializing Forge 3.0...
+[2026-01-10 16:05:55] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061155_001)
+[2026-01-10 16:05:55] INFO     [app                 ] Starting Forge UI (Flet)...
+[2026-01-10 16:05:56] INFO     [frontend.main       ] Initializing Forge Frontend (Flet)
+[2026-01-10 16:05:56] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061156_002)
+[2026-01-10 16:05:56] INFO     [frontend.main       ] ForgeState initialized (session: SESS_1768061156_002)
+[2026-01-10 16:05:56] INFO     [frontend.state      ] FletX state initialized
+[2026-01-10 16:05:56] INFO     [frontend.main       ] FletX state initialized
+[2026-01-10 16:05:56] ERROR    [frontend.main       ] Failed to initialize app shell: Button.__init__() got an unexpected keyword argument 'text'
+[2026-01-10 16:05:57] INFO     [frontend.main       ] Forge UI closed
+[2026-01-10 16:07:50] INFO     [app                 ] Initializing Forge 3.0...
+[2026-01-10 16:07:50] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061270_001)
+[2026-01-10 16:07:50] INFO     [app                 ] Starting Forge UI (Flet)...
+[2026-01-10 16:07:51] INFO     [frontend.main       ] Initializing Forge Frontend (Flet)
+[2026-01-10 16:07:51] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061271_002)
+[2026-01-10 16:07:51] INFO     [frontend.main       ] ForgeState initialized (session: SESS_1768061271_002)
+[2026-01-10 16:07:51] INFO     [frontend.state      ] FletX state initialized
+[2026-01-10 16:07:51] INFO     [frontend.main       ] FletX state initialized
+[2026-01-10 16:07:51] INFO     [frontend.app_shell  ] App shell initialized
+[2026-01-10 16:07:51] INFO     [frontend.main       ] App shell initialized
+[2026-01-10 16:07:51] INFO     [frontend.main       ] Forge Frontend ready
+[2026-01-10 16:08:07] INFO     [frontend.main       ] Forge UI closed
+[2026-01-10 16:08:37] INFO     [app                 ] Initializing Forge 3.0...
+[2026-01-10 16:08:37] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061317_001)
+[2026-01-10 16:08:37] INFO     [app                 ] Starting Forge UI (Flet)...
+[2026-01-10 16:08:38] INFO     [frontend.main       ] Initializing Forge Frontend (Flet)
+[2026-01-10 16:08:38] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061318_002)
+[2026-01-10 16:08:38] INFO     [frontend.main       ] ForgeState initialized (session: SESS_1768061318_002)
+[2026-01-10 16:08:38] INFO     [frontend.state      ] FletX state initialized
+[2026-01-10 16:08:38] INFO     [frontend.main       ] FletX state initialized
+[2026-01-10 16:08:38] INFO     [frontend.app_shell  ] App shell initialized
+[2026-01-10 16:08:38] INFO     [frontend.main       ] App shell initialized
+[2026-01-10 16:08:38] INFO     [frontend.main       ] Forge Frontend ready
+[2026-01-10 16:08:47] INFO     [frontend.main       ] Forge UI closed
+[2026-01-10 16:14:13] INFO     [app                 ] Initializing Forge 3.0...
+[2026-01-10 16:14:13] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061653_001)
+[2026-01-10 16:14:13] INFO     [app                 ] Starting Forge UI (Flet)...
+[2026-01-10 16:14:14] INFO     [frontend.main       ] Initializing Forge Frontend (Flet)
+[2026-01-10 16:14:14] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061654_002)
+[2026-01-10 16:14:14] INFO     [frontend.main       ] ForgeState initialized (session: SESS_1768061654_002)
+[2026-01-10 16:14:14] INFO     [frontend.state      ] FletX state initialized
+[2026-01-10 16:14:14] INFO     [frontend.main       ] FletX state initialized
+[2026-01-10 16:14:14] INFO     [frontend.app_shell  ] App shell initialized
+[2026-01-10 16:14:14] INFO     [frontend.main       ] App shell initialized
+[2026-01-10 16:14:14] INFO     [frontend.main       ] Forge Frontend ready
+[2026-01-10 16:14:17] INFO     [frontend.main       ] Forge UI closed
+[2026-01-10 16:15:23] INFO     [app                 ] Initializing Forge 3.0...
+[2026-01-10 16:15:23] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061723_001)
+[2026-01-10 16:15:23] INFO     [app                 ] Starting Forge UI (Flet)...
+[2026-01-10 16:15:24] INFO     [frontend.main       ] Initializing Forge Frontend (Flet)
+[2026-01-10 16:15:24] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061724_002)
+[2026-01-10 16:15:24] INFO     [frontend.main       ] ForgeState initialized (session: SESS_1768061724_002)
+[2026-01-10 16:15:24] INFO     [frontend.state      ] FletX state initialized
+[2026-01-10 16:15:24] INFO     [frontend.main       ] FletX state initialized
+[2026-01-10 16:15:24] INFO     [frontend.app_shell  ] App shell initialized
+[2026-01-10 16:15:24] INFO     [frontend.main       ] App shell initialized
+[2026-01-10 16:15:24] INFO     [frontend.main       ] Forge Frontend ready
+[2026-01-10 16:15:28] INFO     [frontend.main       ] Forge UI closed
+[2026-01-10 16:17:43] INFO     [app                 ] Initializing Forge 3.0...
+[2026-01-10 16:17:43] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061863_001)
+[2026-01-10 16:17:43] INFO     [app                 ] Starting Forge UI (Flet)...
+[2026-01-10 16:17:44] INFO     [frontend.main       ] Initializing Forge Frontend (Flet)
+[2026-01-10 16:17:44] INFO     [app.state           ] Initialized Forge state (session: SESS_1768061864_002)
+[2026-01-10 16:17:44] INFO     [frontend.main       ] ForgeState initialized (session: SESS_1768061864_002)
+[2026-01-10 16:17:44] INFO     [frontend.state      ] FletX state initialized
+[2026-01-10 16:17:44] INFO     [frontend.main       ] FletX state initialized
+[2026-01-10 16:17:44] INFO     [frontend.app_shell  ] App shell initialized
+[2026-01-10 16:17:44] INFO     [frontend.main       ] App shell initialized
+[2026-01-10 16:17:44] INFO     [frontend.main       ] Forge Frontend ready
+[2026-01-10 16:17:46] ERROR    [frontend.main       ] Route handler error: module 'flet.controls.alignment' has no attribute 'center' Traceback (most recent call last):
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\main.py", line 127, in route_handler
+    view_content = dashboard.render_dashboard_view(state)
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\views\dashboard.py", line 29, in render_dashboard_view
+    return _render_no_project(state)
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\views\dashboard.py", line 124, in _render_no_project
+    alignment=ft.alignment.center,
+              ^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'flet.controls.alignment' has no attribute 'center'
+[2026-01-10 16:17:46] ERROR    [frontend.main       ] Fallback view load also failed: TextField.__init__() got an unexpected keyword argument 'font_family'
+[2026-01-10 16:17:46] ERROR    [frontend.main       ] Route handler error: module 'flet.controls.alignment' has no attribute 'center' Traceback (most recent call last):
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\main.py", line 129, in route_handler
+    view_content = osint.render_osint_view(state)
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\views\osint.py", line 24, in render_osint_view
+    return _render_no_project(state)
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\views\osint.py", line 49, in _render_no_project
+    alignment=ft.alignment.center,
+              ^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'flet.controls.alignment' has no attribute 'center'
+[2026-01-10 16:17:46] ERROR    [frontend.main       ] Fallback view load also failed: TextField.__init__() got an unexpected keyword argument 'font_family'
+[2026-01-10 16:17:47] ERROR    [frontend.main       ] Route handler error: module 'flet.controls.alignment' has no attribute 'center' Traceback (most recent call last):
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\main.py", line 131, in route_handler
+    view_content = humint.render_humint_view(state)
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\views\humint.py", line 24, in render_humint_view
+    return _render_no_project(state)
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\views\humint.py", line 49, in _render_no_project
+    alignment=ft.alignment.center,
+              ^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'flet.controls.alignment' has no attribute 'center'
+[2026-01-10 16:17:47] ERROR    [frontend.main       ] Fallback view load also failed: TextField.__init__() got an unexpected keyword argument 'font_family'
+[2026-01-10 16:17:47] ERROR    [frontend.main       ] Route handler error: module 'flet.controls.alignment' has no attribute 'center' Traceback (most recent call last):
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\main.py", line 133, in route_handler
+    view_content = sigint.render_sigint_view(state)
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\views\sigint.py", line 24, in render_sigint_view
+    return _render_no_project(state)
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\views\sigint.py", line 49, in _render_no_project
+    alignment=ft.alignment.center,
+              ^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'flet.controls.alignment' has no attribute 'center'
+[2026-01-10 16:17:47] ERROR    [frontend.main       ] Fallback view load also failed: TextField.__init__() got an unexpected keyword argument 'font_family'
+[2026-01-10 16:17:47] ERROR    [frontend.main       ] Route handler error: module 'flet.controls.alignment' has no attribute 'center' Traceback (most recent call last):
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\main.py", line 135, in route_handler
+    view_content = synth.render_synth_view(state)
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\views\synth.py", line 24, in render_synth_view
+    return _render_no_project(state)
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\views\synth.py", line 49, in _render_no_project
+    alignment=ft.alignment.center,
+              ^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'flet.controls.alignment' has no attribute 'center'
+[2026-01-10 16:17:47] ERROR    [frontend.main       ] Fallback view load also failed: TextField.__init__() got an unexpected keyword argument 'font_family'
+[2026-01-10 16:17:48] ERROR    [frontend.main       ] Route handler error: module 'flet.controls.alignment' has no attribute 'center' Traceback (most recent call last):
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\main.py", line 137, in route_handler
+    view_content = geoint.render_geoint_view(state)
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\views\geoint.py", line 24, in render_geoint_view
+    return _render_no_project(state)
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\views\geoint.py", line 49, in _render_no_project
+    alignment=ft.alignment.center,
+              ^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'flet.controls.alignment' has no attribute 'center'
+[2026-01-10 16:17:48] ERROR    [frontend.main       ] Fallback view load also failed: TextField.__init__() got an unexpected keyword argument 'font_family'
+[2026-01-10 16:17:48] ERROR    [frontend.main       ] Route handler error: module 'flet.controls.alignment' has no attribute 'center' Traceback (most recent call last):
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\main.py", line 139, in route_handler
+    view_content = anvil.render_anvil_view(state)
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\views\anvil.py", line 24, in render_anvil_view
+    return _render_no_project(state)
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\views\anvil.py", line 49, in _render_no_project
+    alignment=ft.alignment.center,
+              ^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'flet.controls.alignment' has no attribute 'center'
+[2026-01-10 16:17:48] ERROR    [frontend.main       ] Fallback view load also failed: TextField.__init__() got an unexpected keyword argument 'font_family'
+[2026-01-10 16:17:50] INFO     [frontend.main       ] Forge UI closed
+[2026-01-10 16:20:13] INFO     [app                 ] Initializing Forge 3.0...
+[2026-01-10 16:20:13] INFO     [app.state           ] Initialized Forge state (session: SESS_1768062013_001)
+[2026-01-10 16:20:13] INFO     [app                 ] Starting Forge UI (Flet)...
+[2026-01-10 16:20:14] INFO     [frontend.main       ] Initializing Forge Frontend (Flet)
+[2026-01-10 16:20:14] INFO     [app.state           ] Initialized Forge state (session: SESS_1768062014_002)
+[2026-01-10 16:20:14] INFO     [frontend.main       ] ForgeState initialized (session: SESS_1768062014_002)
+[2026-01-10 16:20:14] INFO     [frontend.state      ] FletX state initialized
+[2026-01-10 16:20:14] INFO     [frontend.main       ] FletX state initialized
+[2026-01-10 16:20:14] INFO     [frontend.app_shell  ] App shell initialized
+[2026-01-10 16:20:14] INFO     [frontend.main       ] App shell initialized
+[2026-01-10 16:20:14] INFO     [frontend.main       ] Forge Frontend ready
+[2026-01-10 16:20:15] INFO     [frontend.main       ] Forge UI closed
+[2026-01-10 16:22:58] INFO     [app                 ] Initializing Forge 3.0...
+[2026-01-10 16:22:58] INFO     [app.state           ] Initialized Forge state (session: SESS_1768062178_001)
+[2026-01-10 16:22:58] INFO     [app                 ] Starting Forge UI (Flet)...
+[2026-01-10 16:22:59] INFO     [frontend.main       ] Initializing Forge Frontend (Flet)
+[2026-01-10 16:22:59] INFO     [app.state           ] Initialized Forge state (session: SESS_1768062179_002)
+[2026-01-10 16:22:59] INFO     [frontend.main       ] ForgeState initialized (session: SESS_1768062179_002)
+[2026-01-10 16:22:59] INFO     [frontend.state      ] FletX state initialized
+[2026-01-10 16:22:59] INFO     [frontend.main       ] FletX state initialized
+[2026-01-10 16:22:59] INFO     [frontend.app_shell  ] App shell initialized
+[2026-01-10 16:22:59] INFO     [frontend.main       ] App shell initialized
+[2026-01-10 16:22:59] INFO     [frontend.main       ] Forge Frontend ready
+[2026-01-10 16:23:01] INFO     [frontend.main       ] Forge UI closed
+[2026-01-10 16:23:08] INFO     [app                 ] Initializing Forge 3.0...
+[2026-01-10 16:23:08] INFO     [app.state           ] Initialized Forge state (session: SESS_1768062188_001)
+[2026-01-10 16:23:08] INFO     [app                 ] Starting Forge UI (Flet)...
+[2026-01-10 16:23:09] INFO     [frontend.main       ] Initializing Forge Frontend (Flet)
+[2026-01-10 16:23:09] INFO     [app.state           ] Initialized Forge state (session: SESS_1768062189_002)
+[2026-01-10 16:23:09] INFO     [frontend.main       ] ForgeState initialized (session: SESS_1768062189_002)
+[2026-01-10 16:23:09] INFO     [frontend.state      ] FletX state initialized
+[2026-01-10 16:23:09] INFO     [frontend.main       ] FletX state initialized
+[2026-01-10 16:23:09] INFO     [frontend.app_shell  ] App shell initialized
+[2026-01-10 16:23:09] INFO     [frontend.main       ] App shell initialized
+[2026-01-10 16:23:09] INFO     [frontend.main       ] Forge Frontend ready
+[2026-01-10 16:23:16] INFO     [frontend.main       ] Forge UI closed

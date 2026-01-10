@@ -165,9 +165,9 @@ class ForgeState:
     
     def close_project(self) -> None:
         """Close the current project and clean up resources."""
-        if self._db is not None:
-            self._db.close()
-            self._db = None
+        # DatabaseManager uses connection-per-operation, no explicit close needed
+        # But we can reset the reference
+        self._db = None
         
         self._file_manager = None
         self._vector_memory = None
@@ -288,7 +288,17 @@ class ForgeState:
         
         if self.has_project:
             stats["project_name"] = self.project.name
-            stats.update(self.db.get_stats())
+            db_stats = self.db.get_stats()
+            
+            # Map database stats keys to expected keys
+            stats["entity_count"] = db_stats.get("entities", 0)
+            stats["relationship_count"] = db_stats.get("relationships", 0)
+            stats["event_count"] = db_stats.get("events", 0)
+            stats["document_count"] = db_stats.get("documents", 0)  # May not exist yet
+            stats["entities_by_type"] = db_stats.get("entities_by_type", {})
+            
+            # Also include original keys for backward compatibility
+            stats.update(db_stats)
         
         return stats
 
