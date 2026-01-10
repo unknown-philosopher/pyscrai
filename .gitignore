@@ -1,13 +1,10 @@
 # Temporarily ignore pyscrai_engine for Gemini Context Window
-cuda/
-tkinter_legacy_forge/
-# _deprecated
-# .github
-# .cursor
+.github
+.cursor
+world.db
+.vscode/
+
 .env
-# world.db
-# VS Code
-# .vscode/
 
 
 /data/projects/archive
