@@ -4,6 +4,7 @@ Forge is a narrative intelligence system for entity extraction, relationship map
 
 ## Quick Start
 
+
 ### Install
 
 ```bash
@@ -15,6 +16,14 @@ pip install -e .
 - `pip install -e ".[cuda]"` — Install PyTorch with CUDA support
 - `pip install -e ".[all]"` — Install all optional dependencies
 - `pip install -e ".[dev,cuda]"` — Combine multiple extras
+
+### Virtual Environment
+
+Activate your environment before running or testing:
+```pwsh
+.venv\Scripts\activate
+# On Linux/macOS: source .venv/bin/activate
+```
 
 ### Run
 
@@ -66,23 +75,26 @@ Copy `.env.sample` to `.env` and configure:
 ```dotenv
 # LLM Provider (default: openrouter)
 # Options: openrouter, lm_proxy, lm_studio, cherry
+DEFAULT_PROVIDER=openrouter
+
 OPENROUTER_API_KEY=<your_api_key>
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+# OPENROUTER_MODEL=xiaomi/mimo-v2-flash:free
 
-# Cherry (local LLM server)
 CHERRY_API_URL=http://127.0.0.1:23333/v1/chat/completions
 CHERRY_API_KEY=<your_api_key>
+# CHERRY_MODEL=xiaomi/mimo-v2-flash:free
 
-# LM Proxy (VS Code LM proxy)
 LM_PROXY_BASE_URL=http://localhost:4000/openai/v1
 LM_PROXY_API_KEY=not-needed
+# LM_PROXY_MODEL=vscode-lm-proxy
 
-# LM Studio (local LLM)
 LM_STUDIO_BASE_URL=http://localhost:1234/v1
 LM_STUDIO_API_KEY=not-needed
+# LM_STUDIO_MODEL=phi-3.5-mini-instruct-hermes-fc-json
 
 # HuggingFace cache (for embeddings & models)
-HF_HOME=~/.cache/huggingface/hub
+HF_HOME=D:/dev/.cache/huggingface/hub
 ```
 
 ## Key Concepts
@@ -96,16 +108,22 @@ HF_HOME=~/.cache/huggingface/hub
 
 ## Testing
 
-Run the test suite:
+Run all tests:
 
 ```bash
-python -m pytest forge/tests/test_forge.py -v
+pytest forge/tests/ -v
 ```
 
-Run individual tests:
+Run a specific test module:
 
 ```bash
-python -m pytest forge/tests/test_forge.py::test_entity_creation -v
+pytest forge/tests/test_core.py -v
+```
+
+Run a specific test function:
+
+```bash
+pytest forge/tests/test_core.py::test_entity_creation -v
 ```
 
 | Test | Description |
@@ -142,3 +160,4 @@ python -m pytest forge/tests/test_forge.py::test_entity_creation -v
 
 ## PyScrAI|Forge 3.0 Documents
 [NiceGUI Blueprint](nicegui_blueprint.md)
+

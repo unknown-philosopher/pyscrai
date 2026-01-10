@@ -1,4 +1,10 @@
 Master Blueprint for **PyScrAI|Forge 3.0**. This document unifies the 3.0 architecture analysis with the streamlined, singleton NiceGUI implementation plan.
+#
+# ---
+# STATUS: IMPLEMENTATION IN PROGRESS
+#
+# As of January 2026, the NiceGUI frontend and several pipeline phases (P1, P3, P4, P5) are not yet implemented. This blueprint is a design and planning document. The backend (core, agents, extraction, and storage subsystems) is functional; UI and advanced features are aspirational.
+#
 
 # PyScrAI|Forge 3.0: Master System Blueprint
 
