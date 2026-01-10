@@ -121,7 +121,7 @@ def _render_no_project(state: FletXState) -> ft.Control:
             spacing=8,
         ),
         expand=True,
-        alignment=ft.alignment.center,
+        alignment=ft.Alignment(0, 0),
     )
 
 
@@ -252,7 +252,7 @@ def _render_entity_distribution(state: FletXState) -> ft.Control:
                     color=style.COLORS["text_muted"],
                 ),
                 padding=16,
-                alignment=ft.alignment.center,
+                alignment=ft.Alignment(0, 0),
             )
         else:
             # Create a simple bar chart representation
@@ -291,7 +291,7 @@ def _render_entity_distribution(state: FletXState) -> ft.Control:
         content = ft.Container(
             content=style.mono_text(f"Error loading chart: {e}", size=12, color=style.COLORS["error"]),
             padding=16,
-            alignment=ft.alignment.center,
+            alignment=ft.Alignment(0, 0),
         )
     
     return ft.Column(

@@ -101,7 +101,7 @@ class AGUIPanel:
                 ft.Container(
                     content=style.mono_text("No suggestions", size=12, color=style.COLORS["text_muted"]),
                     padding=16,
-                    alignment=ft.alignment.center,
+                    alignment=ft.Alignment(0, 0),
                 )
             ]
         

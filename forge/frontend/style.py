@@ -172,7 +172,7 @@ def forge_button(
         text: Button text
         on_click: Click handler
         primary: Use primary (accent) styling
-        icon: Optional icon name
+        icon: Optional icon name (string like "add" or ft.Icons.ADD)
         **kwargs: Additional ElevatedButton properties
         
     Returns:
@@ -182,9 +182,36 @@ def forge_button(
     color = "#000000" if primary else COLORS["text_dim"]
     border_color = COLORS["accent"] if primary else COLORS["border_light"]
     
+    # Convert string icon names to ft.Icons enum (Flet 0.80.0+)
+    icon_value = None
+    if icon:
+        if isinstance(icon, str):
+            # Map common icon names to ft.Icons enum
+            icon_map = {
+                "add": ft.Icons.ADD,
+                "create": ft.Icons.ADD,
+                "edit": ft.Icons.EDIT,
+                "delete": ft.Icons.DELETE,
+                "save": ft.Icons.SAVE,
+                "cancel": ft.Icons.CANCEL,
+                "close": ft.Icons.CLOSE,
+                "check": ft.Icons.CHECK,
+                "settings": ft.Icons.SETTINGS,
+                "refresh": ft.Icons.REFRESH,
+                "upload": ft.Icons.UPLOAD,
+                "download": ft.Icons.DOWNLOAD,
+                "folder": ft.Icons.FOLDER,
+                "file": ft.Icons.DESCRIPTION,
+                "search": ft.Icons.SEARCH,
+                "info": ft.Icons.INFO,
+            }
+            icon_value = icon_map.get(icon, getattr(ft.Icons, icon.upper(), None))
+        else:
+            icon_value = icon  # Already an ft.Icons enum value
+    
     return ft.ElevatedButton(
         content=text.upper(),
-        icon=icon,
+        icon=icon_value,
         on_click=on_click,
         bgcolor=bgcolor,
         color=color,
@@ -261,7 +288,7 @@ def forge_input(
         focused_border_color=COLORS["accent"],
         color=COLORS["text"],
         cursor_color=COLORS["accent"],
-        font_family="JetBrains Mono",
+        text_style=ft.TextStyle(font_family="JetBrains Mono"),
         **kwargs,
     )
 
@@ -279,7 +306,7 @@ def forge_select(
         label: Select label
         options: List of options (strings or Option objects)
         value: Initial value
-        on_change: Change handler
+        on_change: Change handler (mapped to on_select in Flet 0.80+)
         **kwargs: Additional Dropdown properties
         
     Returns:
@@ -289,14 +316,14 @@ def forge_select(
     if options and isinstance(options[0], str):
         options = [ft.dropdown.Option(opt) for opt in options]
     
+    # Build dropdown - Flet 0.80+ uses on_select instead of on_change
     return ft.Dropdown(
         label=label,
         options=options or [],
         value=value,
-        on_change=on_change,
+        on_select=on_change,  # Flet 0.80+ renamed on_change to on_select
         bgcolor=COLORS["bg_card"],
         border_color=COLORS["border"],
-        focused_border_color=COLORS["accent"],
         color=COLORS["text"],
         **kwargs,
     )

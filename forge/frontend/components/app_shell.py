@@ -135,17 +135,18 @@ class AppShell:
             route = phase["route"]
             label = phase["label"]
             
-            # Use string-based Material Icon names
+            # Map string icon names to ft.Icons enum values (Flet 0.80.0+)
             icon_map = {
-                "dashboard": "dashboard",
-                "search": "search",
-                "people": "people",
-                "hub": "hub",
-                "description": "description",
-                "map": "map",
-                "check_circle": "check_circle",
+                "dashboard": ft.Icons.DASHBOARD,
+                "search": ft.Icons.SEARCH,
+                "people": ft.Icons.PEOPLE,
+                "hub": ft.Icons.HUB,
+                "description": ft.Icons.DESCRIPTION,
+                "map": ft.Icons.MAP,
+                "check_circle": ft.Icons.CHECK_CIRCLE,
+                "circle": ft.Icons.CIRCLE,
             }
-            icon = icon_map.get(icon_name, "circle")
+            icon = icon_map.get(icon_name, ft.Icons.CIRCLE)
             
             # Create icon - use text color instead of dim for better visibility
             # Check if this is the current route
@@ -209,7 +210,7 @@ class AppShell:
         """Build the right comms panel (AG-UI drawer, collapsible)."""
         # Toggle button (fixed position)
         toggle_btn = ft.IconButton(
-            icon="chat",
+            icon=ft.Icons.CHAT,
             icon_color=style.COLORS["accent"],
             tooltip="Toggle AG-UI Panel",
             on_click=lambda _: self._toggle_comms_panel(),
@@ -397,7 +398,7 @@ class AppShell:
                 ft.Container(
                     content=style.mono_text(f"Error loading view: {e}", size=14, color=style.COLORS["error"]),
                     expand=True,
-                    alignment=ft.alignment.center,
+                    alignment=ft.Alignment(0, 0),
                 )
             )
     

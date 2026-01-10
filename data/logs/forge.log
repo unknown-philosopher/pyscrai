@@ -204,3 +204,37 @@ AttributeError: module 'flet.controls.alignment' has no attribute 'center'
 [2026-01-10 16:23:09] INFO     [frontend.main       ] App shell initialized
 [2026-01-10 16:23:09] INFO     [frontend.main       ] Forge Frontend ready
 [2026-01-10 16:23:16] INFO     [frontend.main       ] Forge UI closed
+[2026-01-10 16:27:38] INFO     [app                 ] Initializing Forge 3.0...
+[2026-01-10 16:27:38] INFO     [app.state           ] Initialized Forge state (session: SESS_1768062458_001)
+[2026-01-10 16:27:38] INFO     [app                 ] Starting Forge UI (Flet)...
+[2026-01-10 16:27:39] INFO     [frontend.main       ] Initializing Forge Frontend (Flet)
+[2026-01-10 16:27:39] INFO     [app.state           ] Initialized Forge state (session: SESS_1768062459_002)
+[2026-01-10 16:27:39] INFO     [frontend.main       ] ForgeState initialized (session: SESS_1768062459_002)
+[2026-01-10 16:27:39] INFO     [frontend.state      ] FletX state initialized
+[2026-01-10 16:27:39] INFO     [frontend.main       ] FletX state initialized
+[2026-01-10 16:27:39] INFO     [frontend.app_shell  ] App shell initialized
+[2026-01-10 16:27:39] INFO     [frontend.main       ] App shell initialized
+[2026-01-10 16:27:39] INFO     [frontend.main       ] Forge Frontend ready
+[2026-01-10 16:27:55] ERROR    [frontend.main       ] Route handler error: module 'flet.controls.alignment' has no attribute 'center' Traceback (most recent call last):
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\main.py", line 127, in route_handler
+    view_content = dashboard.render_dashboard_view(state)
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\views\dashboard.py", line 29, in render_dashboard_view
+    return _render_no_project(state)
+  File "C:\Users\Dev\Documents\dev\projectus\pyscrai-2\pyscrai\forge\frontend\views\dashboard.py", line 124, in _render_no_project
+    alignment=ft.alignment.center,
+              ^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'flet.controls.alignment' has no attribute 'center'
+[2026-01-10 16:27:55] ERROR    [frontend.main       ] Fallback view load also failed: TextField.__init__() got an unexpected keyword argument 'font_family'
+[2026-01-10 16:31:46] INFO     [frontend.main       ] Forge UI closed
+[2026-01-10 16:31:49] INFO     [app                 ] Initializing Forge 3.0...
+[2026-01-10 16:31:49] INFO     [app.state           ] Initialized Forge state (session: SESS_1768062709_001)
+[2026-01-10 16:31:49] INFO     [app                 ] Starting Forge UI (Flet)...
+[2026-01-10 16:31:50] INFO     [frontend.main       ] Initializing Forge Frontend (Flet)
+[2026-01-10 16:31:50] INFO     [app.state           ] Initialized Forge state (session: SESS_1768062710_002)
+[2026-01-10 16:31:50] INFO     [frontend.main       ] ForgeState initialized (session: SESS_1768062710_002)
+[2026-01-10 16:31:50] INFO     [frontend.state      ] FletX state initialized
+[2026-01-10 16:31:50] INFO     [frontend.main       ] FletX state initialized
+[2026-01-10 16:31:50] INFO     [frontend.app_shell  ] App shell initialized
+[2026-01-10 16:31:50] INFO     [frontend.main       ] App shell initialized
+[2026-01-10 16:31:50] INFO     [frontend.main       ] Forge Frontend ready
+[2026-01-10 16:36:51] INFO     [frontend.main       ] Forge UI closed

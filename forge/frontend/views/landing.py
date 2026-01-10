@@ -89,7 +89,7 @@ def _render_project_list(state: FletXState) -> ft.Control:
         project_items = ft.Container(
             content=style.mono_text("No projects found", size=12, color=style.COLORS["text_dim"]),
             padding=16,
-            alignment=ft.alignment.center,
+            alignment=ft.Alignment(0, 0),
         )
     else:
         project_items = ft.Column(

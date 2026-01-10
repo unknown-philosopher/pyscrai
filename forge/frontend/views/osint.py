@@ -27,7 +27,7 @@ def render_osint_view(state: FletXState) -> ft.Control:
     return ft.Container(
         content=style.mono_text("OSINT View - Coming Soon", size=16, color=style.COLORS["text_dim"]),
         padding=24,
-        alignment=ft.alignment.center,
+        alignment=ft.Alignment(0, 0),
         expand=True,
     )
 
@@ -46,5 +46,5 @@ def _render_no_project(state: FletXState) -> ft.Control:
             spacing=16,
         ),
         expand=True,
-        alignment=ft.alignment.center,
+        alignment=ft.Alignment(0, 0),
     )

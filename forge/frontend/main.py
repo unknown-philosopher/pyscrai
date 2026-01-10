@@ -75,9 +75,15 @@ def main(page: ft.Page) -> None:
     # 5. Setup view routing (after shell is created so route handler can access it)
     _setup_route_handler(page, fletx_state)
     
-    # 6. Initial route - trigger initial load
-    # The route change will trigger _on_route_change which will call the route handler
-    page.go("/")
+    # 6. Initial route - explicitly load landing view
+    # page.go("/") may not trigger if already at "/", so load directly
+    try:
+        from forge.frontend.views import landing
+        view_content = landing.render_landing_view(fletx_state)
+        _shell.set_view_content(view_content)
+        logger.debug("Initial landing view loaded")
+    except Exception as e:
+        logger.error(f"Failed to load initial landing view: {e}")
     
     logger.info("Forge Frontend ready")
 
@@ -159,7 +165,7 @@ def _setup_route_handler(page: ft.Page, state: FletXState) -> None:
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                     ),
                     expand=True,
-                    alignment=ft.alignment.center,
+                    alignment=ft.Alignment(0, 0),
                 )
             )
         except Exception as e:

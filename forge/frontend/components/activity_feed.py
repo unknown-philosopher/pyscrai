@@ -52,7 +52,7 @@ def create_activity_feed(state: FletXState, limit: int = 20) -> ft.Control:
         event_list = ft.Container(
             content=style.mono_text("No events recorded yet", size=12, color=style.COLORS["text_muted"]),
             padding=16,
-            alignment=ft.alignment.center,
+            alignment=ft.Alignment(0, 0),
         )
     else:
         event_items = []
