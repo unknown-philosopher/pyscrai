@@ -30,28 +30,27 @@ def content() -> None:
     project = session.project
     project_name = project.name if project else "UNKNOWN"
     
-    # Project header
-    with ui.row().classes("items-center gap-4 mb-6"):
-        ui.html(f'<h1 class="mono" style="font-size: 1.6rem; font-weight: 600; color: #e0e0e0;">{project_name.upper()}</h1>', sanitize=False)
-        ui.html('<span class="forge-badge forge-badge-active">ACTIVE</span>', sanitize=False)
+    # Project header with better organization
+    with ui.column().classes("w-full mb-8"):
+        with ui.row().classes("items-center gap-4 mb-2"):
+            ui.html(f'<h1 class="mono" style="font-size: 1.6rem; font-weight: 600; color: #e0e0e0;">{project_name.upper()}</h1>', sanitize=False)
+            ui.html('<span class="forge-badge forge-badge-active">ACTIVE</span>', sanitize=False)
+        
+        # Description
+        desc = project.description if project and project.description else "No description provided."
+        ui.html(f'<p class="mono" style="color: #666; font-size: 0.85rem;">{desc}</p>', sanitize=False)
     
-    # Description
-    desc = project.description if project and project.description else "No description provided."
-    ui.html(f'<p class="mono" style="color: #666; font-size: 0.85rem; margin-bottom: 24px;">{desc}</p>', sanitize=False)
-    
-    # Main layout: left stats, right actions
-    with ui.row().classes("w-full gap-6"):
-        # Left column - metrics
-        with ui.column().classes("flex-grow"):
+    # Main grid layout - 2 columns: left (metrics/info), right (phases above quick actions)
+    with ui.grid(columns=2).classes("w-full gap-6").style("grid-template-columns: 1fr 340px;"):
+        # Left column - metrics and info stacked
+        with ui.column().classes("gap-6"):
             _render_metrics_section()
-            ui.element("div").classes("h-6")  # Spacer
             _render_sources_section()
         
-        # Right column - quick actions and status
-        with ui.column().style("width: 320px; flex-shrink: 0;"):
-            _render_quick_actions()
-            ui.element("div").classes("h-6")  # Spacer
+        # Right column - pipeline phases above quick actions
+        with ui.column().classes("gap-6"):
             _render_phase_progress()
+            _render_quick_actions()
 
 
 def _render_no_project() -> None:

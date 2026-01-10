@@ -21,20 +21,24 @@ logger = get_logger("frontend.landing")
 
 def content() -> None:
     """Render the landing page content."""
-    # Page header
-    ui.html('<h1 class="mono" style="font-size: 1.8rem; font-weight: 600; color: #e0e0e0; margin-bottom: 8px;">Welcome to Forge</h1>', sanitize=False)
-    ui.html('<p class="mono" style="font-size: 0.85rem; color: #666; margin-bottom: 32px;">Select or create a project to begin.</p>', sanitize=False)
+    # Page header with better spacing
+    with ui.column().classes("w-full mb-8"):
+        ui.html('<h1 class="mono" style="font-size: 1.8rem; font-weight: 600; color: #e0e0e0; margin-bottom: 8px;">Welcome to Forge</h1>', sanitize=False)
+        ui.html('<p class="mono" style="font-size: 0.85rem; color: #666;">Select or create a project to begin.</p>', sanitize=False)
     
-    with ui.row().classes("w-full gap-6"):
-        # Existing projects panel
-        with ui.element("div").classes("forge-card flex-grow p-6"):
+    # Main grid layout - responsive with proper alignment
+    with ui.grid(columns=2).classes("w-full gap-6").style("grid-template-columns: 1fr 360px;"):
+        # Existing projects panel (left, expands)
+        with ui.element("div").classes("forge-card p-6"):
             ui.html('<div class="section-label">Recent Projects</div>', sanitize=False)
-            _render_project_list()
+            with ui.element("div").classes("mt-4"):
+                _render_project_list()
         
-        # Create new project panel  
-        with ui.element("div").classes("forge-card p-6").style("width: 320px; flex-shrink: 0;"):
+        # Create new project panel (right, fixed width)
+        with ui.element("div").classes("forge-card p-6"):
             ui.html('<div class="section-label">New Project</div>', sanitize=False)
-            _render_create_form()
+            with ui.element("div").classes("mt-4"):
+                _render_create_form()
 
 
 def _render_project_list() -> None:
@@ -56,7 +60,7 @@ def _render_project_list() -> None:
         if not projects:
             ui.html('<span class="mono" style="color: #555; font-size: 0.85rem;">No projects found.</span>', sanitize=False)
         else:
-            with ui.column().classes("w-full gap-2 mt-4"):
+            with ui.column().classes("w-full gap-2"):
                 for project_path in sorted(projects):
                     _render_project_item(project_path)
     
@@ -97,7 +101,7 @@ def _render_project_item(project_path: Path) -> None:
 
 def _render_create_form() -> None:
     """Render the new project creation form."""
-    with ui.column().classes("w-full gap-4 mt-4"):
+    with ui.column().classes("w-full gap-4"):
         name_input = ui.input(
             placeholder="Project Name",
         ).classes("w-full forge-input").props("outlined dense dark")
@@ -114,7 +118,7 @@ def _render_create_form() -> None:
             ).classes("w-full").props("outlined dense dark options-dense")
         
         with ui.element("div").classes(
-            "w-full text-center py-2 px-4 mt-4 cursor-pointer rounded"
+            "w-full text-center py-2 px-4 mt-2 cursor-pointer rounded"
         ).style(
             "background: #00b8d4; color: #000; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 500; letter-spacing: 0.5px;"
         ).on("click", lambda: _create_project(name_input.value, desc_input.value, template_select.value)):

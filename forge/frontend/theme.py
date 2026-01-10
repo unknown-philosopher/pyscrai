@@ -208,13 +208,21 @@ def inject_styles() -> None:
     ui.add_head_html(CUSTOM_CSS)
 
 
-def create_header() -> None:
-    """Create the intelligence platform header bar."""
+def create_header(sidebar: ui.element | None = None, assistant_drawer: ui.element | None = None) -> None:
+    """Create the intelligence platform header bar.
+    
+    Args:
+        sidebar: Optional sidebar element to toggle when clicking PyScrAI logo
+        assistant_drawer: Optional assistant drawer element to toggle
+    """
     from forge.frontend.state import get_session
     
     with ui.header().classes("forge-header items-center px-4 py-2"):
-        # Logo - simple text, no icons
-        ui.html('<span class="mono" style="color: #00b8d4; font-weight: 600; font-size: 1.1rem;">PYSCRAI</span>', sanitize=False)
+        # Logo - clickable to toggle sidebar
+        with ui.element("div").classes("flex items-center cursor-pointer").style(
+            "user-select: none;"
+        ).on("click", lambda: sidebar.toggle() if sidebar else None):
+            ui.html('<span class="mono" style="color: #00b8d4; font-weight: 600; font-size: 1.1rem;">PyScrAI</span>', sanitize=False)
         ui.html('<span class="mono" style="color: #666; margin: 0 4px;">|</span>', sanitize=False)
         ui.html('<span class="mono" style="color: #888; font-size: 0.9rem;">FORGE</span>', sanitize=False)
         
@@ -229,7 +237,15 @@ def create_header() -> None:
         ui.space()
         
         # Right side controls
-        with ui.row().classes("gap-2"):
+        with ui.row().classes("gap-2 items-center"):
+            # Assistant toggle button - compact in header
+            if assistant_drawer:
+                with ui.button(color="amber").props("round dense size=sm").classes("mr-2").on(
+                    "click", assistant_drawer.toggle
+                ) as btn:
+                    ui.html('<span style="font-size: 12px;">⌘</span>', sanitize=False)
+                    btn.tooltip("AI Assistant")
+            
             with ui.element("span").classes("mono forge-btn px-3 py-1").style(
                 "cursor: pointer;"
             ).on("click", lambda: ui.notify("Config panel - Coming soon", type="info")):
@@ -251,15 +267,8 @@ def create_sidebar(active_page: str, collapsed: bool = False) -> ui.element:
     
     with ui.left_drawer(value=True).classes("forge-sidebar p-0").props(f"width={200} bordered") as sidebar:
         with ui.column().classes("w-full h-full"):
-            # Collapse button at top
-            with ui.element("div").classes("px-4 pt-3 pb-2"):
-                with ui.element("span").classes(
-                    "mono forge-btn px-2 py-1 text-center block"
-                ).style("cursor: pointer; font-size: 0.7rem;").on("click", lambda s=sidebar: s.toggle()):
-                    ui.label("<< COLLAPSE")
-            
             # System nav section
-            ui.html('<div class="section-label px-4 pt-2">SYSTEM NAV</div>', sanitize=False)
+            ui.html('<div class="section-label px-4 pt-4">SYSTEM NAV</div>', sanitize=False)
             
             # Overview item
             overview = PHASES[0]
@@ -352,17 +361,11 @@ def create_layout(
     # Apply dark theme base
     ui.query("body").style(f"background: {COLORS['bg_dark']} !important")
     
-    # Create layout components
-    create_header()
-    create_sidebar(active_page)
+    # Create layout components - order matters for header references
+    sidebar = create_sidebar(active_page)
     assistant_drawer = create_assistant_drawer()
+    create_header(sidebar=sidebar, assistant_drawer=assistant_drawer)
     create_footer()
-    
-    # Floating assistant toggle button (minimal style)
-    with ui.page_sticky(position="bottom-right", x_offset=20, y_offset=80):
-        with ui.button(color="cyan").props("fab-mini").on("click", assistant_drawer.toggle) as btn:
-            ui.html('<span style="font-size: 16px;">⌘</span>', sanitize=False)
-            btn.tooltip("AI Assistant")
     
     # Main content area
     with ui.column().classes("p-6 w-full"):
