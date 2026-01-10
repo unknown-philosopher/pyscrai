@@ -43,6 +43,10 @@ setup(
         "python-docx>=0.8.11",
         "pytesseract>=0.3.10",
         "Pillow>=8.0.0",
+        
+        # NiceGUI frontend (native desktop mode)
+        "nicegui>=1.4.0",
+        "pywebview>=4.4.0",
     ],
     extras_require={
         "dev": [

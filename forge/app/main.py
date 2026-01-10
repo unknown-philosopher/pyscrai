@@ -128,12 +128,13 @@ def run_ui(state: "ForgeState") -> int:
     logger.info("Starting Forge UI...")
     
     try:
-        # TODO: Import and launch UI when implemented
-        # from forge.ui.main_window import ForgeMainWindow
-        # app = ForgeMainWindow(state)
-        # app.mainloop()
+        # Launch NiceGUI frontend
+        from forge.frontend import launch_ui
+        return launch_ui(state)
         
-        logger.warning("UI not yet implemented - running in demo mode")
+    except ImportError as e:
+        logger.warning(f"NiceGUI not available: {e}")
+        logger.warning("Falling back to demo mode. Install with: pip install nicegui pywebview")
         _run_demo(state)
         return 0
         

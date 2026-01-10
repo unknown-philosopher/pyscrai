@@ -1,234 +1,190 @@
-Master Blueprint for **PyScrAI|Forge 3.0**. This document unifies the 3.0 architecture analysis with the streamlined, singleton NiceGUI implementation plan.
-#
-# ---
-# STATUS: IMPLEMENTATION IN PROGRESS
-#
-# As of January 2026, the NiceGUI frontend and several pipeline phases (P1, P3, P4, P5) are not yet implemented. This blueprint is a design and planning document. The backend (core, agents, extraction, and storage subsystems) is functional; UI and advanced features are aspirational.
-#
+# PyScrAI|Forge 3.0: Master Implementation Blueprint
 
-# PyScrAI|Forge 3.0: Master System Blueprint
-
-**Version:** 3.0.0
-**Type:** Narrative Intelligence System (Local-First Desktop Application)
-**Architecture:** State-Centralized Core + Thin Reactive Frontend (NiceGUI)
+**Version:** 3.0.0 (NiceGUI Native Desktop Edition)
+**Architecture:** Singleton State + Thin Reactive Frontend + Intelligence Agency Pipeline
+**UI Framework:** NiceGUI (running in Native Mode via `pywebview`)
 
 ---
 
-## 1. Executive Summary
+## 1. System Architecture
 
-PyScrAI|Forge 3.0 is a modular intelligence system designed to extract, analyze, and manage world-building data from unstructured text. It acts as a bridge between raw documents and a structured Knowledge Graph, utilizing Large Language Models (LLMs) for extraction and specialized "Advisors" for analysis.
+The application runs as a local Python process. It avoids the complexity of client-server sessions by instantiating a single **Global State** object accessible by the UI.
 
-The system adopts an **Intelligence Agency Metaphor** for its user interface and pipeline, guiding data from raw extraction to a refined knowledge base:
+### 1.1 Core State (Singleton)
 
-* **OSINT** (Open Source Intelligence) → Extraction
-* **HUMINT** (Human Intelligence) → Entity Refinement
-* **SIGINT** (Signals Intelligence) → Relationship/Network Analysis
-* **SYNTH** (Synthesis) → Narrative Generation
-* **GEOINT** (Geospatial Intelligence) → Map Anchoring
-* **ANVIL** → Finalization
+The `ForgeState` acts as the central nervous system.
 
----
+* **Location:** `forge/app/state.py`.
+* **Responsibility:** Holds the active `ProjectManager`, `Database` connection, and `LLMProvider`.
+* **Access:** Imported directly by UI pages (`from forge.frontend.state import session`).
 
-## 2. Core Architecture (The Backend)
+### 1.2 The "User Proxy" Layer
 
-The backend relies on a **State-Centralized** model where `ForgeState` serves as the mutable container for the active Project, Database, and LLM Provider.
+To keep the NiceGUI frontend "dumb," we introduce the `UserProxyAgent`.
 
-### 2.1 Data Models (The "Blank Canvas")
-
-* **Dynamic Entities:** Entities utilize a Pydantic `BaseModel` with a flexible `attributes: dict` field, moving away from rigid SQL columns. This allows the system to adapt to any genre (Espionage, Cyberpunk, Fantasy) seamlessly.
-* **Prefabs & Schemas:** Field structures are defined by "Prefabs" (YAML/JSON templates). An `actor_espionage` schema injects fields like "clearance_level" and "handler" dynamically.
-* **Event Sourcing:** Every state change (create, update, merge) is logged as an immutable `BaseEvent`. This ensures data integrity and enables "Retcon" (undo/history) capabilities.
-
-### 2.2 Key Systems
-
-* **Vector Memory (`sqlite-vec`):**
-* **Local-First:** Embeddings are stored directly within `world.db` using the `sqlite-vec` extension, eliminating external vector DB dependencies.
-* **Engine:** Uses `sentence-transformers` (e.g., `all-MiniLM-L6-v2`) to generate embeddings locally on the CPU/GPU.
+* **Location:** `forge/agents/user_proxy.py` (New).
+* **Role:** The "Brain" of the Assistant Sidebar.
+* **Workflow:**
+1. Receives text from UI (`assistant.py`).
+2. **Intent Classification:** Uses LLM to classify as `COMMAND` or `QUERY`.
+3. **Routing:**
+* `COMMAND` → Triggers `forge.core.events.mutations` (e.g., `update_entity`).
+* `QUERY` → Routes to phase-specific Advisor (e.g., `OSINTAdvisor` if in Phase 0).
 
 
-* **The Sentinel:**
-* A gatekeeper subsystem for **Phase 0 (OSINT)**.
-* Ingests extracted entities and queries Vector Memory to detect duplicates.
-* **High Similarity (>95%):** Auto-merge.
-* **Moderate Similarity (>85%):** Flag as "Merge Candidate" for human review.
-
-
-* **Prompt Engine:**
-* Managed via `PromptManager` using **Jinja2** templates and YAML config.
-* Supports dynamic context injection (loops, conditionals) to tailor Agent personas (Reviewer, Analyst, Validator).
 
 
 
 ---
 
-## 3. Frontend Architecture (NiceGUI)
+## 2. Directory Structure
 
-The frontend is a **Thin, Reactive Client** built with **NiceGUI**. It is designed as a **Single-User Desktop Application**, removing the complexity of web sessions, authentication, and API layers.
-
-### 3.1 Design Philosophy
-
-1. **Native Experience:** The app runs in "Native Mode" (using `pywebview`), appearing as a standard OS window without a browser address bar.
-2. **Singleton State:** Since there is only one user, we use a single global instance of `ForgeState`.
-3. **Direct Integration:** The UI calls backend functions directly (e.g., `orchestrator.process()`), bypassing REST APIs or JSON serialization overhead.
-4. **Async/Sync Hybrid:** Blocking core operations (SQLite reads, File I/O) are wrapped in `app.storage` or `run.io_bound` to keep the UI reactive.
-
-### 3.2 Directory Structure (`forge/frontend`)
+This structure merges the legacy functional requirements with the 3.0 modular architecture.
 
 ```text
-forge/frontend/
-├── __init__.py
-├── main.py                 # Entry point: ui.run(native=True)
-├── theme.py                # Layout Shell: Sidebar, Header, Assistant Drawer
-├── state.py                # Singleton State Manager
-├── components/             # Reusable Widgets
-│   ├── assistant.py        # Global LLM Chat Sidebar
-│   ├── entity_grid.py      # AgGrid wrapper for HUMINT
-│   ├── map_widget.py       # Leaflet wrapper for GEOINT
-│   └── navigation.py       # Phase switching logic
-└── pages/                  # Route Definitions
-    ├── landing.py          # Project Select
-    ├── dashboard.py        # Overview & Stats
-    ├── osint.py            # P0: Extraction & Sentinel
-    ├── humint.py           # P1: Entities
-    ├── sigint.py           # P2: Relationships
-    ├── synth.py            # P3: Narrative
-    ├── geoint.py           # P4: Cartography
-    └── anvil.py            # P5: Finalize
+forge/
+├── app/
+│   ├── state.py                # Singleton State Definition
+│   └── ...
+├── agents/
+│   ├── user_proxy.py           # NEW: Intent Router for Assistant
+│   └── advisors/               # Existing specialized agents (humint, osint, etc.)
+├── phases/
+│   ├── p0_extraction/          # OSINT (Sentinel + Extractor)
+│   ├── p1_entities/            # HUMINT (Entity Editor)
+│   ├── p2_relationships/       # SIGINT (Graph/NetworkX)
+│   ├── p3_narrative/           # SYNTH (Markdown + Vector Search) [Stub -> Impl]
+│   ├── p4_map/                 # GEOINT (Leaflet Wrapper) [Stub -> Impl]
+│   └── p5_finalize/            # ANVIL
+│       ├── exporter.py         # NEW: JSON/MD/SQL Export Utilities
+│       └── ...
+└── frontend/                   # NEW: NiceGUI Implementation
+    ├── __init__.py
+    ├── main.py                 # Entry Point (ui.run(native=True))
+    ├── state.py                # Session Wrapper
+    ├── theme.py                # Layout (Sidebar, Header, Drawer)
+    ├── components/
+    │   ├── assistant.py        # Chat Widget (talks to UserProxyAgent)
+    │   ├── entity_grid.py      # AG Grid Wrapper
+    │   └── file_picker.py      # Native File Dialog Wrapper
+    └── pages/
+        ├── dashboard.py
+        ├── osint.py
+        ├── humint.py
+        ├── sigint.py
+        ├── synth.py
+        ├── geoint.py
+        └── anvil.py
 
 ```
 
 ---
 
-## 4. The Intelligence Pipeline (UI Implementation)
+## 3. The Intelligence Pipeline (UI Specification)
 
-The UI maps the internal orchestrators (`p0`...`p5`) to the specific Intelligence Agency "Lore" names.
+Each UI page maps to a backend `Orchestrator` and a specific `Advisor`.
 
-### 4.1 Global Layout (`theme.py`)
+### 3.1 Dashboard (Overview)
 
-* **Sidebar (Left):** Navigation rail with icons for OSINT, HUMINT, SIGINT, etc.
-* **Assistant Drawer (Right):** A persistent, collapsible chat interface available on *every* page.
-* **Header:** Displays active project name and "Retcon" (Undo) controls.
-
-### 4.2 Dashboard
-
-* **Goal:** Mission Overview.
-* **Components:**
-* **Stats Cards:** Total Actors, Locations, Relationships, and Token Usage.
-* **Activity Log:** A live scrolling log window (piping Python `logging` directly to a UI element).
-* **Phase Stepper:** Visual progress bar showing the status of the current pipeline.
+* **Backend:** `ProjectManager`.
+* **UI Elements:**
+* **Stats:** Cards showing Entity/Relationship counts.
+* **Console:** A `ui.log` element streaming `forge.log` content in real-time.
+* **Action:** "Load/Create Project" using native file dialogs.
 
 
 
-### 4.3 Phase 0: OSINT (Extraction)
+### 3.2 Phase 0: OSINT (Extraction)
 
-* **Backend:** `forge.phases.p0_extraction`
-* **UI Workflow:**
-* **Source Input:** Native file picker to load text/PDFs.
-* **Chunking View:** Visualize how the text is split for the LLM.
-* **Sentinel Dashboard:** A "Triage" view.
-* **Left Column:** New Extractions.
-* **Right Column:** Database Matches (sorted by vector distance).
-* **Action:** "Merge", "Create New", or "Discard" buttons.
+* **Backend:** `ExtractionOrchestrator` & `Sentinel`.
+* **UI Elements:**
+* **Source Manager:** List of uploaded files (`.txt`, `.pdf`).
+* **Sentinel Triage:** A split view comparing "New Extractions" vs. "Database Candidates" (Vector Match).
+* **Controls:** "Merge", "Reject", "Commit to DB".
 
 
 
+### 3.3 Phase 1: HUMINT (Entities)
 
-
-### 4.4 Phase 1: HUMINT (Entities)
-
-* **Backend:** `forge.phases.p1_entities`
-* **UI Workflow:**
-* **Entity Grid:** A high-performance `ui.aggrid` spreadsheet view.
-* **Detail Editor:** Clicking a row opens a drawer to edit the JSON `attributes` directly or via a form generated from the active Prefab Schema.
-* **Advisor Hook:** The "Assistant" panel gains context on selected rows to answer queries like *"Generate a psychological profile for this Agent."*
-
-
-
-### 4.5 Phase 2: SIGINT (Relationships)
-
-* **Backend:** `forge.phases.p2_relationships`
-* **UI Workflow:**
-* **Network Graph:** A `ui.echarts` or Cytoscape wrapper visualizing the social network.
-* **Analysis Tools:** Buttons to trigger backend NetworkX algorithms (e.g., "Identify Community Clusters", "Find Shortest Path").
-* **Matrix View:** An adjacency matrix table for rapid auditing of connections.
+* **Backend:** `forge.core.models.Entity`.
+* **UI Elements:**
+* **Grid:** `ui.aggrid` displaying all entities. Editable columns.
+* **Detail Drawer:** Clicking a row opens the full JSON editor for that entity.
+* **Assistant Context:** Selection in grid = Context for `UserProxyAgent`.
 
 
 
-### 4.6 Phase 3: SYNTH (Narrative)
+### 3.4 Phase 2: SIGINT (Relationships)
 
-* **Backend:** `forge.phases.p3_narrative`
-* **UI Workflow:**
-* **Split Editor:**
-* **Left:** Narrative text editor (`ui.codemirror` or `ui.textarea`).
-* **Right:** "Fact Deck" (draggable entity cards/snippets).
-
-
-* **LLM Tools:** Toolbar actions for "Expand", "Rewrite Tone", "Fact Check against DB".
+* **Backend:** `RelationshipsOrchestrator`.
+* **UI Elements:**
+* **Graph:** `ui.echarts` visualization (Nodes/Links).
+* **Matrix:** Adjacency matrix table for dense relationship auditing.
 
 
 
-### 4.7 Phase 4: GEOINT (Cartography)
+### 3.5 Phase 3: SYNTH (Narrative)
 
-* **Backend:** `forge.phases.p4_map`
-* **UI Workflow:**
-* **Map Engine:** **Leaflet** integration via `ui.leaflet`.
-* **Functionality:**
-* Render entities with `coordinates` as interactive markers.
-* Draggable markers that update the underlying Entity's location data in real-time.
-* Layer controls to toggle visibility of different Entity types (e.g., "Show Safehouses", "Hide Civilians").
+* **Backend:** `NarrativeOrchestrator` (New).
+* *Function:* Manages Markdown files in `project/narrative/`.
+* *Search:* Exposes `VectorMemory.search()` to find entities relevant to the text.
 
 
+* **UI Elements:**
+* **Editor:** `ui.codemirror` (Markdown).
+* **Fact Deck:** A sidebar suggesting entities based on the cursor's current paragraph (Semantic Search).
 
 
 
-### 4.8 Phase 5: ANVIL (Finalize)
+### 3.6 Phase 4: GEOINT (Cartography)
 
-* **Backend:** `forge.phases.p5_finalize`
-* **UI Workflow:**
-* **Validation Report:** A list of data integrity warnings (e.g., "Orphaned Entity", "Missing Description").
-* **Export Center:** One-click generation of the final JSON packet, SQLite backup, or Markdown World Bible.
+* **Backend:** `MapOrchestrator` (New).
+* *Function:* Queries `world.db` for entities where `coordinates IS NOT NULL`.
+
+
+* **UI Elements:**
+* **Map:** `ui.leaflet` centered on the project's region.
+* **Markers:** Draggable pins that update the underlying Entity's `coordinates` field.
+
+
+
+### 3.7 Phase 5: ANVIL (Finalize)
+
+* **Backend:** `FinalizeOrchestrator` & `Exporter`.
+* **UI Elements:**
+* **Validation:** Report view showing "Orphaned Entities" or "Missing Fields".
+* **Export Deck:** Buttons invoking `exporter.py`:
+* "Export to JSON" (Standard Format).
+* "Export to World Bible" (Markdown Document).
+* "Backup Database" (SQLite dump).
+
+
 
 
 
 ---
 
-## 5. The "Assistant" Integration strategy
+## 4. Implementation Priorities
 
-The Assistant is not just a chatbot; it is a command-line interface wrapped in natural language.
+### Step 1: The Skeleton (Critical Path)
 
-* **Implementation:**
-* Built in `components/assistant.py`.
-* Uses `forge.agents.UserProxyAgent`.
+1. **Init:** Set up `forge/frontend/main.py` with `native=True` and `forge/frontend/theme.py` (Layout).
+2. **State:** Implement the Singleton `ForgeState` in `forge/frontend/state.py`.
+3. **Dashboard:** Build `pages/dashboard.py` to verify project loading works.
 
+### Step 2: The Core Loop (OSINT -> HUMINT)
 
-* **Context Awareness:**
-* The `Assistant` component checks the `app.storage` or `state` to see the **Active Page**.
-* **If on OSINT:** Context = "Current Source Document".
-* **If on HUMINT:** Context = "Currently Selected Entities".
+1. **Agent:** Implement `forge/agents/user_proxy.py` to handle basic intent.
+2. **OSINT:** Build `pages/osint.py` hooking into the existing `Sentinel` logic.
+3. **HUMINT:** Build `pages/humint.py` using `ui.aggrid` for entity management.
 
+### Step 3: The Expansions (P3, P4, P5)
 
-* **Direct Mutation:** The Assistant can trigger backend `OperationHandlers`.
-* *User:* "Change Agent 47's status to MIA."
-* *System:* Parses intent -> Calls `Entity.update(id="agent_47", status="MIA")` -> UI Auto-refreshes.
+1. **Stubs Implementation:** Write the `orchestrator.py` logic for P3 and P4 (Backend first).
+2. **Visuals:** Add Leaflet (P4) and Editor (P3) to the UI.
+3. **Export:** Create `exporter.py` and link it to `pages/anvil.py`.
 
+### Step 4: Refinement
 
-
----
-
-## 6. Implementation Checklist
-
-1. **Scaffold:** Create `forge/frontend` directory and `main.py` configured with `ui.run(native=True)`.
-2. **State Singleton:** Implement `state.py` to initialize `ForgeState` once on startup.
-3. **Shell Layout:** Build `theme.py` with the "Intelligence Agency" dark mode aesthetic and sidebar navigation.
-4. **Pages - Wave 1:** Implement `landing.py` (Load Project) and `dashboard.py` (Stats).
-5. **Pages - Wave 2 (The Core):**
-* `humint.py` (Entity Grid).
-* `osint.py` (File loading + Sentinel view).
-
-
-6. **Pages - Wave 3 (Visuals):**
-* `geoint.py` (Leaflet map integration).
-* `sigint.py` (Graph viz).
-
-
-7. **Assistant:** Wire up the `UserProxyAgent` to the Right Drawer and ensure it can read the current page's context.
+1. **Assistant Polish:** Refine the `UserProxyAgent` prompts to better handle "Edit Entity" commands.
+2. **Testing:** Run manual smoke tests on the UI; write `pytest` cases for the new `exporter.py` and `user_proxy.py`.

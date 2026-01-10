@@ -125,10 +125,21 @@ class ForgeState:
         Returns:
             Created project manifest
         """
-        from forge.core.models.project import ProjectManager
+        from forge.core.models.project import ProjectManager, ProjectManifest
         
-        pm = ProjectManager(self.config.projects_dir)
-        self.project = pm.create_project(name, description=description, **kwargs)
+        # Create the project directory path
+        project_path = self.config.projects_dir / name
+        
+        # Create manifest with provided info
+        manifest = ProjectManifest(
+            name=name,
+            description=description,
+            **kwargs,
+        )
+        
+        pm = ProjectManager(project_path)
+        pm.create_project(manifest)
+        self.project = manifest
         
         # Reset system instances
         self._db = None
