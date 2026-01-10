@@ -1,90 +1,40 @@
+# setup.py - UNIFIED EXTRACT, CONTROL & COMPUTE (Python 3.12+)
 from setuptools import setup, find_packages
 
 setup(
     name="PyScrAI_Forge",
     version="3.0.0",
-    description="PyScrAI|Forge - Worldbuilding and entity extraction toolkit",
-    author="TylerHamilton",
+    description="PyScrAI|Forge - Unified 3.12 Cockpit & CUDA Engine",
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        # Core data modeling and validation
-        "pydantic>=2.0.0",
-        
-        # Async HTTP client (for LLM providers)
-        "httpx>=0.25.0",
-        
-        # Environment variables
-        "python-dotenv>=1.0.0",
-        
-        # Vector search (optional - graceful fallback if unavailable)
-        "sqlite-vec>=0.1.0",
-        
-        # Sentence embeddings (for memory vectorization)
-        "sentence-transformers>=2.2.0",
-        
-        # Graph analysis (for Relationships phase)
-        "networkx>=3.2",
-        
-        # UI and visualization
+        # --- UI & REACTIVE ---
         "flet>=0.24.0",
         "FletXr==0.1.3",
+        
+        # --- VECTOR & ML ENGINE (3.12 Compatible) ---
+        "torch>=2.2.0",           # Native 3.12 CUDA support
+        "qdrant-client[fastembed-gpu]>=1.7.0", # Replaces FAISS with GPU vector search
+        "transformers>=4.38.0",   # Latest local LLM support
+        "bitsandbytes>=0.42.0",   # 4-bit quantization for your 4060
+        "accelerate>=0.27.0",
+        
+        # --- DATABASE & ANALYTICS ---
+        "duckdb>=0.10.0",
+        "pydantic>=2.0.0",
+        "networkx>=3.2",
         "plotly>=5.18.0",
 
-        # Analytical database
-        "duckdb>=0.10.0",
-        
-        # CLI and rich output
-        "typer>=0.9.0",
+        # --- DOCUMENT & LOGIC ---
+        "python-dotenv>=1.0.0",
+        "pyyaml>=6.0.0",
+        "jinja2>=3.0.0",
+        "pypdf>=4.0.0",
+        "beautifulsoup4>=4.12.0",
         "rich>=13.0.0",
         
-        # YAML support for prefabs/prompts
-        "pyyaml>=6.0.0",
-        
-        # Jinja2 for prompt templates 
-        "jinja2>=3.0.0",
-        
-        # Document processing
-        "pypdf>=3.0.0",
-        "beautifulsoup4>=4.12.0",
-        "markdown>=3.4.0",
-        "python-docx>=0.8.11",
-        "pytesseract>=0.3.10",
-        "Pillow>=8.0.0",
-        
-        # # NiceGUI frontend (native desktop mode)
-        # "nicegui>=1.4.0",
-        # "pywebview>=4.4.0",
+        # --- TELEMETRY ---
+        "nvidia-ml-py>=12.535.0",  # GPU monitoring for your dashboard
     ],
-    extras_require={
-        "dev": [
-            "pytest>=7.0.0",
-            "pytest-asyncio>=0.21.0",
-            "pytest-cov>=4.0.0",
-        ],
-        "cuda": [
-            "torch>=2.0.0",
-            "torchvision>=0.15.0",
-            "torchaudio>=2.0.0",
-        ],
-
-        "all": [
-            # Dev dependencies
-            "pytest>=7.0.0",
-            "pytest-asyncio>=0.21.0",
-            "pytest-cov>=4.0.0",
-            # CUDA dependencies
-            "torch>=2.0.0",
-            "torchvision>=0.15.0",
-            "torchaudio>=2.0.0",
-        ],
-    },
-    entry_points={
-        "console_scripts": [
-            "forge = forge.app.main:main",
-            "forge-legacy = pyscrai_forge.src.cli:main",
-        ],
-    },
-    python_requires=">=3.10",
-    package_dir={"": "."},
+    python_requires=">=3.12",
 )
