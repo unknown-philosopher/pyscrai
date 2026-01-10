@@ -4,7 +4,7 @@ tkinter_legacy_forge/
 # _deprecated
 # .github
 # .cursor
-# .env
+.env
 # world.db
 # VS Code
 # .vscode/
