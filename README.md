@@ -141,3 +141,4 @@ python -m pytest forge/tests/test_forge.py::test_entity_creation -v
   - `advisors/` — Phase-specific advisor prompts (osint.yaml, humint.yaml, sigint.yaml, synth.yaml, geoint.yaml, anvil.yaml)
 
 ## PyScrAI|Forge 3.0 Documents (WIP)
+[Overview](pyscrai_forge.md)
