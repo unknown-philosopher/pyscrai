@@ -28,6 +28,7 @@ setup(
         
         # UI and visualization
         "flet>=0.24.0",
+        "FletXr==0.1.3",
         "plotly>=5.18.0",
 
         # Analytical database

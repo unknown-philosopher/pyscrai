@@ -238,3 +238,15 @@ AttributeError: module 'flet.controls.alignment' has no attribute 'center'
 [2026-01-10 16:31:50] INFO     [frontend.main       ] App shell initialized
 [2026-01-10 16:31:50] INFO     [frontend.main       ] Forge Frontend ready
 [2026-01-10 16:36:51] INFO     [frontend.main       ] Forge UI closed
+[2026-01-10 16:55:06] INFO     [app                 ] Initializing Forge 3.0...
+[2026-01-10 16:55:06] INFO     [app.state           ] Initialized Forge state (session: SESS_1768064106_001)
+[2026-01-10 16:55:06] INFO     [app                 ] Starting Forge UI (Flet)...
+[2026-01-10 16:55:07] INFO     [frontend.main       ] Initializing Forge Frontend (Flet)
+[2026-01-10 16:55:07] INFO     [app.state           ] Initialized Forge state (session: SESS_1768064107_002)
+[2026-01-10 16:55:07] INFO     [frontend.main       ] ForgeState initialized (session: SESS_1768064107_002)
+[2026-01-10 16:55:07] INFO     [frontend.state      ] FletX state initialized
+[2026-01-10 16:55:07] INFO     [frontend.main       ] FletX state initialized
+[2026-01-10 16:55:07] INFO     [frontend.app_shell  ] App shell initialized
+[2026-01-10 16:55:07] INFO     [frontend.main       ] App shell initialized
+[2026-01-10 16:55:08] INFO     [frontend.main       ] Forge Frontend ready
+[2026-01-10 16:55:13] INFO     [frontend.main       ] Forge UI closed

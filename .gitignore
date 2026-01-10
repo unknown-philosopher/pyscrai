@@ -1,12 +1,15 @@
 # Temporarily ignore pyscrai_engine for Gemini Context Window
 cuda/
 tkinter_legacy_forge/
-
-_workspace
-.github
-.cursor
-.env
+# _deprecated
+# .github
+# .cursor
+# .env
 # world.db
+# VS Code
+# .vscode/
+
+
 /data/projects/archive
 user_config.json
 /cherry_test
@@ -68,8 +71,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# VS Code
-.vscode/
 
 # Local envs
 .env/
@@ -81,4 +82,4 @@ env.bak/
 venv.bak/
 
 
-_deprecated
+
