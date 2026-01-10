@@ -1,0 +1,1 @@
+"""Narrative and synthesis services."""
