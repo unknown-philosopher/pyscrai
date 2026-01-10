@@ -13,3 +13,5 @@
 [2026-01-10 06:08:29] INFO     [frontend.main       ] Launching Forge UI in native mode
 [2026-01-10 06:08:29] INFO     [frontend.state      ] Frontend session initialized (session_id=SESS_1768025308_001)
 [2026-01-10 06:08:34] INFO     [app.state           ] Loaded project: test
+[2026-01-10 06:24:24] ERROR    [frontend.anvil      ] Failed to get validation issues: 'FinalizeOrchestrator' object has no attribute 'get_validation_issues'
+[2026-01-10 06:24:41] INFO     [frontend.main       ] Forge UI closed
