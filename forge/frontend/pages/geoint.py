@@ -25,39 +25,69 @@ def content() -> None:
         _render_no_project()
         return
     
-    # Page header
+    # Page header (minimal)
     ui.html('<h1 class="mono" style="font-size: 1.6rem; font-weight: 600; color: #e0e0e0; margin-bottom: 8px;">GEOINT_CARTOGRAPHY</h1>', sanitize=False)
-    ui.html('<p class="mono" style="font-size: 0.8rem; color: #555; margin-bottom: 24px;">Visualize and manage entity locations on the map.</p>', sanitize=False)
     
-    # Toolbar
-    with ui.row().classes("w-full mb-4 gap-3 items-center"):
-        # Map source selector
-        ui.html('<span class="mono" style="color: #555; font-size: 0.7rem;">SOURCE:</span>', sanitize=False)
-        map_source = ui.select(
-            options=["OpenStreetMap", "Local Image"],
-            value="OpenStreetMap",
-        ).classes("w-40").props("outlined dense dark options-dense")
+    # Map container - full height with floating controls and collapsible entity list
+    with ui.element("div").classes("w-full relative").style("height: calc(100vh - 200px);"):
+        # Floating toolbar panel (top-left)
+        with ui.element("div").classes("absolute top-4 left-4 z-10").style(
+            "background: rgba(26, 26, 26, 0.95); border: 1px solid #333; border-radius: 4px; padding: 12px; backdrop-filter: blur(8px); min-width: 200px;"
+        ):
+            # Map source selector
+            ui.html('<span class="mono" style="color: #555; font-size: 0.65rem; margin-bottom: 4px;">SOURCE:</span>', sanitize=False)
+            map_source = ui.select(
+                options=["OpenStreetMap", "Local Image"],
+                value="OpenStreetMap",
+            ).classes("w-full mb-3").props("outlined dense dark options-dense")
+            
+            # Layer toggles
+            ui.html('<span class="mono" style="color: #555; font-size: 0.65rem; margin-bottom: 4px;">LAYERS:</span>', sanitize=False)
+            with ui.column().classes("gap-1 mb-3"):
+                ui.checkbox("Actors", value=True).props("dense dark")
+                ui.checkbox("Locations", value=True).props("dense dark")
+                ui.checkbox("Regions", value=True).props("dense dark")
+            
+            # Actions
+            with ui.column().classes("gap-2"):
+                with ui.element("div").classes("forge-btn cursor-pointer px-3 py-1").on("click", _refresh_map):
+                    ui.html('REFRESH', sanitize=False)
+                with ui.element("div").classes("forge-btn cursor-pointer px-3 py-1").on("click", _upload_map_image):
+                    ui.html('UPLOAD MAP', sanitize=False)
         
-        # Layer toggles
-        ui.html('<span class="mono" style="color: #555; font-size: 0.7rem; margin-left: 16px;">LAYERS:</span>', sanitize=False)
-        ui.checkbox("Actors", value=True).classes("ml-2").props("dense dark")
-        ui.checkbox("Locations", value=True).props("dense dark")
-        ui.checkbox("Regions", value=True).props("dense dark")
+        # Collapsible entity list drawer (right side)
+        entity_drawer_open = {"value": False}
         
-        ui.space()
+        def toggle_entity_drawer():
+            entity_drawer_open["value"] = not entity_drawer_open["value"]
+            if entity_drawer_open["value"]:
+                entity_drawer.style("transform: translateX(0);")
+            else:
+                entity_drawer.style("transform: translateX(100%);")
         
-        with ui.element("div").classes("forge-btn cursor-pointer px-3 py-1").on("click", _refresh_map):
-            ui.html('REFRESH', sanitize=False)
-        with ui.element("div").classes("forge-btn cursor-pointer px-3 py-1").on("click", _upload_map_image):
-            ui.html('UPLOAD MAP', sanitize=False)
-    
-    # Map container
-    with ui.element("div").classes("forge-card w-full p-2"):
-        _render_map()
-    
-    # Entity list with coordinates
-    with ui.expansion("ENTITIES WITH COORDINATES").classes("w-full mt-4").props("dense dark"):
-        _render_coordinate_list()
+        # Toggle button (floating, bottom-right)
+        with ui.element("div").classes("absolute bottom-4 right-4 z-10").style(
+            "background: rgba(26, 26, 26, 0.95); border: 1px solid #333; border-radius: 4px; padding: 8px; backdrop-filter: blur(8px); cursor: pointer;"
+        ).on("click", toggle_entity_drawer):
+            ui.html('<span class="mono" style="color: #00b8d4; font-size: 0.7rem;">ENTITIES LIST</span>', sanitize=False)
+        
+        # Entity list drawer (slides in from right)
+        with ui.element("div").classes("absolute top-0 right-0 z-20").style(
+            "width: 300px; height: 100%; background: rgba(26, 26, 26, 0.98); border-left: 1px solid #333; transform: translateX(100%); transition: transform 0.3s ease; overflow-y: auto;"
+        ) as entity_drawer:
+            with ui.column().classes("w-full p-4 gap-4"):
+                # Header
+                with ui.row().classes("items-center justify-between mb-4"):
+                    ui.html('<span class="mono" style="color: #e0e0e0; font-size: 0.9rem; font-weight: 500;">ENTITIES WITH COORDINATES</span>', sanitize=False)
+                    with ui.element("div").classes("cursor-pointer").on("click", toggle_entity_drawer):
+                        ui.html('<span class="mono" style="color: #888; font-size: 1.2rem;">×</span>', sanitize=False)
+                
+                # Entity list
+                _render_coordinate_list()
+        
+        # Map container - full height
+        with ui.element("div").classes("forge-card w-full h-full p-2"):
+            _render_map()
 
 
 def _render_no_project() -> None:
@@ -76,8 +106,8 @@ def _render_map() -> None:
     try:
         entities = _get_map_entities()
         
-        # Create Leaflet map
-        map_widget = ui.leaflet(center=(0, 0), zoom=2).classes("w-full h-96")
+        # Create Leaflet map - full height
+        map_widget = ui.leaflet(center=(0, 0), zoom=2).classes("w-full").style("height: calc(100vh - 200px); min-height: 600px;")
         
         # Add markers for entities with coordinates
         for entity in entities:

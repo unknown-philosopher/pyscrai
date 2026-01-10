@@ -41,13 +41,18 @@ def content() -> None:
     ui.html('<h1 class="mono" style="font-size: 1.6rem; font-weight: 600; color: #e0e0e0; margin-bottom: 8px;">OSINT_EXTRACTION</h1>', sanitize=False)
     ui.html('<p class="mono" style="font-size: 0.8rem; color: #555; margin-bottom: 24px;">Upload source documents for entity extraction. Sentinel identifies potential duplicates.</p>', sanitize=False)
     
-    with ui.row().classes("w-full gap-6"):
-        # Left panel: Source documents
-        with ui.element("div").classes("forge-card p-4").style("width: 320px; flex-shrink: 0;"):
+    # Resizable splitter layout
+    # Note: NiceGUI doesn't have built-in splitter, so we use a flex-based layout with drag handle
+    with ui.element("div").classes("w-full").style("display: flex; gap: 8px; height: calc(100vh - 300px);"):
+        # Left panel: Source documents (resizable)
+        with ui.element("div").classes("forge-card p-4").style("width: 320px; min-width: 250px; flex-shrink: 0; overflow-y: auto;") as left_panel:
             _render_source_panel()
         
-        # Right panel: Sentinel triage
-        with ui.element("div").classes("forge-card p-4 flex-grow"):
+        # Resize handle (visual separator)
+        ui.html('<div style="width: 4px; background: #333; cursor: col-resize; flex-shrink: 0;" id="splitter-handle"></div>', sanitize=False)
+        
+        # Right panel: Sentinel triage (flexible)
+        with ui.element("div").classes("forge-card p-4 flex-grow").style("overflow-y: auto;"):
             _render_sentinel_panel()
 
 
@@ -123,45 +128,86 @@ def _render_sentinel_panel() -> None:
 
 
 def _render_candidate_card(candidate: dict[str, Any]) -> None:
-    """Render a single merge candidate card."""
-    with ui.card().classes("w-full q-mb-sm"):
+    """Render a single merge candidate card with diff highlighting."""
+    new_entity = candidate.get("new_entity", {})
+    db_entity = candidate.get("db_entity", {})
+    similarity = candidate.get("similarity", 0.0)
+    
+    with ui.card().classes("w-full mb-2").style("background: #1a1a1a; border: 1px solid #333;"):
         with ui.row().classes("w-full items-start"):
-            # New extraction (left)
-            with ui.column().classes("w-1/2 q-pr-md"):
-                new_entity = candidate.get("new_entity", {})
-                ui.label(new_entity.get("name", "Unknown")).classes("text-weight-bold")
-                ui.label(new_entity.get("entity_type", "")).classes("text-caption text-grey-5")
-                ui.label(
-                    new_entity.get("description", "")[:100] + "..."
-                ).classes("text-body2 q-mt-xs")
+            # New extraction (left) - highlight differences in green
+            with ui.column().classes("w-1/2 pr-4"):
+                ui.html('<span class="mono" style="color: #555; font-size: 0.7rem; text-transform: uppercase;">NEW EXTRACTION</span>', sanitize=False)
+                
+                # Name with diff highlighting
+                new_name = new_entity.get("name", "Unknown")
+                db_name = db_entity.get("name", "")
+                if new_name != db_name:
+                    ui.html(f'<div class="mono" style="color: #00c853; font-weight: 600; font-size: 0.9rem; margin-top: 4px; padding: 2px 4px; background: rgba(0, 200, 83, 0.1);">{new_name}</div>', sanitize=False)
+                else:
+                    ui.html(f'<div class="mono" style="color: #e0e0e0; font-weight: 600; font-size: 0.9rem; margin-top: 4px;">{new_name}</div>', sanitize=False)
+                
+                # Type
+                new_type = new_entity.get("entity_type", "")
+                db_type = db_entity.get("entity_type", "")
+                if new_type != db_type:
+                    ui.html(f'<div class="mono" style="color: #00c853; font-size: 0.7rem; margin-top: 4px; padding: 2px 4px; background: rgba(0, 200, 83, 0.1);">{new_type}</div>', sanitize=False)
+                else:
+                    ui.html(f'<div class="mono" style="color: #888; font-size: 0.7rem; margin-top: 4px;">{new_type}</div>', sanitize=False)
+                
+                # Description with diff
+                new_desc = new_entity.get("description", "")[:100]
+                db_desc = db_entity.get("description", "")[:100]
+                if new_desc != db_desc:
+                    ui.html(f'<div class="mono" style="color: #00c853; font-size: 0.75rem; margin-top: 8px; padding: 4px; background: rgba(0, 200, 83, 0.05); line-height: 1.4;">{new_desc}...</div>', sanitize=False)
+                else:
+                    ui.html(f'<div class="mono" style="color: #aaa; font-size: 0.75rem; margin-top: 8px; line-height: 1.4;">{new_desc}...</div>', sanitize=False)
             
             # Similarity indicator
-            with ui.column().classes("items-center q-px-md"):
-                similarity = candidate.get("similarity", 0.0)
-                color = "positive" if similarity > 0.9 else "warning" if similarity > 0.8 else "grey"
-                ui.badge(f"{similarity:.0%}", color=color).classes("q-mb-sm")
-                ui.icon("compare_arrows", size="sm").classes("text-grey-5")
+            with ui.column().classes("items-center px-4"):
+                color = "#00c853" if similarity > 0.9 else "#ffab00" if similarity > 0.8 else "#888"
+                ui.html(
+                    f'<div class="mono forge-badge" style="background: {color}; color: #000; padding: 4px 8px; border-radius: 2px; margin-bottom: 8px;">{similarity:.0%}</div>',
+                    sanitize=False
+                )
+                ui.html('<span class="mono" style="color: #555; font-size: 1.2rem;">↔</span>', sanitize=False)
             
-            # Database match (right)
-            with ui.column().classes("w-1/2 q-pl-md"):
-                db_entity = candidate.get("db_entity", {})
-                ui.label(db_entity.get("name", "Unknown")).classes("text-weight-bold")
-                ui.label(db_entity.get("entity_type", "")).classes("text-caption text-grey-5")
-                ui.label(
-                    db_entity.get("description", "")[:100] + "..."
-                ).classes("text-body2 q-mt-xs")
+            # Database match (right) - highlight differences in red (missing in new)
+            with ui.column().classes("w-1/2 pl-4"):
+                ui.html('<span class="mono" style="color: #555; font-size: 0.7rem; text-transform: uppercase;">DATABASE MATCH</span>', sanitize=False)
+                
+                # Name with diff highlighting
+                if db_name != new_name:
+                    ui.html(f'<div class="mono" style="color: #ff5252; font-weight: 600; font-size: 0.9rem; margin-top: 4px; padding: 2px 4px; background: rgba(255, 82, 82, 0.1);">{db_name}</div>', sanitize=False)
+                else:
+                    ui.html(f'<div class="mono" style="color: #e0e0e0; font-weight: 600; font-size: 0.9rem; margin-top: 4px;">{db_name}</div>', sanitize=False)
+                
+                # Type
+                if db_type != new_type:
+                    ui.html(f'<div class="mono" style="color: #ff5252; font-size: 0.7rem; margin-top: 4px; padding: 2px 4px; background: rgba(255, 82, 82, 0.1);">{db_type}</div>', sanitize=False)
+                else:
+                    ui.html(f'<div class="mono" style="color: #888; font-size: 0.7rem; margin-top: 4px;">{db_type}</div>', sanitize=False)
+                
+                # Description with diff
+                if db_desc != new_desc:
+                    ui.html(f'<div class="mono" style="color: #ff5252; font-size: 0.75rem; margin-top: 8px; padding: 4px; background: rgba(255, 82, 82, 0.05); line-height: 1.4;">{db_desc}...</div>', sanitize=False)
+                else:
+                    ui.html(f'<div class="mono" style="color: #aaa; font-size: 0.75rem; margin-top: 8px; line-height: 1.4;">{db_desc}...</div>', sanitize=False)
         
         # Actions
-        with ui.row().classes("w-full q-mt-sm justify-end q-gutter-sm"):
-            ui.button("Merge", icon="merge", color="primary").props("size=sm").on(
-                "click", lambda c=candidate: _approve_merge(c)
-            )
-            ui.button("Keep Both", icon="add", color="secondary").props("size=sm outline").on(
-                "click", lambda c=candidate: _keep_both(c)
-            )
-            ui.button("Reject", icon="close", color="negative").props("size=sm flat").on(
-                "click", lambda c=candidate: _reject_candidate(c)
-            )
+        with ui.row().classes("w-full mt-4 justify-end gap-2"):
+            with ui.element("div").classes("cursor-pointer px-3 py-1 rounded").style(
+                "background: #00b8d4; color: #000; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;"
+            ).on("click", lambda c=candidate: _approve_merge(c)):
+                ui.html('MERGE', sanitize=False)
+            
+            with ui.element("div").classes("forge-btn cursor-pointer px-3 py-1").on("click", lambda c=candidate: _keep_both(c)):
+                ui.html('KEEP BOTH', sanitize=False)
+            
+            with ui.element("div").classes("cursor-pointer px-3 py-1 rounded").style(
+                "background: #ff5252; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;"
+            ).on("click", lambda c=candidate: _reject_candidate(c)):
+                ui.html('REJECT', sanitize=False)
 
 
 async def _handle_file_upload(path: Path, content: bytes) -> None:

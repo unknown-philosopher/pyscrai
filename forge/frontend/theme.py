@@ -46,150 +46,7 @@ COLORS = {
     "critical": "#ff1744",
 }
 
-# Custom CSS for intelligence platform aesthetic
-CUSTOM_CSS = """
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap');
-    
-    :root {
-        --forge-bg: #0a0a0a;
-        --forge-panel: #111111;
-        --forge-card: #1a1a1a;
-        --forge-accent: #00b8d4;
-        --forge-accent-dim: #006d80;
-        --forge-text: #e0e0e0;
-        --forge-text-dim: #888888;
-    }
-    
-    body {
-        font-family: 'Inter', -apple-system, sans-serif !important;
-        background: var(--forge-bg) !important;
-    }
-    
-    .mono {
-        font-family: 'JetBrains Mono', 'Consolas', monospace !important;
-    }
-    
-    .forge-header {
-        background: var(--forge-panel) !important;
-        border-bottom: 1px solid #333 !important;
-    }
-    
-    .forge-sidebar {
-        background: var(--forge-panel) !important;
-        border-right: 1px solid #333 !important;
-    }
-    
-    .forge-card {
-        background: var(--forge-card) !important;
-        border: 1px solid #333 !important;
-        border-radius: 4px !important;
-    }
-    
-    .forge-nav-item {
-        color: var(--forge-text-dim) !important;
-        transition: all 0.15s ease !important;
-        border-left: 2px solid transparent !important;
-        padding: 8px 16px !important;
-    }
-    
-    .forge-nav-item:hover {
-        background: rgba(0, 184, 212, 0.1) !important;
-        color: var(--forge-text) !important;
-    }
-    
-    .forge-nav-item.active {
-        background: rgba(0, 184, 212, 0.15) !important;
-        border-left-color: var(--forge-accent) !important;
-        color: var(--forge-accent) !important;
-    }
-    
-    .forge-stat-value {
-        font-family: 'JetBrains Mono', monospace !important;
-        font-size: 2rem !important;
-        font-weight: 600 !important;
-        color: var(--forge-text) !important;
-    }
-    
-    .forge-badge {
-        font-family: 'JetBrains Mono', monospace !important;
-        font-size: 0.7rem !important;
-        padding: 2px 8px !important;
-        border-radius: 2px !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-    }
-    
-    .forge-badge-online { background: #00c853 !important; color: #000 !important; }
-    .forge-badge-active { background: #00b8d4 !important; color: #000 !important; }
-    .forge-badge-critical { background: #ff1744 !important; color: #fff !important; }
-    .forge-badge-high { background: #ff5252 !important; color: #fff !important; }
-    .forge-badge-info { background: #00b8d4 !important; color: #000 !important; }
-    
-    .forge-terminal {
-        font-family: 'JetBrains Mono', monospace !important;
-        font-size: 0.8rem !important;
-        line-height: 1.5 !important;
-        background: #0d0d0d !important;
-        color: var(--forge-text-dim) !important;
-    }
-    
-    .forge-input {
-        background: #1a1a1a !important;
-        border: 1px solid #333 !important;
-        color: var(--forge-text) !important;
-        font-family: 'JetBrains Mono', monospace !important;
-    }
-    
-    .forge-input:focus {
-        border-color: var(--forge-accent) !important;
-    }
-    
-    .forge-btn {
-        background: transparent !important;
-        border: 1px solid #444 !important;
-        color: var(--forge-text-dim) !important;
-        font-family: 'JetBrains Mono', monospace !important;
-        font-size: 0.75rem !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-        transition: all 0.15s ease !important;
-    }
-    
-    .forge-btn:hover {
-        border-color: var(--forge-accent) !important;
-        color: var(--forge-accent) !important;
-    }
-    
-    .forge-btn-primary {
-        background: var(--forge-accent) !important;
-        border-color: var(--forge-accent) !important;
-        color: #000 !important;
-    }
-    
-    .forge-btn-primary:hover {
-        background: #00d4f5 !important;
-        color: #000 !important;
-    }
-    
-    .section-label {
-        font-family: 'JetBrains Mono', monospace !important;
-        font-size: 0.65rem !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1px !important;
-        color: var(--forge-text-dim) !important;
-        margin-bottom: 8px !important;
-    }
-    
-    .forge-footer {
-        background: var(--forge-panel) !important;
-        border-top: 1px solid #333 !important;
-        font-family: 'JetBrains Mono', monospace !important;
-        font-size: 0.7rem !important;
-        color: var(--forge-text-dim) !important;
-    }
-</style>
-"""
+# CSS is now loaded from external file
 
 # Pipeline phases - text labels, no emojis
 PHASES = [
@@ -204,8 +61,15 @@ PHASES = [
 
 
 def inject_styles() -> None:
-    """Inject custom CSS into the page."""
-    ui.add_head_html(CUSTOM_CSS)
+    """Inject custom CSS from external file into the page."""
+    from pathlib import Path
+    
+    css_path = Path(__file__).parent / "static" / "style.css"
+    if css_path.exists():
+        css_content = css_path.read_text(encoding="utf-8")
+        ui.add_head_html(f"<style>{css_content}</style>")
+    else:
+        logger.warning(f"CSS file not found at {css_path}")
 
 
 def create_header(sidebar: ui.element | None = None, assistant_drawer: ui.element | None = None) -> None:
@@ -238,14 +102,7 @@ def create_header(sidebar: ui.element | None = None, assistant_drawer: ui.elemen
         
         # Right side controls
         with ui.row().classes("gap-2 items-center"):
-            # Assistant toggle button - compact in header
-            if assistant_drawer:
-                with ui.button(color="amber").props("round dense size=sm").classes("mr-2").on(
-                    "click", assistant_drawer.toggle
-                ) as btn:
-                    ui.html('<span style="font-size: 12px;">⌘</span>', sanitize=False)
-                    btn.tooltip("AI Assistant")
-            
+            # Assistant button removed - now in drawer header
             with ui.element("span").classes("mono forge-btn px-3 py-1").style(
                 "cursor: pointer;"
             ).on("click", lambda: ui.notify("Config panel - Coming soon", type="info")):
@@ -306,7 +163,20 @@ def create_assistant_drawer() -> ui.element:
     from forge.frontend.components.assistant import AssistantPanel
     
     with ui.right_drawer(value=False).classes("forge-sidebar p-0").props("width=380 bordered") as drawer:
+        # Assistant panel content
         AssistantPanel()
+    
+    # Toggle button - fixed position relative to viewport (top-right, same location as drawer controls)
+    # Positioned absolutely so it stays in place whether drawer is open or closed
+    # This replaces the native x/- controls
+    with ui.element("div").classes("fixed").style(
+        "top: 8px; right: 8px; z-index: 1001;"
+    ):
+        with ui.button(color="amber").props("round dense size=sm").on(
+            "click", drawer.toggle
+        ) as btn:
+            ui.html('<span style="font-size: 12px;">⌘</span>', sanitize=False)
+            btn.tooltip("Toggle AI Assistant")
     
     return drawer
 

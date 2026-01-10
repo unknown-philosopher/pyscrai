@@ -25,42 +25,53 @@ def content() -> None:
         _render_no_project()
         return
     
-    # Page header
+    # Page header (minimal)
     ui.html('<h1 class="mono" style="font-size: 1.6rem; font-weight: 600; color: #e0e0e0; margin-bottom: 8px;">SIGINT_NETWORK</h1>', sanitize=False)
-    ui.html('<p class="mono" style="font-size: 0.8rem; color: #555; margin-bottom: 24px;">Visualize and analyze the relationship network between entities.</p>', sanitize=False)
     
-    # View toggle
-    with ui.row().classes("items-center gap-2 mb-4"):
-        ui.html('<span class="mono" style="color: #555; font-size: 0.7rem;">VIEW:</span>', sanitize=False)
-        view_mode = ui.toggle(
-            ["Graph", "Matrix"],
-            value="Graph",
-        ).props("dense")
-    
-    # Toolbar
-    with ui.row().classes("w-full mb-4 gap-2 items-center"):
-        with ui.element("div").classes("cursor-pointer px-3 py-1 rounded").style(
-            "background: #00b8d4; color: #000; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;"
-        ).on("click", _refresh_graph):
-            ui.html('REFRESH', sanitize=False)
+    # Graph container - full height with floating controls
+    with ui.element("div").classes("w-full relative").style("height: calc(100vh - 200px);"):
+        # Floating control panel (top-right)
+        with ui.element("div").classes("absolute top-4 right-4 z-10").style(
+            "background: rgba(26, 26, 26, 0.95); border: 1px solid #333; border-radius: 4px; padding: 12px; backdrop-filter: blur(8px);"
+        ):
+            # View toggle
+            with ui.row().classes("items-center gap-2 mb-3"):
+                ui.html('<span class="mono" style="color: #555; font-size: 0.65rem;">VIEW:</span>', sanitize=False)
+                view_mode = ui.toggle(
+                    ["Graph", "Matrix"],
+                    value="Graph",
+                ).props("dense dark")
+            
+            # Controls
+            with ui.column().classes("gap-2"):
+                with ui.element("div").classes("cursor-pointer px-3 py-1 rounded").style(
+                    "background: #00b8d4; color: #000; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;"
+                ).on("click", _refresh_graph):
+                    ui.html('REFRESH', sanitize=False)
+                
+                with ui.element("div").classes("forge-btn cursor-pointer px-3 py-1").on("click", _find_communities):
+                    ui.html('COMMUNITIES', sanitize=False)
+                
+                with ui.element("div").classes("forge-btn cursor-pointer px-3 py-1").on("click", _find_key_actors):
+                    ui.html('KEY ACTORS', sanitize=False)
+                
+                # Layout selector
+                ui.html('<span class="mono" style="color: #555; font-size: 0.65rem; margin-top: 4px;">LAYOUT:</span>', sanitize=False)
+                ui.select(
+                    options=["Force", "Circular", "Hierarchical"],
+                    value="Force",
+                ).classes("w-full").props("outlined dense dark options-dense")
+            
+            # Interactive entity type legend
+            with ui.column().classes("gap-2 mt-4 pt-4 border-t border-gray-700"):
+                ui.html('<span class="mono" style="color: #555; font-size: 0.65rem;">LAYERS:</span>', sanitize=False)
+                entity_types = ["ACTOR", "POLITY", "LOCATION", "RESOURCE", "EVENT", "ABSTRACT"]
+                for etype in entity_types:
+                    checkbox = ui.checkbox(etype, value=True).props("dense dark").classes("text-xs")
+                    # TODO: Wire up to toggle node visibility in graph
         
-        with ui.element("div").classes("forge-btn cursor-pointer px-3 py-1").on("click", _find_communities):
-            ui.html('FIND COMMUNITIES', sanitize=False)
-        with ui.element("div").classes("forge-btn cursor-pointer px-3 py-1").on("click", _find_key_actors):
-            ui.html('KEY ACTORS', sanitize=False)
-        
-        ui.space()
-        
-        # Layout selector
-        ui.html('<span class="mono" style="color: #555; font-size: 0.7rem;">LAYOUT:</span>', sanitize=False)
-        ui.select(
-            options=["Force", "Circular", "Hierarchical"],
-            value="Force",
-        ).classes("w-36").props("outlined dense dark options-dense")
-    
-    # Main content
-    with ui.element("div").classes("forge-card w-full p-4"):
-        with ui.element("div").classes("w-full").style("height: 500px;"):
+        # Graph area - full height
+        with ui.element("div").classes("forge-card w-full h-full p-4"):
             _render_graph()
 
 
@@ -86,6 +97,9 @@ def _render_graph() -> None:
                 ui.html('<span class="mono" style="color: #555; font-size: 0.9rem;">No relationships found</span>', sanitize=False)
                 ui.html('<span class="mono" style="color: #444; font-size: 0.75rem;">Add entities and relationships to see the graph.</span>', sanitize=False)
             return
+        
+        # Container for full-height graph
+        graph_container = ui.element("div").classes("w-full h-full")
         
         # ECharts configuration
         chart_options = {
@@ -128,11 +142,12 @@ def _render_graph() -> None:
             ],
         }
         
-        ui.echart(chart_options).classes("w-full h-full")
+        with graph_container:
+            ui.echart(chart_options).classes("w-full h-full").style("min-height: 600px;")
         
     except Exception as e:
         logger.error(f"Failed to render graph: {e}")
-        ui.label(f"Error loading graph: {e}").classes("text-negative")
+        ui.html(f'<span class="mono" style="color: #ff5252;">Error loading graph: {e}</span>', sanitize=False)
 
 
 def _get_graph_data() -> dict[str, Any]:

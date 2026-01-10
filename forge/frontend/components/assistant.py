@@ -51,7 +51,7 @@ class AssistantPanel:
                 "background: #111; border-bottom: 1px solid #333;"
             ):
                 ui.html('<span class="mono" style="color: #e0e0e0; font-size: 0.9rem; font-weight: 500;">ASSISTANT_V2.0</span>', sanitize=False)
-                ui.html('<span class="mono" style="color: #555; font-size: 0.8rem; cursor: pointer;">- X</span>', sanitize=False)
+                # Toggle button removed - now handled by drawer header in theme.py
             
             # Terminal output area
             with ui.scroll_area().classes("flex-grow w-full").style(
