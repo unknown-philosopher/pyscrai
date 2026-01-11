@@ -5,6 +5,7 @@ from typing import List
 import flet as ft
 
 from forge.core.app_controller import AppController
+from forge.presentation.renderer import render_schema
 
 
 def apply_shell_theme(page: ft.Page) -> None:
@@ -106,24 +107,26 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
         if not controller.workspace_schemas.value:
             workspace.controls = [ft.Text("Awaiting Intel", color=ft.Colors.WHITE70)]
         else:
-            cards: List[ft.Control] = []
+            # Use the AG-UI renderer to render schemas
+            rendered_components: List[ft.Control] = []
             for schema in controller.workspace_schemas.value:
-                title = schema.get("title", "Component")
-                summary = schema.get("summary") or schema.get("type", "schema")
-                cards.append(
-                    ft.Container(
-                        bgcolor="rgba(255,255,255,0.05)",
-                        padding=12,
-                        border_radius=8,
-                        content=ft.Column(
-                            [
-                                ft.Text(title, weight=ft.FontWeight.W_600, color=ft.Colors.WHITE),
-                                ft.Text(str(summary), color=ft.Colors.WHITE70),
-                            ]
-                        ),
+                try:
+                    component = render_schema(schema)
+                    rendered_components.append(component)
+                except Exception as e:
+                    # Fallback to error display if rendering fails
+                    rendered_components.append(
+                        ft.Container(
+                            bgcolor="rgba(255,0,0,0.1)",
+                            padding=12,
+                            border_radius=8,
+                            content=ft.Text(
+                                f"Render error: {str(e)}",
+                                color=ft.Colors.RED_300,
+                            ),
+                        )
                     )
-                )
-            workspace.controls = cards
+            workspace.controls = rendered_components
         page.update()
 
     def _on_nav_change(e: ft.ControlEvent) -> None:
@@ -146,6 +149,7 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
     controller.workspace_schemas.listen(_sync_workspace)
 
     chrome = ft.Container(
+        expand=True,
         gradient=ft.LinearGradient(
             begin=ft.Alignment.TOP_LEFT,
             end=ft.Alignment.BOTTOM_RIGHT,
@@ -153,7 +157,7 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
         ),
         content=ft.Row(
             [
-                ft.Container(width=88, content=nav_rail),
+                ft.Container(width=88, expand=False, content=ft.Column([nav_rail], expand=True)),
                 ft.VerticalDivider(width=1, color="rgba(255,255,255,0.1)"),
                 ft.Container(
                     expand=True,
@@ -210,7 +214,8 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
                         spacing=12,
                     ),
                 ),
-            ]
+            ],
+            expand=True,
         ),
     )
 
