@@ -31,10 +31,6 @@ def _nav_destinations(items: List[dict]) -> List[ft.NavigationRailDestination]:
     return destinations
 
 
-def _format_percent(value: float) -> str:
-    return f"{float(value):.0f}%"
-
-
 def build_shell(page: ft.Page, controller: AppController) -> ft.View:
     apply_shell_theme(page)
 
@@ -51,18 +47,6 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
 
     status_text = ft.Text(controller.status_text.value, color=ft.Colors.WHITE70)
 
-    gpu_kpi = ft.Text(
-        _format_percent(float(controller.telemetry.value.get("gpu_util", 0.0))),
-        size=28,
-        weight=ft.FontWeight.W_700,
-        color=ft.Colors.CYAN_ACCENT,
-    )
-    vram_kpi = ft.Text(
-        f"{float(controller.telemetry.value.get('vram_used_gb', 0.0)):.1f} /"
-        f" {float(controller.telemetry.value.get('vram_total_gb', 0.0)):.1f} GB",
-        color=ft.Colors.WHITE,
-    )
-
     ag_feed = ft.ListView(spacing=8, auto_scroll=True)
 
     workspace = ft.Column(
@@ -76,14 +60,6 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
         ids = [item.get("id") for item in controller.nav_items.value]
         if controller.nav_selected.value in ids:
             nav_rail.selected_index = ids.index(controller.nav_selected.value)
-        page.update()
-
-    def _sync_telemetry() -> None:
-        data = controller.telemetry.value
-        gpu_kpi.value = _format_percent(data.get("gpu_util", 0.0)) # type: ignore
-        vram_kpi.value = (
-            f"{data.get('vram_used_gb', 0.0):.1f} / {data.get('vram_total_gb', 0.0):.1f} GB"
-        )
         page.update()
 
     def _sync_status() -> None:
@@ -143,7 +119,6 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
     # Attach reactive listeners
     controller.nav_items.listen(_sync_nav)
     controller.nav_selected.listen(_sync_nav)
-    controller.telemetry.listen(_sync_telemetry)
     controller.status_text.listen(_sync_status)
     controller.ag_feed.listen(_sync_feed)
     controller.workspace_schemas.listen(_sync_workspace)
@@ -157,7 +132,7 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
         ),
         content=ft.Row(
             [
-                ft.Container(width=88, expand=False, content=ft.Column([nav_rail], expand=True)),
+                nav_rail,
                 ft.VerticalDivider(width=1, color="rgba(255,255,255,0.1)"),
                 ft.Container(
                     expand=True,
@@ -169,15 +144,7 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
                                     ft.Text("PyScrAI Forge", size=18, weight=ft.FontWeight.W_700, color=ft.Colors.WHITE),
                                     ft.Container(width=8),
                                     status_text,
-                                    ft.Row(
-                                        [
-                                            ft.Icon(ft.Icons.MEMORY, color=ft.Colors.BLUE_200),
-                                            gpu_kpi,
-                                            ft.Icon(ft.Icons.STACKED_LINE_CHART, color=ft.Colors.BLUE_200),
-                                            vram_kpi,
-                                        ],
-                                        spacing=8,
-                                    ),
+
                                 ],
                                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                             ),
@@ -220,7 +187,6 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
     )
 
     _sync_nav()
-    _sync_telemetry()
     _sync_status()
     _sync_feed()
     _sync_workspace()

@@ -9,7 +9,6 @@ import threading
 import flet as ft
 
 from forge.core.app_controller import AppController
-from forge.infrastructure.telemetry import GPUTelemetryService
 from forge.presentation.layouts.shell import build_shell
 
 logging.basicConfig(
@@ -18,22 +17,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Global reference to telemetry service to prevent garbage collection
-_telemetry_service: GPUTelemetryService | None = None
-
 
 async def init_services(controller: AppController) -> None:
     """Initialize all services asynchronously."""
-    global _telemetry_service
-
     # Start the controller (wire event bus subscriptions)
     await controller.start()
     logger.info("AppController started")
-
-    # Start GPU telemetry service
-    _telemetry_service = GPUTelemetryService(controller.bus, update_interval=1.0)
-    await _telemetry_service.start()
-    logger.info("GPU telemetry service started")
 
 
 def _run_async_init(controller: AppController) -> None:

@@ -7,7 +7,6 @@ from typing import Any, Dict, Literal
 from .event_bus import EventPayload
 
 # Event Topics
-TOPIC_TELEMETRY_UPDATE = "telemetry.update"
 TOPIC_AGUI_EVENT = "agui.event"
 TOPIC_WORKSPACE_SCHEMA = "workspace.schema"
 TOPIC_STATUS_TEXT = "status.text"
@@ -20,15 +19,6 @@ TOPIC_ENTITY_EXTRACTED = "entity.extracted"
 TOPIC_RELATIONSHIP_FOUND = "relationship.found"
 TOPIC_GRAPH_UPDATED = "graph.updated"
 TOPIC_INTELLIGENCE_SYNTHESIZED = "intelligence.synthesized"
-
-
-def create_telemetry_event(gpu_util: float, vram_used_gb: float, vram_total_gb: float) -> EventPayload:
-    """Create a telemetry update event."""
-    return {
-        "gpu_util": gpu_util,
-        "vram_used_gb": vram_used_gb,
-        "vram_total_gb": vram_total_gb,
-    }
 
 
 def create_agui_event(

@@ -24,13 +24,6 @@ class AppController:
             ]
         )
         self.nav_selected: RxStr = RxStr("ingest")
-        self.telemetry: RxDict[str | float] = RxDict(
-            {
-                "gpu_util": 0.0,
-                "vram_used_gb": 0.0,
-                "vram_total_gb": 0.0,
-            }
-        )
         self.status_text: RxStr = RxStr("System Initialized…")
         self.ag_feed: RxList[Dict[str, Any]] = RxList([])
         self.workspace_schemas: RxList[Dict[str, Any]] = RxList([])
@@ -48,7 +41,6 @@ class AppController:
         if self._started:
             return
 
-        await self._event_bus.subscribe("telemetry.update", self._handle_telemetry)
         await self._event_bus.subscribe("agui.event", self._handle_agui_event)
         await self._event_bus.subscribe("workspace.schema", self._handle_workspace_schema)
         await self._event_bus.subscribe("status.text", self._handle_status_text)
@@ -60,16 +52,6 @@ class AppController:
     async def publish(self, topic: str, payload: EventPayload) -> None:
         """Publish through the shared bus."""
         await self._event_bus.publish(topic, payload)
-
-    async def _handle_telemetry(self, payload: EventPayload) -> None:
-        gpu_util = float(payload.get("gpu_util", 0.0))
-        vram_used = float(payload.get("vram_used_gb", 0.0))
-        vram_total = float(payload.get("vram_total_gb", 0.0))
-        self.telemetry.value = {  # type: ignore[assignment]
-            "gpu_util": gpu_util,
-            "vram_used_gb": vram_used,
-            "vram_total_gb": vram_total,
-        }
 
     async def _handle_agui_event(self, payload: EventPayload) -> None:
         entry = {

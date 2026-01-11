@@ -32,9 +32,6 @@ setup(
         "pypdf>=4.0.0",
         "beautifulsoup4>=4.12.0",
         "rich>=13.0.0",
-        
-        # --- TELEMETRY ---
-        "nvidia-ml-py>=12.535.0",  # GPU monitoring for your dashboard
     ],
     python_requires=">=3.12",
 )
