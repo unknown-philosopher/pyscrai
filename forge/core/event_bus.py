@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections import defaultdict
 from typing import Any, Awaitable, Callable, Dict, List, TypeAlias
 
@@ -14,6 +15,7 @@ class EventBus:
     def __init__(self) -> None:
         self._subscribers: Dict[str, List[EventHandler]] = defaultdict(list)
         self._lock = asyncio.Lock()
+        self._logger = logging.getLogger(__name__)
 
     async def subscribe(self, topic: str, handler: EventHandler) -> None:
         """Register an async handler for a topic."""
@@ -36,14 +38,23 @@ class EventBus:
             return
 
         for handler in handlers:
-            asyncio.create_task(self._safe_dispatch(handler, payload))
+            asyncio.create_task(self._safe_dispatch(topic, handler, payload))
 
-    async def _safe_dispatch(self, handler: EventHandler, payload: EventPayload) -> None:
+    async def _safe_dispatch(
+        self,
+        topic: str,
+        handler: EventHandler,
+        payload: EventPayload,
+    ) -> None:
         """Dispatch wrapper to keep one handler failure from stopping the bus."""
         try:
             await handler(payload)
         except Exception as exc:  # pragma: no cover - placeholder logging
-            print(f"[EventBus] Handler error in {handler.__name__}: {exc}")
+            self._logger.exception(
+                "EventBus handler error",
+                extra={"topic": topic, "handler": handler.__name__},
+                exc_info=exc,
+            )
 
     def clear(self) -> None:
         """Remove all subscriptions."""
