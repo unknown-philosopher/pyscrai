@@ -1,6 +1,6 @@
 ## Progress Against Blueprint
 
-### ✅ **COMPLETED (75% of Architecture)**
+### ✅ **COMPLETED (80% of Architecture)**
 - **Event-Driven Architecture**: Complete EventBus with async pub/sub, error isolation, and strong typing
 - **Application Layer**: Full AppController with FletXr reactive state management
 - **Presentation Shell**: Complete dark UI with navigation, telemetry display, AG-UI feed, and reactive canvas
@@ -9,11 +9,12 @@
 - **Entity Resolution**: ✅ EntityResolutionService implemented, integrated, and tested
 - **Graph Analysis**: ✅ GraphAnalysisService implemented, integrated, and tested
 - **Persistence Layer**: ✅ DuckDB service with entity/relationship storage and analytics queries
+- **LLM Infrastructure**: ✅ OpenRouter provider with streaming support, model factory, error handling
 
-### 🟡 **PARTIALLY IMPLEMENTED (20% Scaffolded)**  
-- **Domain Services**: Document extraction complete; entity resolution, graph analysis, and intelligence synthesis need implementation
-- **Infrastructure Layer**: Scaffolded but missing LLM/Qdrant/DuckDB implementations (telemetry ✅ complete)
-- **UI Components**: ✅ AG-UI schema registry implemented with basic components
+### 🟡 **PARTIALLY IMPLEMENTED (15% Scaffolded)**  
+- **Domain Services**: All Phase 2 services complete; Phase 3 LLM integration and vector store pending
+- **Infrastructure Layer**: LLM provider layer complete (OpenRouter); Qdrant vector store needs integration
+- **UI Components**: ✅ AG-UI schema registry implemented with basic components; intelligent dashboard components pending
 
 ### ✅ **PHASE 1 COMPLETED**
 - **Application Entry Point**: ✅ `main.py` created with Flet app initialization and AppController binding
@@ -29,9 +30,9 @@
 - **Relationship Analysis**: ✅ GraphAnalysisService implemented and tested
 - **DuckDB Persistence**: ✅ Full persistence layer with entity and relationship storage
 
-### ❌ **NOT STARTED (15% Missing)**
-- **Core Framework**: Missing exceptions, base controllers
-- **Infrastructure**: No LLM inference, Qdrant integration, or DuckDB analytics yet
+### ❌ **NOT STARTED (5% Missing)**
+- **Vector Store**: Qdrant integration for semantic search and embeddings
+- **Intelligence Services**: Semantic profiling, narrative synthesis, advanced graph analysis
 
 ---
 
@@ -49,13 +50,16 @@
 - ✅ Add simple relationship analysis
 - ✅ Build basic DuckDB persistence for entities/relationships
 
-### **Phase 3: Core Infrastructure**
-- Implement LLM inference service with 4-bit quantization
-- Integrate Qdrant vector store with embeddings
-- Create full DuckDB analytical layer
-- Add comprehensive error handling and logging
+### **Phase 3: Core Infrastructure** 🟡 PARTIALLY COMPLETE
+- ✅ LLM inference service (OpenRouter provider with streaming, model factory)
+- ⏳ Qdrant vector store integration with embeddings
+- ⏳ Advanced DuckDB analytical layer (graph algorithms, temporal analysis)
+- ⏳ Comprehensive error handling and logging
 
-### **Phase 4: Intelligence Services**
+### **Phase 4: Intelligence Services** 
+
+WORKING ON NOW~~~
+
 - Complete semantic profiling and graph analysis
 - Implement narrative synthesis and reporting
 - Add advanced entity deduplication and merging

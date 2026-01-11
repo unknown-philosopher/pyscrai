@@ -20,6 +20,17 @@ TOPIC_RELATIONSHIP_FOUND = "relationship.found"
 TOPIC_GRAPH_UPDATED = "graph.updated"
 TOPIC_INTELLIGENCE_SYNTHESIZED = "intelligence.synthesized"
 
+# Embedding events
+TOPIC_ENTITY_EMBEDDED = "entity.embedded"
+TOPIC_RELATIONSHIP_EMBEDDED = "relationship.embedded"
+
+# Intelligence events
+TOPIC_ENTITY_MERGED = "entity.merged"
+TOPIC_SEMANTIC_PROFILE = "semantic.profile"
+TOPIC_NARRATIVE_GENERATED = "narrative.generated"
+TOPIC_GRAPH_ANALYSIS = "graph.analysis"
+TOPIC_INFERRED_RELATIONSHIP = "relationship.inferred"
+
 
 def create_data_ingested_event(doc_id: str, content: str) -> EventPayload:
     """Create a data ingested event (document received for extraction)."""

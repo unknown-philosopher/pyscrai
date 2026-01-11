@@ -32,12 +32,36 @@
    - ✅ Mixed document types concurrent processing
    - ✅ Event bus stability under concurrent load
 
+5. **Phase 2 Integration Tests** (`test_phase2_integration.py`)
+   - ✅ Full pipeline flow (Extraction → Resolution → Graph → Persistence)
+   - ✅ Single document processing
+   - ✅ Multiple document processing
+   - ✅ Event ordering verification
+   - ✅ Graph node accumulation
+   - ✅ Data retrieval and validation
+   - ✅ Persistence count accuracy
+
+6. **Graph Analysis Service** (`test_graph_service.py`)
+   - ✅ Graph service subscription to relationships
+   - ✅ Graph node building from relationships
+   - ✅ Graph edge building from relationships
+   - ✅ Multiple relationship accumulation
+   - ✅ Node deduplication
+   - ✅ Graph stats structure validation
+
+7. **Persistence Service** (`test_persistence_service.py`)
+   - ✅ Database schema creation
+   - ✅ Entity storage and retrieval
+   - ✅ Relationship storage and retrieval
+   - ✅ Entity upsert behavior
+   - ✅ Relationship append behavior
+   - ✅ AG-UI event emission
+   - ✅ Empty graph update handling
+   - ✅ Data structure validation
+
 ### 📋 Remaining Tests (Not Yet Implemented)
 
-5. **Persistence Layer**
-   - Once implemented, verify entities/relationships are stored and retrieved correctly
-
-6. **Integration with UI**
+8. **Integration with UI**
    - Confirm that AG-UI events and workspace schema events are emitted and renderable
 
 ---
@@ -64,28 +88,72 @@
 
 ### Test Files
 
+#### Core Infrastructure Tests
 - `test_event_bus.py` - Basic event bus functionality tests
 - `test_event_bus_robustness.py` - Event bus unsubscribe/resubscribe and robustness tests
+
+#### Domain Service Tests (Phase 1)
 - `test_domain_edge_cases.py` - Edge cases and multiple documents tests
 - `test_domain_concurrency.py` - Concurrency and stress tests
 - `test_pipeline.py` - Manual pipeline integration test
+
+#### Phase 2 Pipeline Tests
+- `test_phase2_integration.py` - **Full Phase 2 pipeline integration tests**
+  - Complete pipeline flow (Extraction → Resolution → Graph → Persistence)
+  - Event ordering verification
+  - Multi-document processing
+  - Data retrieval and validation
+- `test_graph_service.py` - **GraphAnalysisService tests**
+  - Graph node and edge building
+  - Graph statistics and structure
+  - Node deduplication
+  - Multiple relationship handling
+- `test_persistence_service.py` - **DuckDBPersistenceService tests**
+  - Database schema creation
+  - Entity and relationship storage
+  - Data retrieval and structure validation
+  - Entity upsert behavior
+  - AG-UI event emission
 
 ### Running Tests
 
 ```bash
 # Run all tests
-python3 -m pytest tests/ -v
+python3 -m unittest discover tests -v
 
 # Run specific test file
-python3 -m pytest tests/test_event_bus_robustness.py -v
+python3 -m unittest tests.test_phase2_integration -v
 
-# Run with coverage
+# Run Phase 2 tests only
+python3 -m unittest tests.test_phase2_integration tests.test_graph_service tests.test_persistence_service -v
+
+# Run with pytest (if installed)
+python3 -m pytest tests/ -v
+
+# Run with coverage (if pytest and coverage installed)
 python3 -m pytest tests/ --cov=forge --cov-report=html
 ```
+
+### Test Statistics
+
+**Total Test Files:** 8
+- Core Infrastructure: 2 files
+- Phase 1 Domain Services: 3 files
+- Phase 2 Pipeline: 3 files
+
+**Coverage Areas:**
+- ✅ Event Bus (basic + robustness)
+- ✅ Document Extraction
+- ✅ Entity Resolution
+- ✅ Graph Analysis
+- ✅ Database Persistence
+- ✅ Full Pipeline Integration
+- ✅ Edge Cases & Error Handling
+- ✅ Concurrency & Performance
 
 ### Next Steps
 
 - Research Flet's official or community-supported test utilities for widget/UI automation
 - Prototype a simple E2E test: launch app, trigger event, assert UI update
-- Add persistence layer tests once implemented
 - Add UI integration tests for AG-UI events and workspace schemas
+- Consider adding performance benchmarks for pipeline processing

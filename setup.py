@@ -14,7 +14,8 @@ setup(
         
         # --- VECTOR & ML ENGINE (3.12 Compatible) ---
         "torch>=2.2.0",           # Native 3.12 CUDA support
-        "qdrant-client[fastembed-gpu]>=1.7.0", # Replaces FAISS with GPU vector search
+        "qdrant-client>=1.16.0",  # GPU-accelerated vector search
+        "sentence-transformers>=5.0.0",  # Semantic embeddings (bge-base, nomic-embed)
         "transformers>=4.38.0",   # Latest local LLM support
         "bitsandbytes>=0.42.0",   # 4-bit quantization for your 4060
         "accelerate>=0.27.0",
@@ -22,7 +23,7 @@ setup(
         # --- DATABASE & ANALYTICS ---
         "duckdb>=0.10.0",
         "pydantic>=2.0.0",
-        "networkx>=3.2",
+        "networkx>=3.6",          # Graph analytics & algorithms
         "plotly>=5.18.0",
 
         # --- DOCUMENT & LOGIC ---
