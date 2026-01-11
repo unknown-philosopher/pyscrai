@@ -6,10 +6,14 @@ import asyncio
 import logging
 import threading
 
-import flet as ft
 
+import flet as ft
 from forge.core.app_controller import AppController
 from forge.presentation.layouts.shell import build_shell
+from forge.domain.extraction.service import DocumentExtractionService
+from forge.domain.resolution.service import EntityResolutionService
+from forge.domain.graph.service import GraphAnalysisService
+from forge.infrastructure.persistence.duckdb_service import DuckDBPersistenceService
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,11 +22,32 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+
 async def init_services(controller: AppController) -> None:
     """Initialize all services asynchronously."""
     # Start the controller (wire event bus subscriptions)
     await controller.start()
     logger.info("AppController started")
+
+    # Initialize and start DocumentExtractionService
+    extraction_service = DocumentExtractionService(controller.bus)
+    await extraction_service.start()
+    logger.info("DocumentExtractionService started")
+
+    # Initialize and start EntityResolutionService
+    resolution_service = EntityResolutionService(controller.bus)
+    await resolution_service.start()
+    logger.info("EntityResolutionService started")
+
+    # Initialize and start GraphAnalysisService
+    graph_service = GraphAnalysisService(controller.bus)
+    await graph_service.start()
+    logger.info("GraphAnalysisService started")
+
+    # Initialize and start DuckDBPersistenceService
+    persistence_service = DuckDBPersistenceService(controller.bus)
+    await persistence_service.start()
+    logger.info("DuckDBPersistenceService started")
 
 
 def _run_async_init(controller: AppController) -> None:
@@ -42,6 +67,13 @@ def _run_async_init(controller: AppController) -> None:
 def main(page: ft.Page) -> None:
     """Main Flet application entry point."""
     logger.info("Initializing PyScrAI Forge...")
+
+    # Hide the top bar and make the window frameless/transparent
+    page.window.title_bar_hidden = True
+    page.window_frameless = True  # Correct property for frameless window
+    page.window.title = ""
+    page.window.bgcolor = ft.Colors.TRANSPARENT  # Use capital 'C'
+    page.bgcolor = ft.Colors.TRANSPARENT         # Use capital 'C'
 
     # Initialize the application controller
     controller = AppController()

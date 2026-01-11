@@ -49,7 +49,6 @@ In the new **Server-Driven UI (SDUI)** architecture, the initial Dashboard viewâ
 The dashboard is contained within a persistent application shell that manages global navigation and layout consistency:
 
 * **Navigation Rail**: A slim vertical navigation bar on the far left for switching between primary system domains (e.g., Data Ingestion, Graph Analysis, Intelligence Synthesis).
-* **Top Telemetry Header**: A horizontal bar displaying the active project name and hardware-specific performance metrics, such as GPU utilization and VRAM usage sourced from `nvidia-ml-py`.
 * **Global Status Indicators**: Real-time counts for the entity and relationship graph, pulled from the DuckDB analytical store via the `AppController`.
 
 ### **2. The Command Feed (AG-UI Panel)**

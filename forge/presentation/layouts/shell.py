@@ -37,7 +37,7 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
     # --- UI primitives ---
     nav_rail = ft.NavigationRail(
         label_type=ft.NavigationRailLabelType.ALL,
-        bgcolor="rgba(255,255,255,0.1)",
+        bgcolor="#080b31",  # Dark blue accent
         indicator_color=ft.Colors.BLUE_400,
         min_width=80,
         min_extended_width=180,

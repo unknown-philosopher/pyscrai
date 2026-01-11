@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, List
 
 from .event_bus import EventPayload
 
@@ -19,6 +19,38 @@ TOPIC_ENTITY_EXTRACTED = "entity.extracted"
 TOPIC_RELATIONSHIP_FOUND = "relationship.found"
 TOPIC_GRAPH_UPDATED = "graph.updated"
 TOPIC_INTELLIGENCE_SYNTHESIZED = "intelligence.synthesized"
+
+
+def create_data_ingested_event(doc_id: str, content: str) -> EventPayload:
+    """Create a data ingested event (document received for extraction)."""
+    return {
+        "doc_id": doc_id,
+        "content": content,
+    }
+
+
+def create_entity_extracted_event(doc_id: str, entities: List[Dict[str, Any]]) -> EventPayload:
+    """Create an entity extracted event."""
+    return {
+        "doc_id": doc_id,
+        "entities": entities,
+    }
+
+
+def create_relationship_found_event(doc_id: str, relationships: List[Dict[str, Any]]) -> EventPayload:
+    """Create a relationship found event."""
+    return {
+        "doc_id": doc_id,
+        "relationships": relationships,
+    }
+
+
+def create_graph_updated_event(doc_id: str, graph_stats: Dict[str, Any]) -> EventPayload:
+    """Create a graph updated event."""
+    return {
+        "doc_id": doc_id,
+        "graph_stats": graph_stats,
+    }
 
 
 def create_agui_event(
