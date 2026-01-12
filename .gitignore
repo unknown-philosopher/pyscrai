@@ -3,11 +3,12 @@
 .cursor
 world.db
 .vscode/
-
+data/
 .env
 *.duckdb
 *.wal
 data/_deprecated
+tests/ 
 
 /data/projects/archive
 user_config.json
