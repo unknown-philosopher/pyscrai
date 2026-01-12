@@ -52,7 +52,8 @@ class OpenRouterProvider(LLMProvider):
                 )
         
         if default_model is None:
-            default_model = os.getenv("OPENROUTER_DEFAULT_MODEL")
+            # Support both OPENROUTER_MODEL and OPENROUTER_DEFAULT_MODEL for compatibility
+            default_model = os.getenv("OPENROUTER_MODEL") or os.getenv("OPENROUTER_DEFAULT_MODEL")
         
         super().__init__(api_key, base_url, timeout, app_name)
         self.default_model = default_model

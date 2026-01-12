@@ -15,6 +15,7 @@ from collections import defaultdict
 from forge.core.event_bus import EventBus, EventPayload
 from forge.core import events
 from forge.infrastructure.llm.base import LLMProvider
+from forge.config.prompts import render_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -53,10 +54,11 @@ class AdvancedGraphAnalysisService:
     
     async def handle_graph_updated(self, payload: EventPayload):
         """Handle graph updated events by running analytics."""
-        doc_id = payload.get("doc_id", "unknown")
+        doc_id = payload.get("doc_id")
         
-        # Run comprehensive analysis
-        await self.analyze_graph(doc_id)
+        # Run comprehensive analysis - if doc_id is None or "unknown", analyze all
+        # Otherwise scope to the specific document
+        await self.analyze_graph(doc_id if doc_id and doc_id != "unknown" else None)
     
     async def analyze_graph(self, doc_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """Run comprehensive graph analysis.
@@ -382,26 +384,13 @@ class AdvancedGraphAnalysisService:
         Returns:
             Inferred relationship dictionary or None
         """
-        prompt = f"""You are an expert knowledge graph analyst. Two entities are connected through common neighbors, suggesting they may have a direct relationship.
-
-Entity 1: {entity1['label']} ({entity1['type']})
-Entity 2: {entity2['label']} ({entity2['type']})
-Common connections: {', '.join(common_neighbors[:5])}
-
-Analyze these entities and determine if there is a plausible direct relationship between them. If yes, provide:
-1. The relationship type (e.g., WORKS_WITH, INFLUENCED_BY, PART_OF, etc.)
-2. A confidence score (0.0 to 1.0)
-3. Brief justification
-
-Respond in JSON format:
-{{
-  "exists": true/false,
-  "type": "RELATIONSHIP_TYPE",
-  "confidence": 0.0-1.0,
-  "justification": "brief explanation"
-}}
-
-Respond with ONLY the JSON, no additional text."""
+        # Render prompt using Jinja2 template
+        prompt = render_prompt(
+            "relationship_inference",
+            entity1=entity1,
+            entity2=entity2,
+            common_neighbors=common_neighbors[:5],
+        )
         
         try:
             # Get available models

@@ -14,6 +14,7 @@ from forge.core.event_bus import EventBus, EventPayload
 from forge.core import events
 from forge.infrastructure.vector.qdrant_service import QdrantService
 from forge.infrastructure.llm.base import LLMProvider
+from forge.config.prompts import render_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -124,19 +125,13 @@ class DeduplicationService:
         Returns:
             True if entities are duplicates, False otherwise
         """
-        prompt = f"""You are an expert entity deduplication system. Two entities have been identified as potentially identical based on semantic similarity.
-
-Entity 1: {entity1_id}
-Entity 2: {entity2_id}
-Similarity Score: {similarity_score:.3f}
-
-Analyze these entities and determine if they represent the same real-world entity. Consider:
-1. Are they the same type of entity (person, organization, concept)?
-2. Do they refer to the same specific instance?
-3. Could they be different entities that happen to have similar names/descriptions?
-
-Respond with ONLY "YES" if they are the same entity (should be merged), or "NO" if they are different entities.
-"""
+        # Render prompt using Jinja2 template
+        prompt = render_prompt(
+            "deduplication_service",
+            entity1_id=entity1_id,
+            entity2_id=entity2_id,
+            similarity_score=similarity_score,
+        )
         
         try:
             # Get available models

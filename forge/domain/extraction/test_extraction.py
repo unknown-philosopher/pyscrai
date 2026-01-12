@@ -7,7 +7,7 @@ from forge.core.event_bus import EventBus
 from forge.domain.extraction.service import DocumentExtractionService
 from forge.core import events
 
-def print_entities(payload):
+async def print_entities(payload):
     print(f"[Test] Entity extraction result: {payload}")
 
 async def main():

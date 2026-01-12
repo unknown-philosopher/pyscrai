@@ -6,6 +6,7 @@ import flet as ft
 
 from forge.core.app_controller import AppController
 from forge.presentation.renderer import render_schema
+from forge.presentation.controllers.ingest_controller import IngestController
 
 
 def apply_shell_theme(page: ft.Page) -> None:
@@ -34,6 +35,9 @@ def _nav_destinations(items: List[dict]) -> List[ft.NavigationRailDestination]:
 def build_shell(page: ft.Page, controller: AppController) -> ft.View:
     apply_shell_theme(page)
 
+    # Initialize ingest controller
+    ingest_controller = IngestController(controller, page)
+
     # --- UI primitives ---
     nav_rail = ft.NavigationRail(
         label_type=ft.NavigationRailLabelType.ALL,
@@ -48,6 +52,12 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
     status_text = ft.Text(controller.status_text.value, color=ft.Colors.WHITE70)
 
     ag_feed = ft.ListView(spacing=8, auto_scroll=True)
+
+    # Content container that switches based on navigation
+    content_container = ft.Container(
+        expand=True,
+        content=ingest_controller.build_view(),  # Default to ingest view
+    )
 
     workspace = ft.Column(
         controls=[ft.Text("Awaiting Intel", color=ft.Colors.WHITE70)],
@@ -111,7 +121,34 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
             idx = rail.selected_index  # type: ignore[attr-defined]
             items = controller.nav_items.value
             if 0 <= idx < len(items):
-                controller.set_nav_selected(items[idx].get("id", ""))
+                nav_id = items[idx].get("id", "")
+                controller.set_nav_selected(nav_id)
+                
+                # Switch content based on navigation
+                if nav_id == "ingest":
+                    content_container.content = ingest_controller.build_view()
+                elif nav_id == "graph":
+                    content_container.content = ft.Container(
+                        padding=20,
+                        content=ft.Column([
+                            ft.Text("Graph View", size=24, weight=ft.FontWeight.W_700, color=ft.Colors.WHITE),
+                            ft.Divider(color="rgba(255, 255, 255, 0.1)"),
+                            ft.Text("Interactive graph visualization coming soon...", color=ft.Colors.WHITE70),
+                        ])
+                    )
+                elif nav_id == "intel":
+                    # Show workspace for intelligence view
+                    content_container.content = ft.Container(
+                        padding=20,
+                        content=ft.Column([
+                            ft.Row([
+                                ft.Icon(ft.Icons.PSYCHOLOGY, size=32, color=ft.Colors.CYAN_300),
+                                ft.Text("Intelligence Dashboard", size=24, weight=ft.FontWeight.W_700, color=ft.Colors.WHITE),
+                            ], spacing=12),
+                            ft.Divider(color="rgba(255, 255, 255, 0.1)"),
+                            workspace,
+                        ], spacing=12, scroll=ft.ScrollMode.AUTO)
+                    )
         page.update()
 
     nav_rail.on_change = _on_nav_change  # type: ignore[assignment]
@@ -153,8 +190,8 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
                                 [
                                     ft.Container(
                                         expand=2,
-                                        content=workspace,
-                                        padding=12,
+                                        content=content_container,
+                                        padding=0,
                                         bgcolor="rgba(255,255,255,0.04)",
                                         border_radius=12,
                                     ),

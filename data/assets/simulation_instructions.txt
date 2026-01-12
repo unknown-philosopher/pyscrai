@@ -1,0 +1,69 @@
+metadata:
+  scenario_id: VZ_DECAP_2026_01_03
+  timestamp: "2026-01-03T11:45:00Z"
+  status: ACTIVE_CRISIS
+  engine_target: PyScrAI_Forge
+
+global_state:
+  operational_theater: Venezuela / Caribbean
+  primary_event: "Capture of Nicolás Maduro and Cilia Flores by U.S. Joint Special Operations Command (JSOC)"
+  legal_status: Foreign Terrorist Organization (FTO) designation active for 'Cartel of the Suns'
+  intervention_type: Kinetic Decapitation Strike / Narco-Terrorism Indictment Enforcement
+
+factions:
+  united_states:
+    leadership:
+      president: "Donald J. Trump"
+      secretary_of_state: "Marco Rubio"
+      attorney_general: "Pam Bondi"
+      envoy_lead: "Christopher Landau (Deputy SecState)"
+    military_assets:
+      naval: ["USS Iwo Jima (Holding High-Value Targets)", "USS Gerald R. Ford (Carrier Strike Group)"]
+      ground: "JSOC / Delta Force (Extraction Units)"
+    strategic_objective: "Transition to recognized Edmundo González/Machado government; dismantle Cartel of the Suns."
+
+  venezuela_regime_remnant:
+    kingmaker: 
+      name: "Vladimir Padrino López"
+      role: "Minister of Defense / FANB Commander"
+      current_stance: "DECLARED RESISTANCE / STATE OF EMERGENCY"
+      location: "Fuerte Tiuna (Emergency Command)"
+    political_successor:
+      name: "Delcy Rodríguez"
+      claim: "Constitutional Successor (VP)"
+      status: "Diplomatic Outreach / UN Appeals"
+    militant_wildcard:
+      name: "Diosdado Cabello"
+      assets: "Colectivos / PSUV Paramilitary"
+      threat_level: "CRITICAL (Street Violence/Asymmetric Response)"
+
+  venezuela_opposition:
+    political_leads: ["María Corina Machado", "Edmundo González"]
+    current_status: "Coordinating transition protocols; calling for FANB neutrality."
+
+key_locations:
+  fuerte_tiuna:
+    status: "RED (Fortified / Emergency Command Active)"
+    controlled_by: "Padrino López"
+  la_carlota_airbase:
+    status: "GREY (Disabled via U.S. Airstrikes)"
+    controlled_by: "Contested / Neutralized"
+  miraflores_palace:
+    status: "YELLOW (Evacuated / Symbolic Value)"
+    controlled_by: "Presidential Guard"
+  uss_iwo_jima:
+    status: "BLUE (Mobile High-Security Prison)"
+    contents: ["Nicolás Maduro", "Cilia Flores"]
+
+simulation_triggers:
+  - id: PADRINO_CHOICE
+    logic: "If Padrino_Lopez moves to Path_B (Negotiation), then Regime_Collapse = TRUE"
+  - id: COLECTIVO_ACTIVATION
+    logic: "If Cabello issues 'Plan Zamora', then Urban_Chaos = 100%"
+  - id: CUBAN_RESPONSE
+    logic: "If Cuban_Advisors > 10000 and aggression_detected, then Regional_Escalation = TRUE"
+
+pathways:
+  path_1_velvet: "Negotiated immunity for Padrino leads to peaceful entry of Machado."
+  path_2_fragmentation: "Regional FANB commanders seize gold/drug routes; civil war scenario."
+  path_3_junta: "Padrino/Cabello discard civilian leadership and establish a Narco-Military State."

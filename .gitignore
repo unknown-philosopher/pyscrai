@@ -5,7 +5,9 @@ world.db
 .vscode/
 
 .env
-
+*.duckdb
+*.wal
+data/_deprecated
 
 /data/projects/archive
 user_config.json

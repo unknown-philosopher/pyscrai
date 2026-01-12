@@ -14,6 +14,7 @@ from typing import Dict, Any, List, Optional
 from forge.core.event_bus import EventBus, EventPayload
 from forge.core import events
 from forge.infrastructure.llm.base import LLMProvider
+from forge.config.prompts import render_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +46,11 @@ class SemanticProfilerService:
         """Start the service and subscribe to events."""
         logger.info("Starting SemanticProfilerService")
         
-        # Subscribe to entity merged and relationship found events
+        # Subscribe to entity merged and graph updated events
+        # Use TOPIC_GRAPH_UPDATED instead of TOPIC_RELATIONSHIP_FOUND to ensure
+        # entities are persisted to the database before generating profiles
         await self.event_bus.subscribe(events.TOPIC_ENTITY_MERGED, self.handle_entity_merged)
-        await self.event_bus.subscribe(events.TOPIC_RELATIONSHIP_FOUND, self.handle_relationship_found)
+        await self.event_bus.subscribe(events.TOPIC_GRAPH_UPDATED, self.handle_graph_updated)
         
         logger.info("SemanticProfilerService started")
     
@@ -63,18 +66,25 @@ class SemanticProfilerService:
             # Generate new profile
             await self.generate_profile(kept_entity)
     
-    async def handle_relationship_found(self, payload: EventPayload):
-        """Handle relationship found events by updating affected entity profiles."""
-        relationships = payload.get("relationships", [])
+    async def handle_graph_updated(self, payload: EventPayload):
+        """Handle graph updated events by generating profiles for new entities.
         
-        # Extract unique entities
-        entities = set()
-        for rel in relationships:
-            entities.add(rel.get("source", ""))
-            entities.add(rel.get("target", ""))
+        This is called after entities are persisted to the database, so we can
+        safely query them.
+        """
+        graph_stats = payload.get("graph_stats", {})
+        nodes = graph_stats.get("nodes", [])
         
-        # Generate profiles for affected entities
-        for entity_id in entities:
+        # Extract unique entity IDs from the graph nodes
+        entity_ids = set()
+        for node in nodes:
+            entity_id = node.get("id")
+            if entity_id:
+                entity_ids.add(entity_id)
+        
+        # Generate profiles for all entities in the graph update
+        # This ensures entities are in the database before we query them
+        for entity_id in entity_ids:
             if entity_id:
                 await self.generate_profile(entity_id)
     
@@ -249,20 +259,8 @@ Relationships ({len(relationships)} total):
         Returns:
             Profile dictionary with summary, attributes, importance, etc.
         """
-        prompt = f"""You are an expert knowledge graph analyst. Generate a concise semantic profile for the following entity.
-
-{context}
-
-Generate a JSON response with the following structure:
-{{
-  "summary": "A 1-2 sentence summary of what this entity is and its significance",
-  "attributes": ["list", "of", "key", "attributes"],
-  "importance": <integer 1-10 rating of importance/centrality>,
-  "key_relationships": ["list of most important relationship types"],
-  "confidence": <float 0-1 confidence in this analysis>
-}}
-
-Respond with ONLY the JSON, no additional text."""
+        # Render prompt using Jinja2 template
+        prompt = render_prompt("semantic_profiler", context=context)
         
         content = ""
         try:

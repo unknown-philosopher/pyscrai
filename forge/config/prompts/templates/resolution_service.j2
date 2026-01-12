@@ -1,0 +1,43 @@
+Analyze the following document and extract relationships between the entities listed below.
+
+Document:
+{{ document_content }}
+
+Extracted Entities:
+{% for entity in entities -%}
+- {{ entity.text }} ({{ entity.type }})
+{% endfor %}
+
+Extract ALL relationships that are explicitly mentioned or strongly implied in the document. For each relationship, provide:
+- source: The source entity name (exactly as listed above)
+- target: The target entity name (exactly as listed above)
+- type: The relationship type. Use specific types such as:
+  * WORKS_AT / MEMBER_OF / PART_OF (for organizational membership)
+  * LOCATED_AT / OPERATED_AT / BASED_AT (for location relationships)
+  * RECEIVED_FROM / TRANSFERRED_TO / SENT_TO (for transactions)
+  * COMMANDED_BY / REPORTS_TO / UNDER (for hierarchy)
+  * ASSOCIATED_WITH / RELATED_TO (for general associations)
+  * STATUS / CONDITION (for states like "under siege")
+- confidence: A confidence score from 0.0 to 1.0 based on how explicit the relationship is in the text
+  * 0.9-1.0: Explicitly stated (e.g., "of the", "within the", "at")
+  * 0.7-0.89: Strongly implied from context
+  * 0.5-0.69: Weakly implied
+  * Below 0.5: Do not include
+
+IMPORTANT:
+- Only extract relationships that are actually mentioned or clearly implied in the document
+- Do NOT create relationships just because entities appear together
+- Use the exact entity names as they appear in the entity list above
+- If an entity has multiple names/aliases, use the primary name from the entity list
+
+Return a JSON array of relationships:
+[
+  {
+    "source": "Entity Name",
+    "target": "Entity Name",
+    "type": "RELATIONSHIP_TYPE",
+    "confidence": 0.85
+  }
+]
+
+Respond with ONLY the JSON array, no additional text or explanation.

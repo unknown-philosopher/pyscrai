@@ -65,10 +65,6 @@ def render_semantic_profile(schema: Dict[str, Any]) -> ft.Control:
         )
     
     return ft.Container(
-        bgcolor="rgba(255, 255, 255, 0.05)",
-        padding=16,
-        border_radius=12,
-        border=ft.border.all(1, "rgba(100, 200, 255, 0.3)"),
         content=ft.Column(
             [
                 # Header with entity ID and importance
@@ -96,7 +92,6 @@ def render_semantic_profile(schema: Dict[str, Any]) -> ft.Control:
                     ],
                     spacing=8,
                 ),
-                
                 # Summary
                 ft.Container(
                     content=ft.Text(
@@ -107,7 +102,6 @@ def render_semantic_profile(schema: Dict[str, Any]) -> ft.Control:
                     ),
                     padding=ft.padding.only(top=8, bottom=8),
                 ),
-                
                 # Attributes
                 ft.Column(
                     [
@@ -125,7 +119,6 @@ def render_semantic_profile(schema: Dict[str, Any]) -> ft.Control:
                     ],
                     spacing=6,
                 ) if attributes else ft.Container(),
-                
                 # Key Relationships
                 ft.Column(
                     [
@@ -139,7 +132,6 @@ def render_semantic_profile(schema: Dict[str, Any]) -> ft.Control:
                     ],
                     spacing=6,
                 ) if key_relationships else ft.Container(),
-                
                 # Confidence footer
                 ft.Row(
                     [
@@ -155,6 +147,10 @@ def render_semantic_profile(schema: Dict[str, Any]) -> ft.Control:
             ],
             spacing=12,
         ),
+        bgcolor="rgba(255, 255, 255, 0.05)",
+        padding=16,
+        border_radius=12,
+        border=ft.border.all(1, "rgba(100, 200, 255, 0.3)"),
     )
 
 

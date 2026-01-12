@@ -118,6 +118,11 @@ class NarrativeSynthesisServiceTest(unittest.IsolatedAsyncioTestCase):
     
     def _create_schema(self):
         """Create database schema for testing."""
+        # Create sequence for relationship IDs
+        self.db_conn.execute("""
+            CREATE SEQUENCE IF NOT EXISTS rel_seq START 1
+        """)
+        
         self.db_conn.execute("""
             CREATE TABLE IF NOT EXISTS entities (
                 id VARCHAR PRIMARY KEY,
@@ -129,7 +134,7 @@ class NarrativeSynthesisServiceTest(unittest.IsolatedAsyncioTestCase):
         """)
         self.db_conn.execute("""
             CREATE TABLE IF NOT EXISTS relationships (
-                id INTEGER PRIMARY KEY,
+                id INTEGER PRIMARY KEY DEFAULT nextval('rel_seq'),
                 source VARCHAR NOT NULL,
                 target VARCHAR NOT NULL,
                 type VARCHAR NOT NULL,

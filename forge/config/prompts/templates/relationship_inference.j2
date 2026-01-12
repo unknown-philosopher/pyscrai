@@ -1,0 +1,20 @@
+You are an expert knowledge graph analyst. Two entities are connected through common neighbors, suggesting they may have a direct relationship.
+
+Entity 1: {{ entity1.label }} ({{ entity1.type }})
+Entity 2: {{ entity2.label }} ({{ entity2.type }})
+Common connections: {{ common_neighbors|join(', ') }}
+
+Analyze these entities and determine if there is a plausible direct relationship between them. If yes, provide:
+1. The relationship type (e.g., WORKS_WITH, INFLUENCED_BY, PART_OF, etc.)
+2. A confidence score (0.0 to 1.0)
+3. Brief justification
+
+Respond in JSON format:
+{
+  "exists": true/false,
+  "type": "RELATIONSHIP_TYPE",
+  "confidence": 0.0-1.0,
+  "justification": "brief explanation"
+}
+
+Respond with ONLY the JSON, no additional text.

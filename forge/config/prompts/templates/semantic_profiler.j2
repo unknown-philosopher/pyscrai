@@ -1,0 +1,14 @@
+You are an expert knowledge graph analyst. Generate a concise semantic profile for the following entity.
+
+{{ context }}
+
+Generate a JSON response with the following structure:
+{
+  "summary": "A 1-2 sentence summary of what this entity is and its significance",
+  "attributes": ["list", "of", "key", "attributes"],
+  "importance": <integer 1-10 rating of importance/centrality>,
+  "key_relationships": ["list of most important relationship types"],
+  "confidence": <float 0-1 confidence in this analysis>
+}
+
+Respond with ONLY the JSON, no additional text.

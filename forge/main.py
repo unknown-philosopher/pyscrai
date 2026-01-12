@@ -5,7 +5,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
+from pathlib import Path
 
+from dotenv import load_dotenv
 
 import flet as ft
 from forge.core.app_controller import AppController
@@ -14,6 +16,18 @@ from forge.domain.extraction.service import DocumentExtractionService
 from forge.domain.resolution.service import EntityResolutionService
 from forge.domain.graph.service import GraphAnalysisService
 from forge.infrastructure.persistence.duckdb_service import DuckDBPersistenceService
+from forge.infrastructure.embeddings.embedding_service import EmbeddingService
+from forge.infrastructure.vector.qdrant_service import QdrantService
+from forge.domain.resolution.deduplication_service import DeduplicationService
+from forge.domain.intelligence.semantic_profiler import SemanticProfilerService
+from forge.domain.intelligence.narrative_service import NarrativeSynthesisService
+from forge.domain.graph.advanced_analyzer import AdvancedGraphAnalysisService
+from forge.infrastructure.llm.provider_factory import ProviderFactory
+import duckdb
+
+# Load environment variables from .env file in project root
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,13 +43,22 @@ async def init_services(controller: AppController) -> None:
     await controller.start()
     logger.info("AppController started")
 
-    # Initialize and start DocumentExtractionService
-    extraction_service = DocumentExtractionService(controller.bus)
+    # Initialize LLM provider early (needed for extraction and intelligence services)
+    try:
+        llm_provider, _ = ProviderFactory.create_from_env()
+        logger.info("LLM provider initialized")
+    except Exception as e:
+        logger.warning(f"Could not initialize LLM provider from environment: {e}")
+        logger.warning("Some services may not function correctly without LLM provider")
+        llm_provider = None
+
+    # Initialize and start DocumentExtractionService (needs LLM provider)
+    extraction_service = DocumentExtractionService(controller.bus, llm_provider)
     await extraction_service.start()
     logger.info("DocumentExtractionService started")
 
-    # Initialize and start EntityResolutionService
-    resolution_service = EntityResolutionService(controller.bus)
+    # Initialize and start EntityResolutionService (needs LLM provider)
+    resolution_service = EntityResolutionService(controller.bus, llm_provider)
     await resolution_service.start()
     logger.info("EntityResolutionService started")
 
@@ -48,6 +71,69 @@ async def init_services(controller: AppController) -> None:
     persistence_service = DuckDBPersistenceService(controller.bus)
     await persistence_service.start()
     logger.info("DuckDBPersistenceService started")
+
+    # Initialize and start EmbeddingService
+    embedding_service = EmbeddingService(controller.bus)
+    await embedding_service.start()
+    logger.info("EmbeddingService started")
+
+    # Initialize and start QdrantService
+    qdrant_service = QdrantService(controller.bus)
+    await qdrant_service.start()
+    logger.info("QdrantService started")
+
+    # Open DuckDB connection for intelligence services
+    db_connection = duckdb.connect(persistence_service.db_path)
+    logger.info(f"Database connection opened: {persistence_service.db_path}")
+
+    # Initialize and start DeduplicationService (requires LLM provider)
+    if llm_provider:
+        deduplication_service = DeduplicationService(
+            controller.bus,
+            qdrant_service,
+            llm_provider,
+            db_connection
+        )
+        await deduplication_service.start()
+        logger.info("DeduplicationService started")
+    else:
+        logger.warning("DeduplicationService not started: LLM provider unavailable")
+
+    # Initialize and start SemanticProfilerService (requires LLM provider)
+    if llm_provider:
+        profiler_service = SemanticProfilerService(
+            controller.bus,
+            llm_provider,
+            db_connection
+        )
+        await profiler_service.start()
+        logger.info("SemanticProfilerService started")
+    else:
+        logger.warning("SemanticProfilerService not started: LLM provider unavailable")
+
+    # Initialize and start NarrativeSynthesisService (requires LLM provider)
+    if llm_provider:
+        narrative_service = NarrativeSynthesisService(
+            controller.bus,
+            llm_provider,
+            db_connection
+        )
+        await narrative_service.start()
+        logger.info("NarrativeSynthesisService started")
+    else:
+        logger.warning("NarrativeSynthesisService not started: LLM provider unavailable")
+
+    # Initialize and start AdvancedGraphAnalysisService (requires LLM provider)
+    if llm_provider:
+        advanced_graph_service = AdvancedGraphAnalysisService(
+            controller.bus,
+            llm_provider,
+            db_connection
+        )
+        await advanced_graph_service.start()
+        logger.info("AdvancedGraphAnalysisService started")
+    else:
+        logger.warning("AdvancedGraphAnalysisService not started: LLM provider unavailable")
 
 
 def _run_async_init(controller: AppController) -> None:
@@ -69,9 +155,8 @@ def main(page: ft.Page) -> None:
     logger.info("Initializing PyScrAI Forge...")
 
     # Hide the top bar and make the window frameless/transparent
-    page.window.title_bar_hidden = True
-    page.window_frameless = True  # Correct property for frameless window
-    page.window.title = ""
+    page.window.title_bar_hidden = False
+    # page.window.title = "PyScrAI - Tyler Hamilton"
     page.window.bgcolor = ft.Colors.TRANSPARENT  # Use capital 'C'
     page.bgcolor = ft.Colors.TRANSPARENT         # Use capital 'C'
 

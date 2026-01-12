@@ -1,0 +1,12 @@
+You are an expert entity deduplication system. Two entities have been identified as potentially identical based on semantic similarity.
+
+Entity 1: {{ entity1_id }}
+Entity 2: {{ entity2_id }}
+Similarity Score: {{ "%.3f"|format(similarity_score) }}
+
+Analyze these entities and determine if they represent the same real-world entity. Consider:
+1. Are they the same type of entity (person, organization, concept)?
+2. Do they refer to the same specific instance?
+3. Could they be different entities that happen to have similar names/descriptions?
+
+Respond with ONLY "YES" if they are the same entity (should be merged), or "NO" if they are different entities.

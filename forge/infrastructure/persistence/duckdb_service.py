@@ -16,11 +16,23 @@ class DuckDBPersistenceService:
     
     def __init__(self, event_bus: EventBus, db_path: Optional[str] = None):
         self.event_bus = event_bus
-        self.db_path = db_path or "forge_data.duckdb"
+        # Default to data/db/forge_data.duckdb relative to project root
+        if db_path is None:
+            # Get project root (assuming this file is in forge/infrastructure/persistence/)
+            project_root = Path(__file__).parent.parent.parent.parent
+            db_dir = project_root / "data" / "db"
+            db_dir.mkdir(parents=True, exist_ok=True)
+            self.db_path = str(db_dir / "forge_data.duckdb")
+        else:
+            self.db_path = db_path
         self.conn: Optional[duckdb.DuckDBPyConnection] = None
     
     async def start(self):
         """Initialize database schema and subscribe to graph events."""
+        # Ensure directory exists
+        db_path_obj = Path(self.db_path)
+        db_path_obj.parent.mkdir(parents=True, exist_ok=True)
+        
         # Initialize database connection
         self.conn = duckdb.connect(self.db_path)
         self._create_schema()
@@ -53,6 +65,8 @@ class DuckDBPersistenceService:
         """)
         
         # Relationships table
+        # Note: DuckDB doesn't support ON DELETE CASCADE in FOREIGN KEY constraints
+        # The deduplication service manually updates relationships before deleting entities
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS relationships (
                 id INTEGER PRIMARY KEY DEFAULT nextval('rel_seq'),
@@ -89,22 +103,29 @@ class DuckDBPersistenceService:
         nodes = graph_stats.get("nodes", [])
         edges = graph_stats.get("edges", [])
         
-        # Insert/update entities
+        # Insert entities (only if they don't exist)
+        # Note: Using INSERT OR IGNORE to avoid foreign key constraint violations
+        # DuckDB's UPDATE operations can cause issues when entities are referenced by relationships
+        # For now, we only insert new entities and skip updates to existing ones
         for node in nodes:
             node_id = node.get("id")
             node_type = node.get("type")
             label = node.get("label")
             
             if node_id and node_type and label:
-                # Upsert entity
-                self.conn.execute("""
-                    INSERT INTO entities (id, type, label)
-                    VALUES (?, ?, ?)
-                    ON CONFLICT (id) DO UPDATE SET
-                        type = EXCLUDED.type,
-                        label = EXCLUDED.label,
-                        updated_at = NOW()
-                """, (node_id, node_type, label))
+                # Only insert if entity doesn't exist
+                # Using a try/except approach since DuckDB doesn't support INSERT OR IGNORE directly
+                result = self.conn.execute(
+                    "SELECT id FROM entities WHERE id = ?",
+                    (node_id,)
+                ).fetchone()
+                
+                if not result:
+                    # Entity doesn't exist, insert it
+                    self.conn.execute("""
+                        INSERT INTO entities (id, type, label)
+                        VALUES (?, ?, ?)
+                    """, (node_id, node_type, label))
         
         # Insert relationships (append only for now)
         for edge in edges:
@@ -192,6 +213,27 @@ class DuckDBPersistenceService:
             }
             for row in result
         ]
+    
+    def clear_all_data(self):
+        """Clear all entities and relationships from the database."""
+        if not self.conn:
+            return
+        
+        try:
+            # Delete relationships first (due to foreign key constraints)
+            self.conn.execute("DELETE FROM relationships")
+            # Then delete entities
+            self.conn.execute("DELETE FROM entities")
+            # Reset sequence
+            self.conn.execute("ALTER SEQUENCE rel_seq RESTART WITH 1")
+            self.conn.commit()
+            logger = __import__("logging").getLogger(__name__)
+            logger.info("Database cleared: all entities and relationships removed")
+        except Exception as e:
+            logger = __import__("logging").getLogger(__name__)
+            logger.error(f"Error clearing database: {e}")
+            if self.conn:
+                self.conn.rollback()
     
     def close(self):
         """Close database connection."""

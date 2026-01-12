@@ -13,6 +13,7 @@ from typing import Dict, Any, List, Optional
 from forge.core.event_bus import EventBus, EventPayload
 from forge.core import events
 from forge.infrastructure.llm.base import LLMProvider
+from forge.config.prompts import render_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -228,23 +229,8 @@ class NarrativeSynthesisService:
         Returns:
             Generated narrative markdown text
         """
-        prompt = f"""You are an expert knowledge analyst. Generate a clear, insightful narrative from the following knowledge graph extracted from a document.
-
-{context}
-
-Generate a well-structured narrative in Markdown format that includes:
-
-1. **NARRATIVE** - A natural language summary (2-3 paragraphs) explaining:
-   - What the document is about
-   - Key entities and their significance
-   - Important relationships and patterns
-   - Main insights or conclusions
-
-2. **KEY ENTITIES** - List the most important entities with brief descriptions and importance ratings
-
-3. **EVIDENCE CHAIN** - Show the chain of evidence/relationships that support the main narrative
-
-Write clearly and concisely. Focus on insights, not just listing facts."""
+        # Render prompt using Jinja2 template
+        prompt = render_prompt("narrative_service", context=context)
         
         try:
             # Get available models

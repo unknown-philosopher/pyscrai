@@ -13,6 +13,7 @@ import asyncio
 import logging
 from typing import List, Dict, Any, Optional, NamedTuple
 from dataclasses import dataclass
+from uuid import UUID, uuid5, NAMESPACE_DNS
 
 from forge.core.event_bus import EventBus, EventPayload
 from forge.core import events
@@ -54,6 +55,20 @@ class QdrantService:
         # Client will be lazy-loaded
         self._client = None
         self._initialized = False
+    
+    @staticmethod
+    def _string_to_uuid(string_id: str) -> UUID:
+        """Convert a string ID to a UUID using deterministic hashing.
+        
+        Args:
+            string_id: String identifier (e.g., "PERSON:Alice")
+            
+        Returns:
+            UUID object
+        """
+        # Use uuid5 (SHA-1 based) for deterministic UUID generation
+        # This ensures the same string always maps to the same UUID
+        return uuid5(NAMESPACE_DNS, string_id)
         
     @property
     def client(self):
@@ -61,11 +76,16 @@ class QdrantService:
         if self._client is None:
             try:
                 from qdrant_client import QdrantClient
-                logger.info(f"Connecting to Qdrant at {self.url}")
-                self._client = QdrantClient(
-                    url=self.url,
-                    api_key=self.api_key,
-                )
+                logger.info(f"Connecting to Qdrant (in-memory mode: {self.url == ':memory:'})")
+                
+                # Use location=":memory:" parameter for in-memory mode
+                if self.url == ":memory:":
+                    self._client = QdrantClient(location=":memory:")
+                else:
+                    self._client = QdrantClient(
+                        url=self.url,
+                        api_key=self.api_key,
+                    )
                 logger.info("Connected to Qdrant successfully")
             except ImportError:
                 logger.error("qdrant-client not installed. Run: pip install qdrant-client")
@@ -150,8 +170,11 @@ class QdrantService:
         """
         from qdrant_client.models import PointStruct
         
+        # Convert string ID to UUID for Qdrant
+        uuid_id = self._string_to_uuid(entity_id)
+        
         point = PointStruct(
-            id=entity_id,
+            id=uuid_id,
             vector=embedding,
             payload={
                 "entity_id": entity_id,
@@ -185,8 +208,11 @@ class QdrantService:
         """
         from qdrant_client.models import PointStruct
         
+        # Convert string ID to UUID for Qdrant
+        uuid_id = self._string_to_uuid(relationship_id)
+        
         point = PointStruct(
-            id=relationship_id,
+            id=uuid_id,
             vector=embedding,
             payload={
                 "relationship_id": relationship_id,

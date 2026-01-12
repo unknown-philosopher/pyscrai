@@ -35,7 +35,7 @@ PROVIDER_ENV_MAP: dict[str, dict[str, str]] = {
     ProviderType.OPENROUTER.value: {
         "api_key": "OPENROUTER_API_KEY",
         "base_url": "OPENROUTER_BASE_URL",
-        "model": "OPENROUTER_DEFAULT_MODEL",
+        "model": "OPENROUTER_MODEL",  # Also supports OPENROUTER_DEFAULT_MODEL for backwards compatibility
     },
     ProviderType.CHERRY.value: {
         "api_key": "CHERRY_API_KEY",
@@ -75,6 +75,9 @@ class ProviderFactory:
     def get_default_model() -> str | None:
         """Get the default model for the configured provider."""
         provider_name = ProviderFactory.get_default_provider_name()
+        # Support both OPENROUTER_MODEL and OPENROUTER_DEFAULT_MODEL for backwards compatibility
+        if provider_name == ProviderType.OPENROUTER.value:
+            return os.getenv("OPENROUTER_MODEL") or os.getenv("OPENROUTER_DEFAULT_MODEL")
         env_map = PROVIDER_ENV_MAP.get(provider_name, {})
         model_var = env_map.get("model")
         return os.getenv(model_var) if model_var else None
@@ -163,7 +166,11 @@ class ProviderFactory:
         
         api_key = os.getenv(env_map["api_key"]) if env_map.get("api_key") else None
         base_url = os.getenv(env_map["base_url"]) if env_map.get("base_url") else None
-        model = os.getenv(env_map["model"]) if env_map.get("model") else None
+        # Support both OPENROUTER_MODEL and OPENROUTER_DEFAULT_MODEL for backwards compatibility
+        if provider_name == ProviderType.OPENROUTER.value:
+            model = os.getenv("OPENROUTER_MODEL") or os.getenv("OPENROUTER_DEFAULT_MODEL")
+        else:
+            model = os.getenv(env_map["model"]) if env_map.get("model") else None
         
         provider = ProviderFactory.create(
             provider_name,

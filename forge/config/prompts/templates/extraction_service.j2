@@ -1,0 +1,17 @@
+Extract all named entities from the following document. Identify people, organizations, locations, and other significant entities.
+
+Document:
+{{ content }}
+
+Return a JSON array of entities, where each entity has:
+- "type": One of PERSON, ORG, LOCATION, EVENT, or OTHER
+- "text": The exact text/name of the entity as it appears in the document
+
+Example format:
+[
+  {"type": "PERSON", "text": "John Smith"},
+  {"type": "ORG", "text": "Acme Corp"},
+  {"type": "LOCATION", "text": "New York"}
+]
+
+Respond with ONLY the JSON array, no additional text or explanation.
