@@ -21,8 +21,12 @@ from forge.infrastructure.vector.qdrant_service import QdrantService
 from forge.domain.resolution.deduplication_service import DeduplicationService
 from forge.domain.intelligence.semantic_profiler import SemanticProfilerService
 from forge.domain.intelligence.narrative_service import NarrativeSynthesisService
+from forge.domain.intelligence.streaming_service import IntelligenceStreamingService
 from forge.domain.graph.advanced_analyzer import AdvancedGraphAnalysisService
+from forge.domain.interaction.workflow_service import UserInteractionWorkflowService
+from forge.infrastructure.export.export_service import ExportService
 from forge.infrastructure.llm.provider_factory import ProviderFactory
+from forge.presentation.renderer import set_event_bus
 import duckdb
 
 # Load environment variables from .env file in project root
@@ -134,6 +138,24 @@ async def init_services(controller: AppController) -> None:
         logger.info("AdvancedGraphAnalysisService started")
     else:
         logger.warning("AdvancedGraphAnalysisService not started: LLM provider unavailable")
+    
+    # Initialize and start UserInteractionWorkflowService
+    workflow_service = UserInteractionWorkflowService(controller.bus)
+    await workflow_service.start()
+    logger.info("UserInteractionWorkflowService started")
+    
+    # Initialize and start IntelligenceStreamingService
+    streaming_service = IntelligenceStreamingService(controller.bus)
+    await streaming_service.start()
+    logger.info("IntelligenceStreamingService started")
+    
+    # Initialize ExportService (no async start needed)
+    export_service = ExportService(db_connection)
+    logger.info("ExportService initialized")
+    
+    # Set event bus in renderer for component actions
+    set_event_bus(controller.bus)
+    logger.info("Event bus set in renderer")
 
 
 def _run_async_init(controller: AppController) -> None:

@@ -40,6 +40,7 @@ class AdvancedGraphAnalysisService:
         self.event_bus = event_bus
         self.llm_provider = llm_provider
         self.db_conn = db_connection
+        self.service_name = "AdvancedGraphAnalysisService"
         
         # Cache analysis results
         self._analysis_cache: Dict[str, Dict[str, Any]] = {}
@@ -394,9 +395,15 @@ class AdvancedGraphAnalysisService:
         )
         
         try:
-            # Get available models
-            models = await self.llm_provider.list_models()
-            model = models[0].id if models else self.llm_provider.default_model or ""
+            # Prefer default_model over first available model
+            model = self.llm_provider.default_model
+            if not model:
+                models = await self.llm_provider.list_models()
+                model = models[0].id if models else ""
+            if not model:
+                logger.error(f"{self.service_name}: No model available for LLM call")
+                return None
+            logger.info(f"{self.service_name}: Using model '{model}' for relationship inference")
             
             # Use rate limiter for LLM call
             rate_limiter = get_rate_limiter()

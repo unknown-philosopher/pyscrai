@@ -33,6 +33,10 @@ setup(
         "pypdf>=4.0.0",
         "beautifulsoup4>=4.12.0",
         "rich>=13.0.0",
+
+        # Pytesting
+         "pytest-asyncio==1.3.0",
+         
     ],
     python_requires=">=3.12",
 )

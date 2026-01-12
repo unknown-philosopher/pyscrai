@@ -89,15 +89,39 @@ async def call_llm_with_retry(
         ValueError: If no model is available
         Exception: If LLM call fails after retries
     """
-    # Get model if not provided
+    # Get model if not provided - prefer default_model over first available
     if model is None:
-        models = await llm_provider.list_models()
-        model = models[0].id if models else llm_provider.default_model
+        logger.debug(f"{service_name}: No model provided, checking default_model: '{llm_provider.default_model}'")
+        model = llm_provider.default_model
+        if not model:
+            logger.warning(f"{service_name}: No default_model set, falling back to first available model")
+            # Fallback to first available model if no default
+            models = await llm_provider.list_models()
+            model = models[0].id if models else None
+            if model:
+                logger.info(f"{service_name}: Selected first available model: '{model}'")
         if not model:
             raise ValueError(f"{service_name}: No model available for LLM call")
     
+    # Log the model being used
+    logger.info(f"{service_name}: Using model '{model}' for LLM call")
+    if llm_provider.default_model and model != llm_provider.default_model:
+        logger.warning(
+            f"{service_name}: Model '{model}' differs from default_model '{llm_provider.default_model}'"
+        )
+    elif llm_provider.default_model:
+        logger.debug(f"{service_name}: Using default_model '{model}' as expected")
+    
     # Create LLM call function
     async def _make_llm_call():
+        # Log the exact payload being sent
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        logger.debug(f"{service_name}: Sending LLM request with payload: {payload}")
         return await llm_provider.complete(
             messages=[{"role": "user", "content": prompt}],
             model=model,

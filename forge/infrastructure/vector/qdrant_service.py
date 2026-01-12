@@ -286,20 +286,61 @@ class QdrantService:
         Returns:
             List of (entity1_id, entity2_id, similarity_score) tuples
         """
-        # Get all entity points
+        # Get all entity points with error handling
         loop = asyncio.get_event_loop()
         
-        # Scroll through all entities
-        scroll_result = await loop.run_in_executor(
-            None,
-            lambda: self.client.scroll(
-                collection_name="entities",
-                limit=1000,  # Adjust based on expected entity count
-                with_vectors=True
-            )
-        )
-        
-        points = scroll_result[0]
+        points = []
+        try:
+            # Use pagination to safely scroll through all entities
+            # This avoids IndexError when collection state changes during scroll
+            offset = None
+            limit = 100  # Smaller batches to reduce risk of index mismatches
+            
+            while True:
+                try:
+                    # Capture offset in closure to avoid lambda closure issues
+                    current_offset = offset
+                    scroll_result = await loop.run_in_executor(
+                        None,
+                        lambda: self.client.scroll(
+                            collection_name="entities",
+                            limit=limit,
+                            offset=current_offset,
+                            with_vectors=True
+                        )
+                    )
+                    
+                    batch_points, next_offset = scroll_result
+                    
+                    if not batch_points:
+                        break
+                    
+                    points.extend(batch_points)
+                    
+                    # Check if we've reached the end
+                    if next_offset is None:
+                        break
+                    
+                    offset = next_offset
+                    
+                except IndexError as e:
+                    # Handle index out of bounds - collection may have changed
+                    logger.warning(
+                        f"IndexError during scroll (collection may have changed): {e}. "
+                        f"Collected {len(points)} points so far. Continuing with available data."
+                    )
+                    break
+                except Exception as e:
+                    logger.error(f"Error scrolling entities: {e}")
+                    # If we have some points, continue with what we have
+                    if points:
+                        logger.info(f"Continuing with {len(points)} points collected before error")
+                        break
+                    raise
+                    
+        except Exception as e:
+            logger.error(f"Failed to retrieve entities for deduplication: {e}")
+            return []
         
         if len(points) < 2:
             logger.info("Not enough entities for deduplication")

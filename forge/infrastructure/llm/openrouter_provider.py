@@ -57,6 +57,14 @@ class OpenRouterProvider(LLMProvider):
         
         super().__init__(api_key, base_url, timeout, app_name)
         self.default_model = default_model
+        
+        # Log the default model being set
+        import logging
+        logger = logging.getLogger(__name__)
+        if self.default_model:
+            logger.info(f"OpenRouterProvider initialized with default_model: '{self.default_model}'")
+        else:
+            logger.warning("OpenRouterProvider initialized without default_model - will use first available model")
         self._client: httpx.AsyncClient | None = None
         self._models_cache: list[ModelInfo] | None = None
         self._models_cache_time: float = 0
@@ -220,17 +228,34 @@ class OpenRouterProvider(LLMProvider):
         top_p: float = 1.0,
     ) -> dict:
         """Create a chat completion."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Log the request payload BEFORE sending
         data = {
             "model": model,
             "messages": messages,
             "temperature": temperature,
             "top_p": top_p,
         }
-        
         if max_tokens:
             data["max_tokens"] = max_tokens
         
-        return await self._post("/chat/completions", data)
+        logger.info(f"OpenRouterProvider.complete: Requesting model '{model}'")
+        logger.debug(f"OpenRouterProvider.complete: Request payload: {data}")
+        
+        response = await self._post("/chat/completions", data)
+        
+        # Log the response model (may differ from requested if OpenRouter substitutes)
+        response_model = response.get('model', 'N/A')
+        logger.info(f"OpenRouterProvider.complete: Requested model '{model}', Response model '{response_model}'")
+        if model != response_model:
+            logger.warning(
+                f"OpenRouterProvider.complete: Model mismatch! "
+                f"Requested '{model}' but received '{response_model}'"
+            )
+        logger.debug(f"OpenRouterProvider.complete: Full LLM response: {response}")
+        return response
     
     async def stream_complete(
         self,

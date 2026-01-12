@@ -188,7 +188,10 @@ class ProviderFactory:
                 )
                 if model:
                     provider.default_model = model
-                logger.info(f"ProviderFactory: Using provider '{prov}' with model '{model}'")
+                    logger.info(f"ProviderFactory: Set default_model to '{model}' on provider")
+                else:
+                    logger.warning(f"ProviderFactory: No model specified, provider.default_model is '{provider.default_model}'")
+                logger.info(f"ProviderFactory: Using provider '{prov}' with default_model '{provider.default_model}'")
                 return provider, model
             except Exception as e:
                 logger.warning(f"ProviderFactory: Failed to initialize provider '{prov}': {e}")

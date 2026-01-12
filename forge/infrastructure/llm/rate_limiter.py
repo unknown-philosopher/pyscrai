@@ -34,7 +34,7 @@ class RateLimiter:
             initial_retry_delay: Initial delay before retrying in seconds (default: 2.0, or LLM_RATE_LIMIT_RETRY_DELAY env var)
         """
         # More conservative defaults for free tier APIs
-        self.max_concurrent = max_concurrent or int(os.getenv("LLM_RATE_LIMIT_MAX_CONCURRENT", "1"))
+        self.max_concurrent = max_concurrent or int(os.getenv("LLM_RATE_LIMIT_MAX_CONCURRENT", "2"))
         self.min_delay = min_delay or float(os.getenv("LLM_RATE_LIMIT_MIN_DELAY", "2.0"))
         self.max_retries = max_retries or int(os.getenv("LLM_RATE_LIMIT_MAX_RETRIES", "3"))
         self.initial_retry_delay = initial_retry_delay or float(os.getenv("LLM_RATE_LIMIT_RETRY_DELAY", "3.0"))
