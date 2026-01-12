@@ -150,40 +150,52 @@ class ProviderFactory:
         timeout: float = 60.0,
         app_name: str = "Forge",
     ) -> tuple[LLMProvider, str | None]:
-        """Create provider from environment configuration.
-        
-        Returns:
-            Tuple of (provider, default_model)
-        """
+        """Create provider from environment configuration, with fallback to SECONDARY_PROVIDER and lm_proxy."""
+        import logging
+        logger = logging.getLogger(__name__)
+
         provider_name = ProviderFactory.get_default_provider_name()
-        env_map = PROVIDER_ENV_MAP.get(provider_name)
-        
-        if env_map is None:
-            raise ValueError(
-                f"Unsupported provider: {provider_name}. "
-                f"Supported: {list(PROVIDER_ENV_MAP.keys())}"
-            )
-        
-        api_key = os.getenv(env_map["api_key"]) if env_map.get("api_key") else None
-        base_url = os.getenv(env_map["base_url"]) if env_map.get("base_url") else None
-        # Support both OPENROUTER_MODEL and OPENROUTER_DEFAULT_MODEL for backwards compatibility
-        if provider_name == ProviderType.OPENROUTER.value:
-            model = os.getenv("OPENROUTER_MODEL") or os.getenv("OPENROUTER_DEFAULT_MODEL")
-        else:
-            model = os.getenv(env_map["model"]) if env_map.get("model") else None
-        
-        provider = ProviderFactory.create(
-            provider_name,
-            api_key=api_key,
-            base_url=base_url,
-            timeout=timeout,
-            app_name=app_name,
+        secondary_provider = os.getenv("SECONDARY_PROVIDER", None)
+        tried_providers = []
+
+        # Only use providers from .env, do not always fallback to lm_proxy unless set as secondary
+        provider_candidates = [provider_name]
+        if secondary_provider:
+            secondary_provider = secondary_provider.strip().lower().replace("-", "_")
+            if secondary_provider != provider_name:
+                provider_candidates.append(secondary_provider)
+
+        for prov in provider_candidates:
+            if prov in tried_providers:
+                continue
+            tried_providers.append(prov)
+            env_map = PROVIDER_ENV_MAP.get(prov)
+            if env_map is None:
+                continue
+            api_key = os.getenv(env_map["api_key"]) if env_map.get("api_key") else None
+            base_url = os.getenv(env_map["base_url"]) if env_map.get("base_url") else None
+            if prov == ProviderType.OPENROUTER.value:
+                model = os.getenv("OPENROUTER_MODEL") or os.getenv("OPENROUTER_DEFAULT_MODEL")
+            else:
+                model = os.getenv(env_map["model"]) if env_map.get("model") else None
+            try:
+                provider = ProviderFactory.create(
+                    prov,
+                    api_key=api_key,
+                    base_url=base_url,
+                    timeout=timeout,
+                    app_name=app_name,
+                )
+                if model:
+                    provider.default_model = model
+                logger.info(f"ProviderFactory: Using provider '{prov}' with model '{model}'")
+                return provider, model
+            except Exception as e:
+                logger.warning(f"ProviderFactory: Failed to initialize provider '{prov}': {e}")
+                continue
+        raise ValueError(
+            f"No valid LLM provider could be initialized. Tried: {tried_providers}"
         )
-        
-        if model:
-            provider.default_model = model
-        
-        return provider, model
 
 
 # ============================================================================

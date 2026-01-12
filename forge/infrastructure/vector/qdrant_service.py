@@ -275,6 +275,11 @@ class QdrantService:
     ) -> List[tuple[str, str, float]]:
         """Find potential duplicate entities.
         
+        Uses a more efficient algorithm that:
+        1. Only compares each pair once
+        2. Uses a set for O(1) duplicate checking
+        3. Limits comparisons to reduce false positives
+        
         Args:
             similarity_threshold: Minimum similarity to consider duplicates
             
@@ -295,9 +300,19 @@ class QdrantService:
         )
         
         points = scroll_result[0]
-        duplicates = []
         
-        # Check each entity against all others
+        if len(points) < 2:
+            logger.info("Not enough entities for deduplication")
+            return []
+        
+        # Use a set for O(1) duplicate pair checking
+        seen_pairs: set[tuple[str, str]] = set()
+        duplicates: list[tuple[str, str, float]] = []
+        
+        # Track entities we've already processed to avoid redundant comparisons
+        processed_entities: set[str] = set()
+        
+        # Check each entity against others
         for i, point in enumerate(points):
             vector = point.vector
             # Handle different vector formats
@@ -310,32 +325,60 @@ class QdrantService:
             
             if not vector or not isinstance(vector, list):
                 continue
-            
+                
             # Ensure we have a flat list of numbers
             try:
                 # Cast to List[float] for type checker
                 embedding: List[float] = [float(v) if not isinstance(v, list) else float(v[0]) for v in vector]
             except (TypeError, ValueError, IndexError):
                 continue
+            
+            payload = point.payload or {}
+            entity_id = payload.get("entity_id", str(point.id))
+            entity_type = payload.get("type", "")
+            
+            # Skip if we've already processed this entity as a query
+            if entity_id in processed_entities:
+                continue
                 
-            # Find similar entities
+            # Find similar entities (limit to top 5 to reduce false positives)
             similar = await self.find_similar_entities(
                 embedding=embedding,
-                limit=10,
+                limit=5,  # Reduced from 10 to reduce false positives
                 score_threshold=similarity_threshold
             )
             
             # Filter out self and create pairs
-            payload = point.payload or {}
-            entity_id = payload.get("entity_id", str(point.id))
             for sim in similar:
-                if sim.entity_id != entity_id and sim.score >= similarity_threshold:
-                    # Avoid duplicate pairs (A,B) and (B,A)
-                    pair = tuple(sorted([entity_id, sim.entity_id]))
-                    if pair not in [(d[0], d[1]) for d in duplicates]:
-                        duplicates.append((pair[0], pair[1], sim.score))
+                if sim.entity_id == entity_id:
+                    continue
+                    
+                # Only consider pairs we haven't seen
+                # Create sorted pair as 2-element tuple
+                sorted_ids = sorted([entity_id, sim.entity_id])
+                pair: tuple[str, str] = (sorted_ids[0], sorted_ids[1])
+                if pair in seen_pairs:
+                    continue
+                
+                # Additional filtering: only compare entities of the same type
+                # (this reduces false positives significantly)
+                sim_payload = sim.metadata or {}
+                sim_type = sim_payload.get("type", "")
+                if entity_type and sim_type and entity_type != sim_type:
+                    continue
+                
+                # Only add if similarity is high enough
+                if sim.score >= similarity_threshold:
+                    duplicates.append((pair[0], pair[1], sim.score))
+                    seen_pairs.add(pair)
+            
+            # Mark this entity as processed
+            processed_entities.add(entity_id)
         
-        logger.info(f"Found {len(duplicates)} potential duplicate pairs")
+        logger.info(
+            f"Found {len(duplicates)} potential duplicate pairs "
+            f"(from {len(points)} entities, threshold={similarity_threshold})"
+        )
         return duplicates
     
     async def handle_entity_embedded(self, payload: EventPayload):

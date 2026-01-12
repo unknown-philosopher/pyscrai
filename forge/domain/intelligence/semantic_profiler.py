@@ -13,7 +13,8 @@ from typing import Dict, Any, List, Optional
 
 from forge.core.event_bus import EventBus, EventPayload
 from forge.core import events
-from forge.infrastructure.llm.base import LLMProvider
+from forge.infrastructure.llm.base import LLMProvider, RateLimitError
+from forge.infrastructure.llm.rate_limiter import get_rate_limiter
 from forge.config.prompts import render_prompt
 
 logger = logging.getLogger(__name__)
@@ -83,10 +84,15 @@ class SemanticProfilerService:
                 entity_ids.add(entity_id)
         
         # Generate profiles for all entities in the graph update
-        # This ensures entities are in the database before we query them
+        # Process sequentially with rate limiting to avoid API rate limits
         for entity_id in entity_ids:
             if entity_id:
-                await self.generate_profile(entity_id)
+                try:
+                    await self.generate_profile(entity_id)
+                    # Small delay between entities to avoid rate limits
+                    await asyncio.sleep(0.3)
+                except Exception as e:
+                    logger.error(f"Failed to generate profile for {entity_id}: {e}")
     
     async def generate_profile(self, entity_id: str) -> Optional[Dict[str, Any]]:
         """Generate a semantic profile for an entity.
@@ -263,16 +269,25 @@ Relationships ({len(relationships)} total):
         prompt = render_prompt("semantic_profiler", context=context)
         
         content = ""
+        rate_limiter = get_rate_limiter()
         try:
             # Get available models
             models = await self.llm_provider.list_models()
             model = models[0].id if models else self.llm_provider.default_model or ""
             
-            response = await self.llm_provider.complete(
-                messages=[{"role": "user", "content": prompt}],
-                model=model,
-                max_tokens=500,
-                temperature=0.3,
+            # Use rate limiter for LLM call
+            # Pass the function itself, not the coroutine, so it can be called on each retry
+            async def _make_llm_call():
+                return await self.llm_provider.complete(
+                    messages=[{"role": "user", "content": prompt}],
+                    model=model,
+                    max_tokens=500,
+                    temperature=0.3,
+                )
+            
+            response = await rate_limiter.execute_with_retry(
+                _make_llm_call,  # Pass function, not coroutine
+                is_rate_limit_error=lambda e: isinstance(e, RateLimitError) or "rate limit" in str(e).lower()
             )
             
             # Parse JSON response

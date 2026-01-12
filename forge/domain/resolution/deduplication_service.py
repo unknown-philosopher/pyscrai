@@ -13,7 +13,8 @@ from typing import List, Dict, Any, Optional
 from forge.core.event_bus import EventBus, EventPayload
 from forge.core import events
 from forge.infrastructure.vector.qdrant_service import QdrantService
-from forge.infrastructure.llm.base import LLMProvider
+from forge.infrastructure.llm.base import LLMProvider, RateLimitError
+from forge.infrastructure.llm.rate_limiter import get_rate_limiter
 from forge.config.prompts import render_prompt
 
 logger = logging.getLogger(__name__)
@@ -138,11 +139,20 @@ class DeduplicationService:
             models = await self.llm_provider.list_models()
             model = models[0].id if models else self.llm_provider.default_model or ""
             
-            response = await self.llm_provider.complete(
-                messages=[{"role": "user", "content": prompt}],
-                model=model,
-                max_tokens=10,
-                temperature=0.0,
+            # Use rate limiter for LLM call
+            rate_limiter = get_rate_limiter()
+            # Pass the function itself, not the coroutine, so it can be called on each retry
+            async def _make_llm_call():
+                return await self.llm_provider.complete(
+                    messages=[{"role": "user", "content": prompt}],
+                    model=model,
+                    max_tokens=10,
+                    temperature=0.0,
+                )
+            
+            response = await rate_limiter.execute_with_retry(
+                _make_llm_call,  # Pass function, not coroutine
+                is_rate_limit_error=lambda e: isinstance(e, RateLimitError) or "rate limit" in str(e).lower()
             )
             
             # Extract content from response
