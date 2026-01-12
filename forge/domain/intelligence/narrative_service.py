@@ -107,6 +107,21 @@ class NarrativeSynthesisService:
                 }
             )
             
+            # Also publish to workspace schema for UI visualization
+            await self.event_bus.publish(
+                events.TOPIC_WORKSPACE_SCHEMA,
+                events.create_workspace_schema_event({
+                    "type": "narrative",
+                    "title": "Document Narrative",
+                    "props": {
+                        "doc_id": doc_id,
+                        "narrative": narrative,
+                        "entity_count": len(entities),
+                        "relationship_count": len(relationships),
+                    }
+                })
+            )
+            
             # Emit AG-UI event
             await self.event_bus.publish(
                 events.TOPIC_AGUI_EVENT,

@@ -107,6 +107,16 @@ class AdvancedGraphAnalysisService:
             }
         )
         
+        # Also publish to workspace schema for UI visualization
+        await self.event_bus.publish(
+            events.TOPIC_WORKSPACE_SCHEMA,
+            events.create_workspace_schema_event({
+                "type": "graph_analytics",
+                "title": "Graph Analysis",
+                "props": analysis
+            })
+        )
+        
         # Emit AG-UI event
         await self.event_bus.publish(
             events.TOPIC_AGUI_EVENT,

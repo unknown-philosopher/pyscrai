@@ -6,6 +6,14 @@ from typing import Any, Callable, Dict
 
 import flet as ft
 
+# Import intelligence components
+from forge.presentation.components.intelligence import (
+    render_semantic_profile,
+    render_narrative,
+    render_graph_analytics,
+    render_entity_card,
+)
+
 
 def _render_card(schema: Dict[str, Any]) -> ft.Control:
     """Render a basic card component."""
@@ -78,6 +86,11 @@ _COMPONENT_REGISTRY: Dict[str, Callable[[Dict[str, Any]], ft.Control]] = {
     "card": _render_card,
     "kpi_card": _render_kpi_card,
     "text": _render_text,
+    # Intelligence components
+    "semantic_profile": render_semantic_profile,
+    "narrative": render_narrative,
+    "graph_analytics": render_graph_analytics,
+    "entity_card": render_entity_card,
 }
 
 

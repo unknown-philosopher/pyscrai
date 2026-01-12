@@ -119,6 +119,16 @@ class SemanticProfilerService:
                 }
             )
             
+            # Also publish to workspace schema for UI visualization
+            await self.event_bus.publish(
+                events.TOPIC_WORKSPACE_SCHEMA,
+                events.create_workspace_schema_event({
+                    "type": "semantic_profile",
+                    "title": f"Profile: {entity_info['label']}",
+                    "props": profile
+                })
+            )
+            
             # Emit AG-UI event
             await self.event_bus.publish(
                 events.TOPIC_AGUI_EVENT,
