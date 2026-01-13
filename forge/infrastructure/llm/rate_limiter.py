@@ -39,9 +39,12 @@ class RateLimiter:
         self.max_retries = max_retries or int(os.getenv("LLM_RATE_LIMIT_MAX_RETRIES", "3"))
         self.initial_retry_delay = initial_retry_delay or float(os.getenv("LLM_RATE_LIMIT_RETRY_DELAY", "3.0"))
         
-        self.semaphore = asyncio.Semaphore(self.max_concurrent)
+        # Lazy initialization of asyncio primitives to avoid event loop binding issues
+        # Store the event loop ID to detect when we're in a different loop
+        self._semaphore: Optional[asyncio.Semaphore] = None
         self._last_request_time: Optional[float] = None
-        self._lock = asyncio.Lock()
+        self._lock: Optional[asyncio.Lock] = None
+        self._loop_id: Optional[int] = None
         
         logger.info(
             f"RateLimiter initialized: max_concurrent={self.max_concurrent}, "
@@ -50,6 +53,25 @@ class RateLimiter:
     
     async def acquire(self) -> None:
         """Acquire a permit for making a request (respects rate limits)."""
+        # Ensure primitives are created for current event loop
+        # We're in an async context, so get_running_loop() will work
+        loop = asyncio.get_running_loop()
+        loop_id = id(loop)
+        
+        # If we have primitives but they're for a different loop, recreate them
+        if self._loop_id is not None and self._loop_id != loop_id:
+            self._lock = None
+            self._semaphore = None
+        
+        # Create lock if needed
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+            self._loop_id = loop_id
+        
+        # Create semaphore if needed
+        if self._semaphore is None:
+            self._semaphore = asyncio.Semaphore(self.max_concurrent)
+        
         async with self._lock:
             # Enforce minimum delay between requests
             if self._last_request_time is not None:
@@ -59,11 +81,16 @@ class RateLimiter:
             self._last_request_time = time.time()
         
         # Acquire semaphore to limit concurrency
-        await self.semaphore.acquire()
+        await self._semaphore.acquire()
     
     def release(self) -> None:
         """Release a permit after request completes."""
-        self.semaphore.release()
+        if self._semaphore is not None:
+            try:
+                self._semaphore.release()
+            except RuntimeError:
+                # Semaphore might be bound to different loop - ignore
+                pass
     
     async def execute_with_retry(
         self,
@@ -114,12 +141,23 @@ class RateLimiter:
 
 
 # Global rate limiter instance
+# Note: This is a singleton, but locks are created lazily per event loop
 _default_limiter: Optional[RateLimiter] = None
 
 
 def get_rate_limiter() -> RateLimiter:
-    """Get the default rate limiter instance."""
+    """Get the default rate limiter instance.
+    
+    Note: The rate limiter is a singleton, but asyncio primitives
+    (locks, semaphores) are created lazily to avoid event loop binding issues.
+    """
     global _default_limiter
     if _default_limiter is None:
         _default_limiter = RateLimiter()
     return _default_limiter
+
+
+def reset_rate_limiter() -> None:
+    """Reset the global rate limiter instance (useful for testing)."""
+    global _default_limiter
+    _default_limiter = None

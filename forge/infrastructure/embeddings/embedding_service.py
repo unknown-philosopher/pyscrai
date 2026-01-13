@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from collections import defaultdict
 
 from forge.core.event_bus import EventBus, EventPayload
@@ -59,7 +59,30 @@ class EmbeddingService:
         # Batch queue for efficient processing
         self._entity_batch: List[Dict[str, Any]] = []
         self._relationship_batch: List[Dict[str, Any]] = []
-        self._batch_lock = asyncio.Lock()
+        # Lazy initialization to avoid event loop binding issues
+        self._batch_lock: Optional[asyncio.Lock] = None
+        self._loop_id: Optional[int] = None
+    
+    def _ensure_batch_lock(self) -> asyncio.Lock:
+        """Get or create batch lock for current event loop."""
+        try:
+            loop = asyncio.get_running_loop()
+            loop_id = id(loop)
+            
+            # If we have a lock but it's for a different loop, recreate it
+            if self._loop_id is not None and self._loop_id != loop_id:
+                self._batch_lock = None
+            
+            # Create lock if needed
+            if self._batch_lock is None:
+                self._batch_lock = asyncio.Lock()
+                self._loop_id = loop_id
+        except RuntimeError:
+            # No running event loop - create lock anyway (will be bound when used)
+            if self._batch_lock is None:
+                self._batch_lock = asyncio.Lock()
+        
+        return self._batch_lock
         
     @property
     def general_model(self):

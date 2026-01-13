@@ -103,24 +103,27 @@ class DuckDBPersistenceService:
         nodes = graph_stats.get("nodes", [])
         edges = graph_stats.get("edges", [])
         
-        # Insert entities (only if they don't exist)
-        # Note: Using INSERT OR IGNORE to avoid foreign key constraint violations
-        # DuckDB's UPDATE operations can cause issues when entities are referenced by relationships
-        # For now, we only insert new entities and skip updates to existing ones
+        # Upsert entities (insert if new, update if exists)
         for node in nodes:
             node_id = node.get("id")
             node_type = node.get("type")
             label = node.get("label")
             
             if node_id and node_type and label:
-                # Only insert if entity doesn't exist
-                # Using a try/except approach since DuckDB doesn't support INSERT OR IGNORE directly
+                # Check if entity already exists
                 result = self.conn.execute(
                     "SELECT id FROM entities WHERE id = ?",
                     (node_id,)
                 ).fetchone()
                 
-                if not result:
+                if result:
+                    # Entity exists, update it
+                    self.conn.execute("""
+                        UPDATE entities
+                        SET type = ?, label = ?, updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    """, (node_type, label, node_id))
+                else:
                     # Entity doesn't exist, insert it
                     self.conn.execute("""
                         INSERT INTO entities (id, type, label)

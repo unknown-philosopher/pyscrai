@@ -2,13 +2,6 @@
 
 **PyScrAI | Forge** is a **server-driven, event-based intelligence synthesis and worldbuilding engine** designed for real-time entity extraction, relationship analysis, and semantic synthesis using **local CUDA-accelerated models** and a **generative UI layer**.
 
-Forge is built around **decoupling**:
-
-* Logic from presentation
-* Services from pipelines
-* UI from static layouts
-* Human-in-the-loop verifications and feedback
-
 ---
 
 ## 1. High-Level Architecture
