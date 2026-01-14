@@ -54,8 +54,13 @@ class NarrativeSynthesisService:
     
     async def handle_graph_updated(self, payload: EventPayload):
         """Handle graph updated events by generating narratives."""
-        doc_id = payload.get("doc_id", "unknown")
+        doc_id = payload.get("doc_id")
         graph_stats = payload.get("graph_stats", {})
+        
+        # Skip if doc_id is None (e.g., during session restore - narrative should be generated per document, not globally)
+        if doc_id is None:
+            logger.debug("Skipping narrative generation for None doc_id (session restore)")
+            return
         
         # Generate narrative for this document
         await self.generate_narrative(doc_id, graph_stats)

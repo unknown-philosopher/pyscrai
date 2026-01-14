@@ -7,6 +7,13 @@ Return a JSON array of entities, where each entity has:
 - "type": One of PERSON, ORG, LOCATION, EVENT, or OTHER
 - "text": The exact text/name of the entity as it appears in the document
 
+CRITICAL JSON FORMAT REQUIREMENTS:
+- Use ONLY double quotes (") for all strings, never single quotes (')
+- Escape special characters: use \" for quotes inside strings, \\ for backslashes
+- Ensure all brackets and braces are properly closed
+- No trailing commas before closing brackets or braces
+- All property names must be in double quotes
+
 Example format:
 [
   {"type": "PERSON", "text": "John Smith"},
@@ -14,4 +21,4 @@ Example format:
   {"type": "LOCATION", "text": "New York"}
 ]
 
-Respond with ONLY the JSON array, no additional text or explanation.
+Respond with ONLY the JSON array. Do not include markdown code blocks, explanations, or any other text. The response must be valid JSON that can be parsed by json.loads().

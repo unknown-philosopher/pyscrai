@@ -83,8 +83,8 @@ class DocumentExtractionService(BaseLLMService):
         entities = await call_llm_and_parse_json(
             llm_provider=llm_provider,
             prompt=prompt,
-            max_tokens=2000,
-            temperature=0.3,
+            max_tokens=10000,
+            temperature=0,
             service_name=self.service_name,
             doc_id=doc_id
         )

@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import time
 from collections.abc import AsyncGenerator
 
@@ -123,13 +124,42 @@ class OpenRouterProvider(LLMProvider):
                 )
         return self._client
     
-    def _handle_error(self, response: httpx.Response) -> None:
-        """Handle API error responses."""
+    def _extract_error_message(self, response: httpx.Response) -> str:
+        """Extract a meaningful error message from an HTTP response.
+        
+        Handles JSON errors, HTML error pages (e.g., Cloudflare), and plain text.
+        """
         try:
             error_data = response.json()
-            error_message = error_data.get("error", {}).get("message", str(error_data))
+            return error_data.get("error", {}).get("message", str(error_data))
         except (json.JSONDecodeError, KeyError):
-            error_message = response.text or f"HTTP {response.status_code}"
+            # Check if response is HTML (e.g., Cloudflare error page)
+            text = response.text or ""
+            content_type = response.headers.get("content-type", "").lower()
+            
+            if "text/html" in content_type or text.strip().startswith("<!DOCTYPE") or text.strip().startswith("<html"):
+                # Extract meaningful error from HTML
+                # Try to find error title or message in common HTML error pages
+                title_match = re.search(r"<title[^>]*>(.*?)</title>", text, re.IGNORECASE | re.DOTALL)
+                h1_match = re.search(r"<h1[^>]*>(.*?)</h1>", text, re.IGNORECASE | re.DOTALL)
+                
+                if title_match:
+                    return title_match.group(1).strip()
+                elif h1_match:
+                    return h1_match.group(1).strip()
+                else:
+                    # Fallback: use status code with a generic message
+                    return f"HTTP {response.status_code}: Server returned HTML error page"
+            else:
+                # Not HTML, use text but truncate if too long
+                error_message = text[:500] if len(text) > 500 else text
+                if not error_message:
+                    error_message = f"HTTP {response.status_code}"
+                return error_message
+    
+    def _handle_error(self, response: httpx.Response) -> None:
+        """Handle API error responses."""
+        error_message = self._extract_error_message(response)
         
         if response.status_code == 401:
             raise AuthenticationError(
@@ -179,17 +209,8 @@ class OpenRouterProvider(LLMProvider):
                     # Read the error response body before handling
                     await response.aread()
                     
-                    # Extract error message from streaming response
-                    try:
-                        error_text = response.text
-                        # Try to parse as JSON
-                        try:
-                            error_data = json.loads(error_text)
-                            error_message = error_data.get("error", {}).get("message", str(error_data))
-                        except json.JSONDecodeError:
-                            error_message = error_text or f"HTTP {response.status_code}"
-                    except Exception:
-                        error_message = f"HTTP {response.status_code}"
+                    # Use the same error extraction logic as non-streaming requests
+                    error_message = self._extract_error_message(response)
                     
                     # Raise appropriate exception
                     if response.status_code == 401:

@@ -3,7 +3,9 @@
 Processes extracted entities, performs deduplication, and identifies relationships using LLM.
 """
 
+import asyncio
 import logging
+from collections import defaultdict
 from typing import Dict, List, Any, Optional
 
 from forge.core.event_bus import EventBus, EventPayload
@@ -50,7 +52,12 @@ class EntityResolutionService(BaseLLMService):
             self._document_cache[doc_id] = content
     
     async def handle_entity_extracted(self, payload: EventPayload):
-        """Process extracted entities and identify relationships using LLM."""
+        """Process extracted entities and identify relationships using LLM.
+        
+        Uses Strategy 6 (Hybrid Approach) for large entity sets:
+        - Small sets (<=15 entities): Process normally
+        - Large sets (>15 entities): Batched parallel processing with progressive publishing
+        """
         doc_id = payload.get("doc_id", "unknown")
         entities = payload.get("entities", [])
         
@@ -66,20 +73,18 @@ class EntityResolutionService(BaseLLMService):
         if not document_content:
             logger.warning(f"No document content cached for {doc_id}, relationship extraction may be less accurate")
         
-        # Extract relationships using LLM
-        relationships = await self._extract_relationships(doc_id, entities, document_content)
-        
-        if relationships:
-            await self.event_bus.publish(
-                events.TOPIC_RELATIONSHIP_FOUND,
-                events.create_relationship_found_event(
-                    doc_id=doc_id,
-                    relationships=relationships,
-                )
-            )
-            logger.info(f"Extracted {len(relationships)} relationships from document {doc_id}")
+        if len(entities) <= 15:
+            # Small set: process normally
+            relationships = await self._extract_relationships(doc_id, entities, document_content)
+            if relationships:
+                await self._publish_relationships(doc_id, relationships, is_complete=True)
+                logger.info(f"Extracted {len(relationships)} relationships from document {doc_id}")
+            else:
+                logger.info(f"No relationships found in document {doc_id}")
         else:
-            logger.info(f"No relationships found in document {doc_id}")
+            # Large set: use batched parallel processing
+            logger.info(f"Processing {len(entities)} entities using batched parallel approach for document {doc_id}")
+            await self._extract_relationships_batched(doc_id, entities, document_content)
     
     async def _extract_relationships(
         self,
@@ -118,7 +123,7 @@ class EntityResolutionService(BaseLLMService):
         relationships = await call_llm_and_parse_json(
             llm_provider=llm_provider,
             prompt=prompt,
-            max_tokens=2000,
+            max_tokens=8000,
             temperature=0.3,
             service_name=self.service_name,
             doc_id=doc_id
@@ -175,3 +180,174 @@ class EntityResolutionService(BaseLLMService):
             })
         
         return normalized_relationships
+    
+    def _create_smart_batches(
+        self, 
+        entities: List[Dict[str, Any]], 
+        batch_size: int = 12
+    ) -> List[List[Dict[str, Any]]]:
+        """Create smart batches by grouping entities by type before batching.
+        
+        This improves relationship detection accuracy by keeping related entities
+        (same type) together in the same batch.
+        
+        Args:
+            entities: List of entity dictionaries
+            batch_size: Target size for each batch (default: 12)
+            
+        Returns:
+            List of entity batches
+        """
+        # Group entities by type
+        type_groups = defaultdict(list)
+        for entity in entities:
+            entity_type = entity.get("type", "UNKNOWN")
+            type_groups[entity_type].append(entity)
+        
+        # Create batches prioritizing same-type relationships
+        batches = []
+        current_batch = []
+        
+        # First, try to fill batches with same-type entities
+        for entity_type, type_entities in type_groups.items():
+            for entity in type_entities:
+                if len(current_batch) >= batch_size:
+                    batches.append(current_batch)
+                    current_batch = []
+                current_batch.append(entity)
+        
+        # Add remaining entities to batches
+        if current_batch:
+            batches.append(current_batch)
+        
+        # If we have very few batches, try to balance them better
+        if len(batches) == 1 and len(entities) > batch_size:
+            # Redistribute into multiple batches
+            batches = [
+                entities[i:i + batch_size] 
+                for i in range(0, len(entities), batch_size)
+            ]
+        
+        logger.debug(f"Created {len(batches)} batches from {len(entities)} entities")
+        return batches
+    
+    async def _extract_relationships_batch(
+        self,
+        doc_id: str,
+        batch: List[Dict[str, Any]],
+        document_content: str,
+        batch_idx: int
+    ) -> List[Dict[str, Any]]:
+        """Extract relationships for a single batch of entities.
+        
+        Args:
+            doc_id: Document ID
+            batch: List of entities in this batch
+            document_content: Original document content for context
+            batch_idx: Index of this batch (for logging)
+            
+        Returns:
+            List of relationship dictionaries for this batch
+        """
+        try:
+            logger.debug(f"Processing batch {batch_idx} with {len(batch)} entities for document {doc_id}")
+            relationships = await self._extract_relationships(doc_id, batch, document_content)
+            logger.debug(f"Batch {batch_idx} found {len(relationships)} relationships")
+            return relationships
+        except Exception as e:
+            logger.error(f"Error processing batch {batch_idx} for document {doc_id}: {e}", exc_info=True)
+            return []
+    
+    async def _extract_relationships_batched(
+        self,
+        doc_id: str,
+        entities: List[Dict[str, Any]],
+        document_content: str
+    ) -> List[Dict[str, Any]]:
+        """Extract relationships using batched parallel processing with progressive publishing.
+        
+        Implements Strategy 6 (Hybrid Approach):
+        - Smart batching by entity type
+        - Parallel processing with asyncio.gather
+        - Progressive publishing as batches complete
+        
+        Args:
+            doc_id: Document ID
+            entities: List of all entities to process
+            document_content: Original document content for context
+            
+        Returns:
+            List of all relationship dictionaries found
+        """
+        # Create smart batches by type
+        batches = self._create_smart_batches(entities, batch_size=12)
+        
+        if not batches:
+            logger.warning(f"No batches created for document {doc_id}")
+            return []
+        
+        logger.info(f"Processing {len(batches)} batches in parallel for document {doc_id}")
+        
+        # Process batches in parallel
+        tasks = [
+            self._extract_relationships_batch(doc_id, batch, document_content, batch_idx)
+            for batch_idx, batch in enumerate(batches)
+        ]
+        
+        # Gather results (with error handling)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Publish incrementally and collect all relationships
+        all_relationships = []
+        for batch_idx, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.error(f"Batch {batch_idx} failed for document {doc_id}: {result}", exc_info=True)
+            else:
+                batch_relationships = result
+                if batch_relationships:
+                    all_relationships.extend(batch_relationships)
+                    # Publish this batch's relationships immediately
+                    await self._publish_relationships(
+                        doc_id, 
+                        batch_relationships,
+                        batch_index=batch_idx,
+                        is_complete=(batch_idx == len(batches) - 1)
+                    )
+                    logger.debug(
+                        f"Published batch {batch_idx} with {len(batch_relationships)} relationships "
+                        f"(complete={batch_idx == len(batches) - 1})"
+                    )
+        
+        logger.info(
+            f"Completed batched processing for document {doc_id}: "
+            f"{len(all_relationships)} total relationships from {len(batches)} batches"
+        )
+        return all_relationships
+    
+    async def _publish_relationships(
+        self,
+        doc_id: str,
+        relationships: List[Dict[str, Any]],
+        batch_index: Optional[int] = None,
+        is_complete: bool = True
+    ) -> None:
+        """Publish relationships to the event bus.
+        
+        Args:
+            doc_id: Document ID
+            relationships: List of relationship dictionaries
+            batch_index: Optional batch index for incremental publishing
+            is_complete: Whether this is the final batch
+        """
+        if not relationships:
+            return
+        
+        await self.event_bus.publish(
+            events.TOPIC_RELATIONSHIP_FOUND,
+            events.create_relationship_found_event(
+                doc_id=doc_id,
+                relationships=relationships,
+                batch_index=batch_index,
+                is_complete=is_complete
+            )
+        )

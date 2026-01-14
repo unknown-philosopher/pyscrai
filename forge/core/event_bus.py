@@ -58,7 +58,9 @@ class EventBus:
             handlers = list(self._subscribers.get(topic, []))
 
         if not handlers:
-            self._logger.warning(f"No subscribers for topic '{topic}'")
+            # Some topics are informational and may not have subscribers (e.g., relationship.inferred)
+            # Log at debug level instead of warning to reduce noise
+            self._logger.debug(f"No subscribers for topic '{topic}' (this is normal for informational topics)")
             return
 
         self._logger.debug(f"Publishing to topic '{topic}' with {len(handlers)} handler(s)")

@@ -199,6 +199,92 @@ class ProviderFactory:
         raise ValueError(
             f"No valid LLM provider could be initialized. Tried: {tried_providers}"
         )
+    
+    @staticmethod
+    def create_semantic_provider_from_env(
+        timeout: float = 60.0,
+        app_name: str = "Forge",
+    ) -> tuple[LLMProvider, str | None]:
+        """Create semantic provider from environment configuration.
+        
+        Uses SEMANTIC_PROVIDER environment variable if set, otherwise falls back
+        to the default provider (DEFAULT_PROVIDER).
+        
+        Args:
+            timeout: Request timeout in seconds
+            app_name: Application name for API headers
+            
+        Returns:
+            Tuple of (LLMProvider instance, model name or None)
+            
+        Raises:
+            ValueError: If no valid provider could be initialized
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Check for SEMANTIC_PROVIDER first
+        semantic_provider_name = os.getenv("SEMANTIC_PROVIDER")
+        if semantic_provider_name:
+            semantic_provider_name = semantic_provider_name.strip().lower().replace("-", "_")
+            logger.info(f"ProviderFactory: Using SEMANTIC_PROVIDER='{semantic_provider_name}' for semantic profiling")
+        else:
+            # Fall back to default provider
+            semantic_provider_name = ProviderFactory.get_default_provider_name()
+            logger.info(f"ProviderFactory: SEMANTIC_PROVIDER not set, using default provider '{semantic_provider_name}' for semantic profiling")
+        
+        # Get environment map for the semantic provider
+        env_map = PROVIDER_ENV_MAP.get(semantic_provider_name)
+        if env_map is None:
+            # Provider type not recognized, try to create anyway (might be a custom provider)
+            logger.warning(f"ProviderFactory: Unknown semantic provider type '{semantic_provider_name}', attempting to create anyway")
+            try:
+                provider = ProviderFactory.create(
+                    semantic_provider_name,
+                    timeout=timeout,
+                    app_name=app_name,
+                )
+                logger.info(f"ProviderFactory: Created semantic provider '{semantic_provider_name}'")
+                return provider, None
+            except Exception as e:
+                logger.error(f"ProviderFactory: Failed to create semantic provider '{semantic_provider_name}': {e}")
+                # Fall back to default provider
+                logger.info("ProviderFactory: Falling back to default provider for semantic profiling")
+                return ProviderFactory.create_from_env(timeout=timeout, app_name=app_name)
+        
+        # Get configuration from environment
+        api_key = os.getenv(env_map["api_key"]) if env_map.get("api_key") else None
+        base_url = os.getenv(env_map["base_url"]) if env_map.get("base_url") else None
+        
+        # Get model - for semantic provider, check for provider-specific model env vars
+        if semantic_provider_name == ProviderType.OPENROUTER.value:
+            # Check for semantic-specific model first, then fall back to default
+            model = os.getenv("SEMANTIC_OPENROUTER_MODEL") or os.getenv("OPENROUTER_MODEL") or os.getenv("OPENROUTER_DEFAULT_MODEL")
+        else:
+            # For other providers, check for semantic-specific model env var
+            semantic_model_var = f"SEMANTIC_{env_map['model']}"
+            model = os.getenv(semantic_model_var) or os.getenv(env_map["model"])
+        
+        try:
+            provider = ProviderFactory.create(
+                semantic_provider_name,
+                api_key=api_key,
+                base_url=base_url,
+                timeout=timeout,
+                app_name=app_name,
+            )
+            if model:
+                provider.default_model = model
+                logger.info(f"ProviderFactory: Set default_model to '{model}' on semantic provider")
+            else:
+                logger.warning(f"ProviderFactory: No model specified for semantic provider, provider.default_model is '{provider.default_model}'")
+            logger.info(f"ProviderFactory: Using semantic provider '{semantic_provider_name}' with default_model '{provider.default_model}'")
+            return provider, model
+        except Exception as e:
+            logger.warning(f"ProviderFactory: Failed to initialize semantic provider '{semantic_provider_name}': {e}")
+            # Fall back to default provider
+            logger.info("ProviderFactory: Falling back to default provider for semantic profiling")
+            return ProviderFactory.create_from_env(timeout=timeout, app_name=app_name)
 
 
 # ============================================================================

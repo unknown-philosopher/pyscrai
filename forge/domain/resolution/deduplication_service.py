@@ -64,6 +64,11 @@ class DeduplicationService:
     
     async def handle_graph_updated(self, payload: EventPayload):
         """Handle graph updated events by checking for duplicates."""
+        # Skip deduplication if flag is set (e.g., during session restore)
+        if payload.get("skip_deduplication", False):
+            logger.debug("Skipping deduplication (skip_deduplication flag set)")
+            return
+        
         logger.info("Checking for duplicate entities")
         
         # Find potential duplicates from Qdrant
@@ -173,7 +178,15 @@ class DeduplicationService:
             return is_duplicate
             
         except Exception as e:
-            logger.error(f"Error confirming duplicate with LLM: {e}")
+            # Truncate long error messages (e.g., HTML error pages)
+            error_msg = str(e)
+            if len(error_msg) > 500:
+                error_msg = error_msg[:500] + "... (truncated)"
+            
+            logger.error(
+                f"Error confirming duplicate with LLM for entities {entity1_id} and {entity2_id}: {error_msg}",
+                exc_info=False  # Don't log full traceback for API errors
+            )
             # Default to not merging if LLM fails
             return False
     
@@ -205,6 +218,13 @@ class DeduplicationService:
                 SET target = ?
                 WHERE target = ?
             """, (entity1_id, entity2_id))
+            
+            # Delete semantic profile for entity2 (if exists)
+            # DuckDB doesn't support ON DELETE CASCADE, so we must delete manually
+            self.db_conn.execute("""
+                DELETE FROM semantic_profiles
+                WHERE entity_id = ?
+            """, (entity2_id,))
             
             # Delete entity2
             self.db_conn.execute("""

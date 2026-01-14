@@ -7,11 +7,14 @@ All autosave and event handlers use forge_data.duckdb (self.conn) for both writi
 
 import asyncio
 import json
+import logging
 import duckdb
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from forge.core.event_bus import EventBus, EventPayload
 from forge.core import events
+
+logger = logging.getLogger(__name__)
 
 
 class DuckDBPersistenceService:
@@ -50,6 +53,16 @@ class DuckDBPersistenceService:
         await self.event_bus.subscribe(
             events.TOPIC_WORKSPACE_SCHEMA,
             self.handle_workspace_schema
+        )
+        # Subscribe to semantic profile events - AUTO-SAVE to main database
+        await self.event_bus.subscribe(
+            events.TOPIC_SEMANTIC_PROFILE,
+            self.handle_semantic_profile
+        )
+        # Subscribe to narrative events - AUTO-SAVE to main database
+        await self.event_bus.subscribe(
+            events.TOPIC_NARRATIVE_GENERATED,
+            self.handle_narrative_generated
         )
     
     def _create_schema(self):
@@ -118,15 +131,66 @@ class DuckDBPersistenceService:
             CREATE INDEX IF NOT EXISTS idx_ui_artifacts_created ON ui_artifacts(created_at)
         """)
         
+        # Semantic Profiles table for storing entity profiles
+        # Note: DuckDB doesn't support ON DELETE CASCADE in FOREIGN KEY constraints
+        # The deduplication service should manually delete profiles when entities are deleted/merged
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS semantic_profiles (
+                entity_id VARCHAR PRIMARY KEY,
+                summary TEXT NOT NULL,
+                key_attributes TEXT,
+                related_entities TEXT,
+                significance_score DOUBLE,
+                profile_json TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (entity_id) REFERENCES entities(id)
+            )
+        """)
+        
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_profiles_significance ON semantic_profiles(significance_score)
+        """)
+        
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_profiles_entity ON semantic_profiles(entity_id)
+        """)
+        
+        # Narratives table for storing document narratives
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS narratives (
+                doc_id VARCHAR PRIMARY KEY,
+                narrative TEXT NOT NULL,
+                entity_count INTEGER,
+                relationship_count INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_narratives_created ON narratives(created_at)
+        """)
+        
         conn.commit()
     
     async def handle_graph_updated(self, payload: EventPayload):
         """Persist graph updates to main database (auto-save during extraction)."""
         if not self.conn:
             return
+        
+        # Skip persistence if graph_stats is empty (e.g., during session restore)
         graph_stats = payload.get("graph_stats", {})
+        if not graph_stats:
+            return
+        
         nodes = graph_stats.get("nodes", [])
         edges = graph_stats.get("edges", [])
+        
+        # Only persist if there are actual nodes/edges to save
+        if not nodes and not edges:
+            return
+        
         # Upsert entities (insert if new, update if exists)
         for node in nodes:
             node_id = node.get("id")
@@ -139,19 +203,24 @@ class DuckDBPersistenceService:
                     (node_id,)
                 ).fetchone()
                 if result:
-                    # Entity exists, update it
-                    self.conn.execute("""
-                        UPDATE entities
-                        SET type = ?, label = ?, updated_at = CURRENT_TIMESTAMP
-                        WHERE id = ?
-                    """, (node_type, label, node_id))
+                    # Entity exists, update it (only if values changed to avoid unnecessary updates)
+                    try:
+                        self.conn.execute("""
+                            UPDATE entities
+                            SET type = ?, label = ?, updated_at = CURRENT_TIMESTAMP
+                            WHERE id = ? AND (type != ? OR label != ?)
+                        """, (node_type, label, node_id, node_type, label))
+                    except Exception as e:
+                        # Log constraint violations but don't fail - entity already exists
+                        logger.debug(f"Could not update entity {node_id}: {e}")
                 else:
                     # Entity doesn't exist, insert it
                     self.conn.execute("""
                         INSERT INTO entities (id, type, label)
                         VALUES (?, ?, ?)
                     """, (node_id, node_type, label))
-        # Insert relationships (append only for now)
+        
+        # Insert relationships (use INSERT OR IGNORE to avoid duplicates)
         for edge in edges:
             source = edge.get("source")
             target = edge.get("target")
@@ -159,11 +228,20 @@ class DuckDBPersistenceService:
             confidence = edge.get("confidence", 1.0)
             doc_id = edge.get("doc_id")
             if source and target and rel_type:
-                self.conn.execute("""
-                    INSERT INTO relationships (source, target, type, confidence, doc_id)
-                    VALUES (?, ?, ?, ?, ?)
-                """, (source, target, rel_type, confidence, doc_id))
+                # Check if relationship already exists to avoid duplicates
+                existing = self.conn.execute("""
+                    SELECT id FROM relationships 
+                    WHERE source = ? AND target = ? AND type = ? AND doc_id = ?
+                """, (source, target, rel_type, doc_id)).fetchone()
+                
+                if not existing:
+                    self.conn.execute("""
+                        INSERT INTO relationships (source, target, type, confidence, doc_id)
+                        VALUES (?, ?, ?, ?, ?)
+                    """, (source, target, rel_type, confidence, doc_id))
+        
         self.conn.commit()
+        
         # Emit AG-UI event with persistence confirmation
         entity_count = self.get_entity_count()
         relationship_count = self.get_relationship_count()
@@ -243,6 +321,196 @@ class DuckDBPersistenceService:
         
         return artifacts
     
+    async def handle_semantic_profile(self, payload: EventPayload):
+        """Persist semantic profile to main database (auto-save)."""
+        if not self.conn:
+            return
+        
+        entity_id = payload.get("entity_id")
+        profile = payload.get("profile")
+        
+        if not entity_id or not profile:
+            return
+        
+        try:
+            # Serialize profile to JSON
+            profile_json = json.dumps(profile, sort_keys=True)
+            
+            # Extract key fields from profile for structured storage
+            summary = profile.get("summary", "")
+            key_attributes = json.dumps(profile.get("key_attributes", []))
+            related_entities = json.dumps(profile.get("related_entities", []))
+            significance_score = profile.get("significance_score", 0.0)
+            
+            # Upsert profile (insert if new, update if exists)
+            # Check if profile exists
+            existing = self.conn.execute(
+                "SELECT entity_id FROM semantic_profiles WHERE entity_id = ?",
+                (entity_id,)
+            ).fetchone()
+            
+            if existing:
+                # Update existing profile
+                self.conn.execute("""
+                    UPDATE semantic_profiles SET
+                        summary = ?,
+                        key_attributes = ?,
+                        related_entities = ?,
+                        significance_score = ?,
+                        profile_json = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE entity_id = ?
+                """, (summary, key_attributes, related_entities, significance_score, profile_json, entity_id))
+            else:
+                # Insert new profile
+                self.conn.execute("""
+                    INSERT INTO semantic_profiles 
+                        (entity_id, summary, key_attributes, related_entities, significance_score, profile_json)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (entity_id, summary, key_attributes, related_entities, significance_score, profile_json))
+            
+            self.conn.commit()
+            
+        except Exception as e:
+            logger.error(f"Error persisting semantic profile for {entity_id}: {e}")
+            if self.conn:
+                self.conn.rollback()
+    
+    async def handle_narrative_generated(self, payload: EventPayload):
+        """Persist narrative to main database (auto-save)."""
+        if not self.conn:
+            return
+        
+        doc_id = payload.get("doc_id")
+        narrative = payload.get("narrative")
+        entity_count = payload.get("entity_count", 0)
+        relationship_count = payload.get("relationship_count", 0)
+        
+        if not doc_id or not narrative:
+            return
+        
+        try:
+            # Upsert narrative (insert if new, update if exists)
+            # Check if narrative exists
+            existing = self.conn.execute(
+                "SELECT doc_id FROM narratives WHERE doc_id = ?",
+                (doc_id,)
+            ).fetchone()
+            
+            if existing:
+                # Update existing narrative
+                self.conn.execute("""
+                    UPDATE narratives SET
+                        narrative = ?,
+                        entity_count = ?,
+                        relationship_count = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE doc_id = ?
+                """, (narrative, entity_count, relationship_count, doc_id))
+            else:
+                # Insert new narrative
+                self.conn.execute("""
+                    INSERT INTO narratives 
+                        (doc_id, narrative, entity_count, relationship_count)
+                    VALUES (?, ?, ?, ?)
+                """, (doc_id, narrative, entity_count, relationship_count))
+            
+            self.conn.commit()
+            
+        except Exception as e:
+            logger.error(f"Error persisting narrative for {doc_id}: {e}")
+            if self.conn:
+                self.conn.rollback()
+    
+    def get_semantic_profile(self, entity_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieve a semantic profile for an entity."""
+        if not self.conn:
+            return None
+        
+        try:
+            result = self.conn.execute("""
+                SELECT profile_json
+                FROM semantic_profiles
+                WHERE entity_id = ?
+            """, (entity_id,)).fetchone()
+            
+            if result:
+                return json.loads(result[0])
+        except Exception as e:
+            logger.error(f"Error retrieving semantic profile for {entity_id}: {e}")
+        
+        return None
+    
+    def get_all_semantic_profiles(self) -> List[Dict[str, Any]]:
+        """Retrieve all semantic profiles."""
+        if not self.conn:
+            return []
+        
+        profiles = []
+        try:
+            results = self.conn.execute("""
+                SELECT entity_id, profile_json
+                FROM semantic_profiles
+                ORDER BY significance_score DESC
+            """).fetchall()
+            
+            for row in results:
+                try:
+                    profile = json.loads(row[1])
+                    profile["entity_id"] = row[0]  # Add entity_id to profile
+                    profiles.append(profile)
+                except json.JSONDecodeError:
+                    continue
+        except Exception as e:
+            logger.error(f"Error retrieving semantic profiles: {e}")
+        
+        return profiles
+    
+    def get_narrative(self, doc_id: str) -> Optional[str]:
+        """Retrieve a narrative for a document."""
+        if not self.conn:
+            return None
+        
+        try:
+            result = self.conn.execute("""
+                SELECT narrative
+                FROM narratives
+                WHERE doc_id = ?
+            """, (doc_id,)).fetchone()
+            
+            if result:
+                return result[0]
+        except Exception as e:
+            logger.error(f"Error retrieving narrative for {doc_id}: {e}")
+        
+        return None
+    
+    def get_all_narratives(self) -> List[Dict[str, Any]]:
+        """Retrieve all narratives."""
+        if not self.conn:
+            return []
+        
+        narratives = []
+        try:
+            results = self.conn.execute("""
+                SELECT doc_id, narrative, entity_count, relationship_count, created_at
+                FROM narratives
+                ORDER BY created_at DESC
+            """).fetchall()
+            
+            for row in results:
+                narratives.append({
+                    "doc_id": row[0],
+                    "narrative": row[1],
+                    "entity_count": row[2],
+                    "relationship_count": row[3],
+                    "created_at": row[4],
+                })
+        except Exception as e:
+            logger.error(f"Error retrieving narratives: {e}")
+        
+        return narratives
+    
     def get_entity_count(self) -> int:
         """Get total number of entities in the database."""
         if not self.conn:
@@ -308,11 +576,16 @@ class DuckDBPersistenceService:
         
         logger = __import__("logging").getLogger(__name__)
         try:
-            # Delete relationships first (due to foreign key constraints)
+            # Delete in order to respect foreign key constraints:
+            # 1. Delete semantic_profiles first (has foreign key to entities)
+            self.conn.execute("DELETE FROM semantic_profiles")
+            # 2. Delete narratives (no foreign keys, but clear it)
+            self.conn.execute("DELETE FROM narratives")
+            # 3. Delete relationships (has foreign keys to entities)
             self.conn.execute("DELETE FROM relationships")
-            # Then delete entities
+            # 4. Delete entities (now safe since nothing references them)
             self.conn.execute("DELETE FROM entities")
-            # Delete UI artifacts
+            # 5. Delete UI artifacts (no foreign keys)
             self.conn.execute("DELETE FROM ui_artifacts")
             # Note: DuckDB doesn't support ALTER SEQUENCE RESTART yet
             # The sequence will continue from its current value, which is fine
@@ -327,7 +600,7 @@ class DuckDBPersistenceService:
             except Exception as e:
                 logger.warning(f"Could not checkpoint database after clearing: {e}")
             
-            logger.info("Database cleared: all entities, relationships, and UI artifacts removed")
+            logger.info("Database cleared: all entities, relationships, profiles, narratives, and UI artifacts removed")
         except Exception as e:
             logger.error(f"Error clearing database: {e}")
             # DuckDB doesn't require explicit rollback for most operations

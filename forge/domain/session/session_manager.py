@@ -40,6 +40,10 @@ class SessionManager:
         NOTE: Since auto-save is disabled, this loads the state from the last time
         the user clicked 'Save Project'. Real-time extraction/analysis changes are
         held in memory until explicitly saved.
+        
+        NOTE: UI artifacts are NOT restored - they are snapshots from previous extractions
+        and may be stale. The workspace should be empty, allowing intelligence views
+        to query the database directly for current data.
         """
         logger.info("♻️ Restoring session from database...")
         await self.controller.push_agui_log("♻️ Starting Session Restore...", "info")
@@ -47,19 +51,12 @@ class SessionManager:
         # 1. Clear current UI first to avoid duplicates
         self.controller.clear_workspace()
 
-        # 2. Restore UI Visualizations
-        artifacts = self.persistence.get_stored_ui_artifacts()
-        if artifacts:
-            logger.info(f"Loading {len(artifacts)} UI artifacts...")
-            for schema in artifacts:
-                # Emit to AppController to render in Workspace
-                await self.controller.emit_schema(schema)
-            
-            await self.controller.push_agui_log(
-                f"Restored {len(artifacts)} intelligence cards.", "success"
-            )
-        else:
-            await self.controller.push_agui_log("No saved UI artifacts found.", "warning")
+        # 2. Skip restoring UI artifacts - they are snapshots from previous extractions
+        # and may be stale. The workspace should be empty, allowing intelligence views
+        # (Graph Analytics, Entity Cards, etc.) to query the database directly for current data.
+        # UI artifacts are meant for real-time streaming during extraction, not persistent storage.
+        logger.info("Skipping UI artifacts restoration (workspace will be empty, views query DB directly)")
+        await self.controller.push_agui_log("Workspace cleared. Intelligence views will load from database.", "info")
 
         # 3. Clear QDrant collections before re-indexing to avoid IndexError
         logger.info("Clearing QDrant collections before re-indexing...")
@@ -154,6 +151,68 @@ class SessionManager:
             await self.controller.push_agui_log("Relationship re-indexing complete.", "success")
         else:
             await self.controller.push_agui_log("No relationships found to re-index.", "warning")
+        
+        # 6. Load semantic profiles from database and publish to workspace
+        profiles = self.persistence.get_all_semantic_profiles()
+        if profiles:
+            logger.info(f"Loading {len(profiles)} semantic profiles from database...")
+            # Get all entities once (avoid O(n*m) complexity)
+            entities = self.persistence.get_all_entities()
+            entity_map = {e["id"]: e for e in entities}  # Create lookup map
+            
+            for profile in profiles:
+                entity_id = profile.get("entity_id")
+                if entity_id:
+                    # Get entity info for display
+                    entity_info = entity_map.get(entity_id)
+                    if entity_info:
+                        await self.controller.publish(
+                            events.TOPIC_WORKSPACE_SCHEMA,
+                            events.create_workspace_schema_event({
+                                "type": "semantic_profile",
+                                "title": f"Profile: {entity_info['label']}",
+                                "props": profile
+                            })
+                        )
+            await self.controller.push_agui_log(f"Loaded {len(profiles)} semantic profiles from database.", "info")
+        else:
+            await self.controller.push_agui_log("No semantic profiles found in database.", "info")
+        
+        # 7. Load narratives from database and publish to workspace
+        narratives = self.persistence.get_all_narratives()
+        if narratives:
+            logger.info(f"Loading {len(narratives)} narratives from database...")
+            for narrative_data in narratives:
+                await self.controller.publish(
+                    events.TOPIC_WORKSPACE_SCHEMA,
+                    events.create_workspace_schema_event({
+                        "type": "narrative",
+                        "title": f"Narrative: {narrative_data['doc_id']}",
+                        "props": {
+                            "doc_id": narrative_data["doc_id"],
+                            "narrative": narrative_data["narrative"],
+                            "entity_count": narrative_data["entity_count"],
+                            "relationship_count": narrative_data["relationship_count"],
+                        }
+                    })
+                )
+            await self.controller.push_agui_log(f"Loaded {len(narratives)} narratives from database.", "info")
+        
+        # 8. Trigger graph analysis to generate UI schemas from database data
+        # This will cause AdvancedGraphAnalysisService to analyze the graph and publish schemas
+        # Pass None as doc_id to analyze ALL entities/relationships, not just a specific document
+        # Set skip_deduplication=True since data is already deduplicated
+        logger.info("Triggering graph analysis to generate UI schemas...")
+        await self.controller.push_agui_log("Generating intelligence views from database...", "info")
+        await self.controller.publish(
+            events.TOPIC_GRAPH_UPDATED,
+            {
+                "doc_id": None,  # None = analyze all data, not filtered by doc_id
+                "graph_stats": {},  # Empty stats - services will query DB directly
+                "skip_deduplication": True,  # Skip deduplication during restore (data already processed)
+                "skip_semantic_profiling": True  # Skip semantic profiling (profiles already loaded from DB)
+            }
+        )
 
     async def clear_workspace_only(self):
         """Clears only the UI workspace for a new project (database untouched)."""

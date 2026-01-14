@@ -482,10 +482,11 @@ class GraphController:
             
             Handler = make_handler(str(server_dir))
             self._http_server = HTTPServer(('127.0.0.1', port), Handler)
+            server = self._http_server  # Capture for nested function
             
             def run_server():
                 try:
-                    self._http_server.serve_forever()
+                    server.serve_forever()  # type: ignore[union-attr]
                 except Exception:
                     pass  # Server stopped
             

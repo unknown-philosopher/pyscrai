@@ -74,6 +74,11 @@ class SemanticProfilerService:
         This is called after entities are persisted to the database, so we can
         safely query them.
         """
+        # Skip semantic profiling if flag is set (e.g., during session restore when profiles are loaded from DB)
+        if payload.get("skip_semantic_profiling", False):
+            logger.debug("Skipping semantic profiling (skip_semantic_profiling flag set)")
+            return
+        
         graph_stats = payload.get("graph_stats", {})
         nodes = graph_stats.get("nodes", [])
         
@@ -84,7 +89,15 @@ class SemanticProfilerService:
             if entity_id:
                 entity_ids.add(entity_id)
         
-        # Generate profiles for all entities in the graph update
+        # If no nodes in graph_stats (e.g., during session restore), query all entities from database
+        if not entity_ids and self.db_conn:
+            try:
+                results = self.db_conn.execute("SELECT id FROM entities").fetchall()
+                entity_ids = {row[0] for row in results}
+            except Exception as e:
+                logger.error(f"Error querying entities for profiling: {e}")
+        
+        # Generate profiles for all entities
         # Process sequentially with rate limiting to avoid API rate limits
         for entity_id in entity_ids:
             if entity_id:
@@ -95,11 +108,13 @@ class SemanticProfilerService:
                 except Exception as e:
                     logger.error(f"Failed to generate profile for {entity_id}: {e}")
     
-    async def generate_profile(self, entity_id: str) -> Optional[Dict[str, Any]]:
+    async def generate_profile(self, entity_id: str, max_retries: int = 3, retry_delay: float = 0.5) -> Optional[Dict[str, Any]]:
         """Generate a semantic profile for an entity.
         
         Args:
             entity_id: Entity ID to profile
+            max_retries: Maximum number of retries if entity is not found (for timing issues)
+            retry_delay: Initial delay between retries in seconds (exponential backoff)
             
         Returns:
             Semantic profile dictionary or None if error
@@ -108,10 +123,54 @@ class SemanticProfilerService:
         if entity_id in self._profile_cache:
             return self._profile_cache[entity_id]
         
-        # Get entity information from database
-        entity_info = self._get_entity_info(entity_id)
+        # Check database for existing profile (skip LLM generation if exists)
+        if self.db_conn:
+            try:
+                result = self.db_conn.execute("""
+                    SELECT profile_json
+                    FROM semantic_profiles
+                    WHERE entity_id = ?
+                """, (entity_id,)).fetchone()
+                
+                if result:
+                    import json
+                    profile = json.loads(result[0])
+                    # Cache the loaded profile
+                    self._profile_cache[entity_id] = profile
+                    
+                    # Publish to workspace for UI display
+                    entity_info = self._get_entity_info(entity_id)
+                    if entity_info:
+                        await self.event_bus.publish(
+                            events.TOPIC_WORKSPACE_SCHEMA,
+                            events.create_workspace_schema_event({
+                                "type": "semantic_profile",
+                                "title": f"Profile: {entity_info['label']}",
+                                "props": profile
+                            })
+                        )
+                    
+                    logger.debug(f"Loaded semantic profile for {entity_id} from database")
+                    return profile
+            except Exception as e:
+                logger.debug(f"Error loading profile from database for {entity_id}: {e}")
+                # Continue to generate new profile if loading fails
+        
+        # Get entity information from database with retry logic for timing issues
+        entity_info = None
+        for attempt in range(max_retries):
+            entity_info = self._get_entity_info(entity_id)
+            if entity_info:
+                break
+            
+            if attempt < max_retries - 1:
+                # Entity not found yet, wait and retry (exponential backoff)
+                delay = retry_delay * (2 ** attempt)
+                logger.debug(f"Entity {entity_id} not found in database (attempt {attempt + 1}/{max_retries}), retrying in {delay:.2f}s...")
+                await asyncio.sleep(delay)
+        
         if not entity_info:
-            logger.warning(f"Entity {entity_id} not found in database")
+            logger.warning(f"Entity {entity_id} not found in database after {max_retries} attempts")
             return None
         
         # Get relationships for this entity

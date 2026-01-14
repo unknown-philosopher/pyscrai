@@ -48,12 +48,28 @@ def create_entity_extracted_event(doc_id: str, entities: List[Dict[str, Any]]) -
     }
 
 
-def create_relationship_found_event(doc_id: str, relationships: List[Dict[str, Any]]) -> EventPayload:
-    """Create a relationship found event."""
-    return {
+def create_relationship_found_event(
+    doc_id: str, 
+    relationships: List[Dict[str, Any]],
+    batch_index: int | None = None,
+    is_complete: bool = True
+) -> EventPayload:
+    """Create a relationship found event.
+    
+    Args:
+        doc_id: Document ID
+        relationships: List of relationship dictionaries
+        batch_index: Optional batch index for incremental publishing
+        is_complete: Whether this is the final batch (default: True for backward compatibility)
+    """
+    event: EventPayload = {
         "doc_id": doc_id,
         "relationships": relationships,
+        "is_complete": is_complete,
     }
+    if batch_index is not None:
+        event["batch_index"] = batch_index
+    return event
 
 
 def create_graph_updated_event(doc_id: str, graph_stats: Dict[str, Any]) -> EventPayload:

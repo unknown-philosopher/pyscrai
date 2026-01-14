@@ -9,12 +9,21 @@ Analyze these entities and determine if there is a plausible direct relationship
 2. A confidence score (0.0 to 1.0)
 3. Brief justification
 
+CRITICAL JSON FORMAT REQUIREMENTS:
+- Use ONLY double quotes (") for all strings, never single quotes (')
+- Escape special characters: use \" for quotes inside strings, \\ for backslashes
+- Ensure all braces { } are properly closed
+- No trailing commas before closing braces
+- All property names must be in double quotes
+- "exists" must be a boolean (true or false), not a string
+- "confidence" must be a number (float 0.0-1.0), not a string
+
 Respond in JSON format:
 {
-  "exists": true/false,
+  "exists": true,
   "type": "RELATIONSHIP_TYPE",
-  "confidence": 0.0-1.0,
+  "confidence": 0.75,
   "justification": "brief explanation"
 }
 
-Respond with ONLY the JSON, no additional text.
+Respond with ONLY the JSON object. Do not include markdown code blocks, explanations, or any other text. The response must be valid JSON that can be parsed by json.loads().

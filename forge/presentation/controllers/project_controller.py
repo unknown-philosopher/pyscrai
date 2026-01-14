@@ -55,10 +55,12 @@ class ProjectController:
             root.attributes('-topmost', True)
             
             # Open file dialog
+            projects_dir = Path("/home/tyler/_development/pyscrai/data/projects")
+            projects_dir.mkdir(parents=True, exist_ok=True)
             file_path = filedialog.askopenfilename(
                 title="Open Project",
                 filetypes=[("DuckDB Database", "*.duckdb"), ("All Files", "*.*")],
-                initialdir=os.getcwd(),
+                initialdir=str(projects_dir),
             )
             
             root.destroy()
@@ -84,11 +86,13 @@ class ProjectController:
             root.attributes('-topmost', True)
             
             # Save file dialog
+            projects_dir = Path("/home/tyler/_development/pyscrai/data/projects")
+            projects_dir.mkdir(parents=True, exist_ok=True)
             file_path = filedialog.asksaveasfilename(
                 title="Save Project",
                 defaultextension=".duckdb",
                 filetypes=[("DuckDB Database", "*.duckdb"), ("All Files", "*.*")],
-                initialdir=os.getcwd(),
+                initialdir=str(projects_dir),
                 initialfile="project.duckdb",
             )
             

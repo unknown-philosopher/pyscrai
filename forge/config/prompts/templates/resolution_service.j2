@@ -30,6 +30,15 @@ IMPORTANT:
 - Use the exact entity names as they appear in the entity list above
 - If an entity has multiple names/aliases, use the primary name from the entity list
 
+CRITICAL JSON FORMAT REQUIREMENTS:
+- Use ONLY double quotes (") for all strings, never single quotes (')
+- Escape special characters in entity names: use \" for quotes inside strings, \\ for backslashes
+- Ensure all brackets [ ] and braces { } are properly closed
+- No trailing commas before closing brackets or braces
+- All property names ("source", "target", "type", "confidence") must be in double quotes
+- Confidence must be a number (float), not a string
+- If an entity name contains quotes or special characters, escape them properly
+
 Return a JSON array of relationships:
 [
   {
@@ -40,4 +49,14 @@ Return a JSON array of relationships:
   }
 ]
 
-Respond with ONLY the JSON array, no additional text or explanation.
+Example with special characters:
+[
+  {
+    "source": "John \"Johnny\" Smith",
+    "target": "Acme Corp",
+    "type": "WORKS_AT",
+    "confidence": 0.9
+  }
+]
+
+Respond with ONLY the JSON array. Do not include markdown code blocks (```json or ```), explanations, or any other text. The response must be valid JSON that can be parsed by json.loads() with no errors.

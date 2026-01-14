@@ -68,7 +68,7 @@ async def call_llm_with_retry(
     llm_provider: LLMProvider,
     prompt: str,
     model: Optional[str] = None,
-    max_tokens: int = 2000,
+    max_tokens: int = 8000,
     temperature: float = 0.3,
     service_name: str = "Service"
 ) -> Dict[str, Any]:
@@ -174,6 +174,33 @@ def clean_markdown_code_blocks(content: str) -> str:
     return content
 
 
+def _add_json_format_reminder(prompt: str, attempt: int) -> str:
+    """Add JSON format reminder to prompt on retries.
+    
+    Args:
+        prompt: Original prompt
+        attempt: Retry attempt number (1-based)
+        
+    Returns:
+        Prompt with JSON format reminder appended
+    """
+    json_reminder = (
+        "\n\nCRITICAL: Your previous response contained invalid JSON. "
+        "You MUST respond with ONLY valid JSON - no markdown, no explanations, no code blocks. "
+        "\n\nJSON Requirements:"
+        "\n- All strings MUST use double quotes (\"), not single quotes (')"
+        "\n- All property names MUST be in double quotes"
+        "\n- Every string value MUST be properly closed with a matching quote"
+        "\n- Every opening bracket [ must have a closing bracket ]"
+        "\n- Every opening brace { must have a closing brace }"
+        "\n- All items in arrays must be separated by commas"
+        "\n- No trailing commas before closing brackets or braces"
+        "\n- Escape special characters in strings with backslash (\\\" for quotes, \\\\ for backslash)"
+        "\n\nYour response must be a valid JSON array that can be parsed by json.loads() with no errors."
+    )
+    return prompt + json_reminder
+
+
 async def call_llm_and_parse_json(
     llm_provider: LLMProvider,
     prompt: str,
@@ -181,9 +208,10 @@ async def call_llm_and_parse_json(
     max_tokens: int = 2000,
     temperature: float = 0.3,
     service_name: str = "Service",
-    doc_id: Optional[str] = None
+    doc_id: Optional[str] = None,
+    max_retries: int = 2
 ) -> Optional[Any]:
-    """Make an LLM call and parse the response as JSON.
+    """Make an LLM call and parse the response as JSON with retry logic.
     
     Args:
         llm_provider: LLM provider instance
@@ -193,48 +221,97 @@ async def call_llm_and_parse_json(
         temperature: Sampling temperature
         service_name: Service name for logging
         doc_id: Optional document ID for logging
+        max_retries: Maximum number of retries on JSON parsing failure
         
     Returns:
-        Parsed JSON object, or None if parsing fails
+        Parsed JSON object, or None if parsing fails after all retries
     """
-    try:
-        response = await call_llm_with_retry(
-            llm_provider=llm_provider,
-            prompt=prompt,
-            model=model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            service_name=service_name
-        )
-        
-        content = extract_content_from_response(response)
-        if not content:
-            log_msg = f"No content in LLM response"
+    for attempt in range(max_retries + 1):  # Initial attempt + max_retries
+        try:
+            # Use original prompt on first attempt, add reminder on retries
+            current_prompt = prompt if attempt == 0 else _add_json_format_reminder(prompt, attempt)
+            
+            # Lower temperature on retries for more deterministic output
+            current_temperature = temperature if attempt == 0 else max(0.0, temperature - 0.1)
+            
+            if attempt > 0:
+                log_msg = f"Retrying JSON parse (attempt {attempt + 1}/{max_retries + 1})"
+                if doc_id:
+                    log_msg += f" for document {doc_id}"
+                logger.warning(f"{service_name}: {log_msg}")
+            
+            response = await call_llm_with_retry(
+                llm_provider=llm_provider,
+                prompt=current_prompt,
+                model=model,
+                max_tokens=max_tokens,
+                temperature=current_temperature,
+                service_name=service_name
+            )
+            
+            content = extract_content_from_response(response)
+            if not content:
+                log_msg = f"No content in LLM response"
+                if doc_id:
+                    log_msg += f" for document {doc_id}"
+                if attempt < max_retries:
+                    logger.warning(f"{service_name}: {log_msg}, will retry")
+                    continue
+                logger.warning(f"{service_name}: {log_msg}")
+                return None
+            
+            # Clean markdown code blocks
+            content = clean_markdown_code_blocks(content)
+            
+            # Parse JSON
+            try:
+                result = json.loads(content)
+                if attempt > 0:
+                    log_msg = f"Successfully parsed JSON on retry attempt {attempt + 1}"
+                    if doc_id:
+                        log_msg += f" for document {doc_id}"
+                    logger.info(f"{service_name}: {log_msg}")
+                return result
+            except json.JSONDecodeError as e:
+                error_msg = f"Failed to parse LLM response as JSON: {e}"
+                if doc_id:
+                    error_msg += f" (document {doc_id})"
+                
+                if attempt < max_retries:
+                    logger.warning(f"{service_name}: {error_msg}, will retry")
+                    # Log a snippet around the error location for debugging
+                    error_pos = getattr(e, 'pos', None)
+                    if error_pos:
+                        start = max(0, error_pos - 100)
+                        end = min(len(content), error_pos + 100)
+                        logger.debug(f"{service_name}: Error context: ...{content[start:end]}...")
+                    continue
+                else:
+                    logger.error(f"{service_name}: {error_msg} (all retries exhausted)")
+                    logger.debug(f"{service_name}: Response content (first 1000 chars): {content[:1000]}")
+                    
+                    # Log error position if available
+                    error_pos = getattr(e, 'pos', None)
+                    if error_pos:
+                        logger.debug(f"{service_name}: JSON parse error at position {error_pos} of {len(content)}")
+                        # Show the problematic area
+                        start = max(0, error_pos - 200)
+                        end = min(len(content), error_pos + 200)
+                        logger.debug(f"{service_name}: Error region: ...{content[start:end]}...")
+                return None
+                
+        except Exception as e:
+            log_msg = f"Error in LLM call"
             if doc_id:
                 log_msg += f" for document {doc_id}"
-            logger.warning(f"{service_name}: {log_msg}")
+            if attempt < max_retries:
+                logger.warning(f"{service_name}: {log_msg}: {e}, will retry")
+                continue
+            logger.error(f"{service_name}: {log_msg}: {e} (all retries exhausted)", exc_info=True)
             return None
-        
-        # Clean markdown code blocks
-        content = clean_markdown_code_blocks(content)
-        
-        # Parse JSON
-        try:
-            return json.loads(content)
-        except json.JSONDecodeError as e:
-            log_msg = f"Failed to parse LLM response as JSON: {e}"
-            if doc_id:
-                log_msg += f" (document {doc_id})"
-            logger.error(f"{service_name}: {log_msg}")
-            logger.debug(f"{service_name}: Response content: {content[:500]}")
-            return None
-            
-    except Exception as e:
-        log_msg = f"Error in LLM call"
-        if doc_id:
-            log_msg += f" for document {doc_id}"
-        logger.error(f"{service_name}: {log_msg}: {e}", exc_info=True)
-        return None
+    
+    # Should never reach here, but just in case
+    return None
 
 
 async def call_llm_and_get_text(
