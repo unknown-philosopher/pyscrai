@@ -223,10 +223,10 @@ class ProjectController:
         )
 
     def new_project(self, e):
-        """Start a new project: clear session and notify user."""
-        # Log and clear current session asynchronously
+        """Start a new project: clear only the workspace UI, keep database intact."""
+        # Log and clear workspace asynchronously (UI only, no database clear)
         asyncio.create_task(self.app_controller.push_agui_log("Starting new project...", "info"))
-        asyncio.create_task(self.session_manager.clear_session())
+        asyncio.create_task(self.session_manager.clear_workspace_only())
         # Notify the user in the UI (use setattr/getattr to avoid static-type complaints)
         snack = ft.SnackBar(ft.Text("New project started!"))
         setattr(self.page, "snack_bar", snack)

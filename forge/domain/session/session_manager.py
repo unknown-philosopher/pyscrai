@@ -35,7 +35,12 @@ class SessionManager:
         self.embedding = embedding_service
 
     async def restore_session(self):
-        """Reloads UI state and re-indexes vectors from persistent storage."""
+        """Reloads UI state and re-indexes vectors from the last manually-saved project.
+        
+        NOTE: Since auto-save is disabled, this loads the state from the last time
+        the user clicked 'Save Project'. Real-time extraction/analysis changes are
+        held in memory until explicitly saved.
+        """
         logger.info("♻️ Restoring session from database...")
         await self.controller.push_agui_log("♻️ Starting Session Restore...", "info")
         
@@ -150,8 +155,17 @@ class SessionManager:
         else:
             await self.controller.push_agui_log("No relationships found to re-index.", "warning")
 
+    async def clear_workspace_only(self):
+        """Clears only the UI workspace for a new project (database untouched)."""
+        logger.info("🎨 Clearing workspace UI only...")
+        
+        # Clear only the UI workspace, keep all database data intact
+        self.controller.clear_workspace()
+        
+        await self.controller.push_agui_log("Workspace cleared. Database preserved.", "success")
+
     async def clear_session(self):
-        """Wipes the database and clears the UI for a new project."""
+        """Wipes the database and clears the UI (full reset)."""
         logger.info("🗑️ Clearing session...")
         
         # 1. Clear UI
@@ -160,7 +174,24 @@ class SessionManager:
         # 2. Clear Database
         self.persistence.clear_all_data()
         
-        # 3. Clear Vector Store (if supported by QdrantService, otherwise restart needed for in-memory)
+        # 3. Reset the database connection to ensure fresh state
+        # This prevents cached state or pending transactions from interfering
+        try:
+            if self.persistence.conn:
+                self.persistence.conn.close()
+                logger.info("Closed database connection after clearing")
+            
+            # Reconnect to get a fresh connection
+            import duckdb
+            self.persistence.conn = duckdb.connect(self.persistence.db_path)
+            # Recreate schema to ensure tables exist
+            self.persistence._create_schema()
+            logger.info("Reconnected to database with fresh state")
+        except Exception as e:
+            logger.error(f"Error resetting database connection: {e}")
+            await self.controller.push_agui_log(f"Warning: Database connection reset failed: {e}", "warning")
+        
+        # 4. Clear Vector Store (if supported by QdrantService, otherwise restart needed for in-memory)
         # Assuming QdrantService has a way to reset or we just rely on DB wipe
         # Re-creating collections in Qdrant is a heavy op, ideally we'd delete points.
         # For now, we rely on the DB wipe. Future searches won't match if we don't clear vectors,
@@ -229,7 +260,10 @@ class SessionManager:
                 pass
 
     async def open_project(self, file_path: str) -> None:
-        """Open a project database file and restore the session."""
+        """Open a project database file and restore the session.
+        
+        SAFE APPROACH: Connects to the selected file without overwriting main database.
+        """
         logger.info(f"📂 Opening project from {file_path}...")
         await self.controller.push_agui_log(f"Opening project from {file_path}...", "info")
         
@@ -248,16 +282,19 @@ class SessionManager:
                 await self.restore_session()
                 return
             
+            # SAFE APPROACH: Connect to the external file temporarily without overwriting main database
             # Close the current database connection
             if self.persistence.conn:
                 self.persistence.conn.close()
             
-            # Copy the selected database file to replace the current one
-            shutil.copy2(source_path, db_path)
-            
-            # Reconnect to the database
+            # Connect directly to the selected file (DO NOT COPY/OVERWRITE)
             import duckdb
-            self.persistence.conn = duckdb.connect(str(db_path))
+            self.persistence.conn = duckdb.connect(str(source_path))
+            # Update the db_path reference to track what file we're currently connected to
+            self.persistence.db_path = str(source_path)
+            
+            # Ensure the opened database has proper schema (tables may not exist)
+            self.persistence._create_schema()
             
             logger.info(f"Project opened successfully from {file_path}")
             await self.controller.push_agui_log(f"Project opened successfully. Restoring session...", "success")

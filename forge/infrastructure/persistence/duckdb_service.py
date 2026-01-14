@@ -1,6 +1,8 @@
 """DuckDB Persistence Service for PyScrAI Forge.
 
 Stores entities and relationships for analytics and queries.
+
+All autosave and event handlers use forge_data.duckdb (self.conn) for both writing and reading.
 """
 
 import asyncio
@@ -13,8 +15,9 @@ from forge.core import events
 
 
 class DuckDBPersistenceService:
-    """Manages persistent storage of entities and relationships using DuckDB."""
+    """Manages persistent storage of entities and relationships using DuckDB.
     
+    """
     def __init__(self, event_bus: EventBus, db_path: Optional[str] = None):
         self.event_bus = event_bus
         # Default to data/db/forge_data.duckdb relative to project root
@@ -29,39 +32,42 @@ class DuckDBPersistenceService:
         self.conn: Optional[duckdb.DuckDBPyConnection] = None
     
     async def start(self):
-        """Initialize database schema and subscribe to graph events."""
+        """Initialize main database and subscribe to autosave events."""
         # Ensure directory exists
         db_path_obj = Path(self.db_path)
         db_path_obj.parent.mkdir(parents=True, exist_ok=True)
-        
-        # Initialize database connection
+        # Initialize main database connection (manual save/load and autosave)
         self.conn = duckdb.connect(self.db_path)
         self._create_schema()
-        
-        # Subscribe to graph update events
+        logger = __import__("logging").getLogger(__name__)
+        logger.info(f"Database initialized: {self.db_path}")
+        # Subscribe to graph updates - AUTO-SAVE to main database
         await self.event_bus.subscribe(
             events.TOPIC_GRAPH_UPDATED,
             self.handle_graph_updated
         )
-        
-        # Subscribe to workspace schema events to auto-save UI artifacts
+        # Subscribe to workspace schema events - AUTO-SAVE to main database
         await self.event_bus.subscribe(
             events.TOPIC_WORKSPACE_SCHEMA,
             self.handle_workspace_schema
         )
     
     def _create_schema(self):
-        """Create tables for entities and relationships."""
-        if not self.conn:
+        """Create tables for entities and relationships in main database."""
+        self._create_schema_in(self.conn)
+    
+    def _create_schema_in(self, conn: Optional[duckdb.DuckDBPyConnection]):
+        """Create tables for entities and relationships in the specified connection."""
+        if not conn:
             return
         
         # Create sequence for relationship IDs first
-        self.conn.execute("""
+        conn.execute("""
             CREATE SEQUENCE IF NOT EXISTS rel_seq START 1
         """)
         
         # Entities table
-        self.conn.execute("""
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS entities (
                 id VARCHAR PRIMARY KEY,
                 type VARCHAR NOT NULL,
@@ -74,7 +80,7 @@ class DuckDBPersistenceService:
         # Relationships table
         # Note: DuckDB doesn't support ON DELETE CASCADE in FOREIGN KEY constraints
         # The deduplication service manually updates relationships before deleting entities
-        self.conn.execute("""
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS relationships (
                 id INTEGER PRIMARY KEY DEFAULT nextval('rel_seq'),
                 source VARCHAR NOT NULL,
@@ -89,18 +95,18 @@ class DuckDBPersistenceService:
         """)
         
         # Create indexes for performance
-        self.conn.execute("""
+        conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_entities_type ON entities(type)
         """)
-        self.conn.execute("""
+        conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_relationships_source ON relationships(source)
         """)
-        self.conn.execute("""
+        conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_relationships_target ON relationships(target)
         """)
         
         # UI Artifacts table for storing workspace schemas
-        self.conn.execute("""
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS ui_artifacts (
                 id VARCHAR PRIMARY KEY,
                 schema TEXT NOT NULL,
@@ -108,34 +114,30 @@ class DuckDBPersistenceService:
             )
         """)
         
-        self.conn.execute("""
+        conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_ui_artifacts_created ON ui_artifacts(created_at)
         """)
         
-        self.conn.commit()
+        conn.commit()
     
     async def handle_graph_updated(self, payload: EventPayload):
-        """Persist graph updates to DuckDB."""
+        """Persist graph updates to main database (auto-save during extraction)."""
         if not self.conn:
             return
-        
         graph_stats = payload.get("graph_stats", {})
         nodes = graph_stats.get("nodes", [])
         edges = graph_stats.get("edges", [])
-        
         # Upsert entities (insert if new, update if exists)
         for node in nodes:
             node_id = node.get("id")
             node_type = node.get("type")
             label = node.get("label")
-            
             if node_id and node_type and label:
                 # Check if entity already exists
                 result = self.conn.execute(
                     "SELECT id FROM entities WHERE id = ?",
                     (node_id,)
                 ).fetchone()
-                
                 if result:
                     # Entity exists, update it
                     self.conn.execute("""
@@ -149,7 +151,6 @@ class DuckDBPersistenceService:
                         INSERT INTO entities (id, type, label)
                         VALUES (?, ?, ?)
                     """, (node_id, node_type, label))
-        
         # Insert relationships (append only for now)
         for edge in edges:
             source = edge.get("source")
@@ -157,19 +158,15 @@ class DuckDBPersistenceService:
             rel_type = edge.get("type")
             confidence = edge.get("confidence", 1.0)
             doc_id = edge.get("doc_id")
-            
             if source and target and rel_type:
                 self.conn.execute("""
                     INSERT INTO relationships (source, target, type, confidence, doc_id)
                     VALUES (?, ?, ?, ?, ?)
                 """, (source, target, rel_type, confidence, doc_id))
-        
         self.conn.commit()
-        
         # Emit AG-UI event with persistence confirmation
         entity_count = self.get_entity_count()
         relationship_count = self.get_relationship_count()
-        
         await self.event_bus.publish(
             events.TOPIC_AGUI_EVENT,
             events.create_agui_event(
@@ -180,25 +177,22 @@ class DuckDBPersistenceService:
         )
     
     async def handle_workspace_schema(self, payload: EventPayload):
-        """Persist workspace schema (UI artifact) to DuckDB."""
+        """Persist workspace schema (UI artifact) to main database (auto-save)."""
         schema = payload.get("schema")
         if not schema or not self.conn:
             return
-        
         # Generate a unique ID for this schema artifact
         # Use a hash of the schema content or timestamp-based ID
         import hashlib
         schema_json = json.dumps(schema, sort_keys=True)
         artifact_id = hashlib.md5(schema_json.encode()).hexdigest()
-        
         # Check if this artifact already exists
         result = self.conn.execute(
             "SELECT id FROM ui_artifacts WHERE id = ?",
             (artifact_id,)
         ).fetchone()
-        
         if not result:
-            # Insert new artifact
+            # Insert new artifact to main database
             self.conn.execute("""
                 INSERT INTO ui_artifacts (id, schema)
                 VALUES (?, ?)
@@ -324,6 +318,15 @@ class DuckDBPersistenceService:
             # The sequence will continue from its current value, which is fine
             # for our use case since we're using it for relationship IDs
             self.conn.commit()
+            
+            # CRITICAL: Force a checkpoint to ensure WAL is flushed to main database file
+            # This prevents the cleared state from being lost if the connection closes unexpectedly
+            try:
+                self.conn.execute("CHECKPOINT")
+                logger.info("Database checkpoint completed after clearing data")
+            except Exception as e:
+                logger.warning(f"Could not checkpoint database after clearing: {e}")
+            
             logger.info("Database cleared: all entities, relationships, and UI artifacts removed")
         except Exception as e:
             logger.error(f"Error clearing database: {e}")

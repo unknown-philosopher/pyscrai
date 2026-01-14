@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import socket
+import subprocess
 import tempfile
+import threading
 import webbrowser
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Any, Optional
 from collections import defaultdict
@@ -48,6 +52,9 @@ class GraphController:
         }
         # Cache for graph HTML file
         self._graph_html_path: Optional[Path] = None
+        # HTTP server for serving HTML files
+        self._http_server: Optional[HTTPServer] = None
+        self._http_server_thread: Optional[threading.Thread] = None
     
     def build_view(self) -> ft.Control:
         """Build the graph view UI with controls and graph container."""
@@ -76,10 +83,20 @@ class GraphController:
             try:
                 html_path = self._generate_and_save_graph(filtered_entities, filtered_relationships)
                 if html_path and html_path.exists():
-                    # Use webbrowser to open the file
-                    file_url = f"file://{html_path.absolute()}"
-                    webbrowser.open(file_url)
-                    await self.app_controller.push_agui_log(f"Graph visualization opened in browser", "success")
+                    # Serve via HTTP server (more reliable than file:// URLs)
+                    url = await self._serve_html_file(html_path)
+                    if url:
+                        if self._open_url_in_browser(url):
+                            await self.app_controller.push_agui_log(f"Graph visualization opened in browser", "success")
+                        else:
+                            await self.app_controller.push_agui_log(f"Could not open browser. URL: {url}", "warning")
+                    else:
+                        # Fallback to file:// URL
+                        file_url = f"file://{html_path.absolute()}"
+                        if self._open_url_in_browser(file_url):
+                            await self.app_controller.push_agui_log(f"Graph visualization opened in browser", "success")
+                        else:
+                            await self.app_controller.push_agui_log(f"Could not open browser. File: {html_path}", "warning")
                 else:
                     await self.app_controller.push_agui_log("Failed to generate graph visualization", "error")
             except Exception as ex:
@@ -371,6 +388,133 @@ class GraphController:
         ]
         
         return filtered_entities, filtered_relationships
+    
+    def _open_url_in_browser(self, url: str) -> bool:
+        """Open a URL in the default browser.
+        
+        Args:
+            url: URL to open
+            
+        Returns:
+            True if browser was launched successfully, False otherwise
+        """
+        # Try common browsers in order of preference
+        # Format: (command_name, use_app_mode)
+        browsers = [
+            # Chromium-based browsers (with app mode for cleaner UI)
+            ('chromium-browser', True),
+            ('chromium', True),
+            ('google-chrome', True),
+            ('google-chrome-stable', True),
+            # Firefox
+            ('firefox', False),
+            # Epiphany/GNOME Web
+            ('epiphany', False),
+            ('epiphany-browser', False),
+            # xdg-open as last resort
+            ('xdg-open', False),
+        ]
+        
+        for browser_name, use_app_mode in browsers:
+            try:
+                if use_app_mode:
+                    # Chromium browsers support --app flag for app-like experience
+                    cmd = [browser_name, f'--app={url}']
+                else:
+                    cmd = [browser_name, url]
+                
+                # Try to launch the browser
+                subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True
+                )
+                return True
+            except (FileNotFoundError, OSError):
+                continue
+        
+        # Fallback to webbrowser module (may not work but worth trying)
+        try:
+            webbrowser.open(url)
+            return True
+        except Exception:
+            pass
+        
+        return False
+    
+    def _find_free_port(self) -> int:
+        """Find a free port for the HTTP server."""
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('', 0))
+            s.listen(1)
+            port = s.getsockname()[1]
+        return port
+    
+    async def _serve_html_file(self, html_path: Path) -> Optional[str]:
+        """Start a simple HTTP server to serve the HTML file.
+        
+        Args:
+            html_path: Path to the HTML file to serve
+            
+        Returns:
+            URL to access the file, or None if server couldn't be started
+        """
+        try:
+            # Stop any existing server
+            if self._http_server:
+                self._stop_http_server()
+            
+            # Change to the directory containing the HTML file
+            server_dir = html_path.parent
+            port = self._find_free_port()
+            
+            # Create handler class with directory bound
+            def make_handler(directory: str):
+                class Handler(SimpleHTTPRequestHandler):
+                    def __init__(self, *args, **kwargs):
+                        super().__init__(*args, directory=directory, **kwargs)
+                    
+                    def log_message(self, format, *args):
+                        # Suppress server logs
+                        pass
+                return Handler
+            
+            Handler = make_handler(str(server_dir))
+            self._http_server = HTTPServer(('127.0.0.1', port), Handler)
+            
+            def run_server():
+                try:
+                    self._http_server.serve_forever()
+                except Exception:
+                    pass  # Server stopped
+            
+            self._http_server_thread = threading.Thread(target=run_server, daemon=True)
+            self._http_server_thread.start()
+            
+            # Give the server a moment to start
+            await asyncio.sleep(0.1)
+            
+            # Build URL
+            filename = html_path.name
+            url = f"http://127.0.0.1:{port}/{filename}"
+            return url
+        except Exception as e:
+            logger.warning(f"Could not start HTTP server: {e}")
+            return None
+    
+    def _stop_http_server(self):
+        """Stop the HTTP server if it's running."""
+        if self._http_server:
+            try:
+                self._http_server.shutdown()
+                self._http_server.server_close()
+            except Exception:
+                pass
+            self._http_server = None
+        if self._http_server_thread and self._http_server_thread.is_alive():
+            self._http_server_thread.join(timeout=1.0)
+        self._http_server_thread = None
     
     def _generate_and_save_graph(
         self,
