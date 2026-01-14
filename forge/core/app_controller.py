@@ -18,17 +18,20 @@ class AppController:
         # Reactive state exposed to the presentation layer
         self.nav_items: RxList[Dict[str, str]] = RxList(
             [
-                {"id": "ingest", "label": "Ingest", "icon": "database"},
-                {"id": "graph", "label": "Graph", "icon": "account_tree"},
+                # MERGED VIEW: Project + Graph + Ingest
+                {"id": "dashboard", "label": "Dashboard", "icon": "dashboard"},
+                # EXISTING VIEW: Intelligence Dashboard
                 {"id": "intel", "label": "Intel", "icon": "psychology"},
-                {"id": "project", "label": "Project", "icon": "settings_applications"},
             ]
         )
-        self.nav_selected: RxStr = RxStr("ingest")
+        self.nav_selected: RxStr = RxStr("dashboard")
         self.status_text: RxStr = RxStr("System Initialized…")
         self.ag_feed: RxList[Dict[str, Any]] = RxList([])
         self.workspace_schemas: RxList[Dict[str, Any]] = RxList([])
         self.is_ready: RxBool = RxBool(False)
+        
+        # New: Collapsible AG-UI Panel State
+        self.is_agui_expanded: RxBool = RxBool(True)
 
         # Internal flag to prevent duplicate subscriptions
         self._started = False
@@ -97,6 +100,10 @@ class AppController:
             "agui.event",
             {"message": message, "level": level, "ts": time.time()},
         )
+    
+    def toggle_agui(self) -> None:
+        """Toggle the visibility of the AG-UI feed panel."""
+        self.is_agui_expanded.value = not self.is_agui_expanded.value
 
     def clear_workspace(self) -> None:
         """Synchronous helper to reset schemas."""

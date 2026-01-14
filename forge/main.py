@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import logging.handlers
+import os
 import threading
 from pathlib import Path
 from typing import Optional
@@ -278,4 +279,20 @@ def main(page: ft.Page) -> None:
 
 
 if __name__ == "__main__":
-    ft.run(main, view=ft.AppView.FLET_APP)
+    # Support web mode for testing via environment variable
+    # When FLET_WEB_MODE=true, run in web mode (accessible via HTTP for Playwright)
+    # Otherwise, run as desktop app (FLET_APP)
+    if os.getenv("FLET_WEB_MODE") == "true":
+        port = int(os.getenv("FLET_PORT", "8550"))
+        logger.info(f"Starting Flet app in WEB mode on port {port} (for testing)")
+        # Try FLET_APP_WEB first (no browser window), fall back to WEB_BROWSER if needed
+        # In WSL2, we can suppress browser by unsetting DISPLAY if needed
+        view_mode = ft.AppView.FLET_APP_WEB
+        # If DISPLAY is not set or we want to suppress browser, FLET_APP_WEB should work
+        # Otherwise WEB_BROWSER will open a browser window (but Playwright can still connect)
+        if os.getenv("FLET_FORCE_WEB_BROWSER") == "true":
+            view_mode = ft.AppView.WEB_BROWSER
+        ft.run(main, view=view_mode, port=port, host="127.0.0.1")
+    else:
+        logger.info("Starting Flet app in DESKTOP mode")
+        ft.run(main, view=ft.AppView.FLET_APP)

@@ -7,9 +7,8 @@ import flet as ft
 from forge.core.app_controller import AppController
 from forge.core.service_registry import get_session_manager
 from forge.presentation.renderer import render_schema
-from forge.presentation.controllers.ingest_controller import IngestController
-from forge.presentation.controllers.project_controller import ProjectController
-from forge.presentation.controllers.graph_controller import GraphController
+# Import the new DashboardController
+from forge.presentation.controllers.dashboard_controller import DashboardController
 
 
 def apply_shell_theme(page: ft.Page) -> None:
@@ -38,21 +37,8 @@ def _nav_destinations(items: List[dict]) -> List[ft.NavigationRailDestination]:
 def build_shell(page: ft.Page, controller: AppController) -> ft.View:
     apply_shell_theme(page)
 
-    # Initialize ingest controller
-    ingest_controller = IngestController(controller, page)
-    
-    def get_project_controller():
-        """Lazy initialization of ProjectController when session_manager becomes available."""
-        # Dynamically access the global session_manager (set in background thread)
-        # This allows the UI to access it even if it was None when build_shell() was called
-        sm = get_session_manager()
-        if sm:
-            return ProjectController(controller, sm, page)
-        return None
-    
-    def get_graph_controller():
-        """Lazy initialization of GraphController."""
-        return GraphController(controller, page)
+    # Initialize the new Dashboard Controller
+    dashboard_controller = DashboardController(controller, page)
 
     # --- UI primitives ---
     nav_rail = ft.NavigationRail(
@@ -67,14 +53,16 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
 
     status_text = ft.Text(controller.status_text.value, color=ft.Colors.WHITE70)
 
+    # AG-UI Feed List
     ag_feed = ft.ListView(spacing=8, auto_scroll=True)
 
-    # Content container that switches based on navigation
+    # Main Content Container
     content_container = ft.Container(
         expand=True,
-        content=ingest_controller.build_view(),  # Default to ingest view
+        content=dashboard_controller.build_view(),  # Default to unified dashboard
     )
 
+    # Intelligence Workspace (Scrollable)
     workspace = ft.Column(
         controls=[ft.Text("Awaiting Intel", color=ft.Colors.WHITE70)],
         scroll=ft.ScrollMode.AUTO,
@@ -96,13 +84,19 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
         ag_feed.controls = [
             ft.Row(
                 [
-                    ft.Text(entry.get("level", "info").upper(), color=ft.Colors.AMBER_200),
-                    ft.Text(entry.get("message", ""), color=ft.Colors.WHITE),
+                    ft.Text(entry.get("level", "info").upper(), color=ft.Colors.AMBER_200, size=10, width=40),
+                    ft.Text(entry.get("message", ""), color=ft.Colors.WHITE, size=12, expand=True),
                 ],
-                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                alignment=ft.MainAxisAlignment.START,
+                vertical_alignment=ft.CrossAxisAlignment.START,
             )
             for entry in controller.ag_feed.value
         ]
+        page.update()
+
+    def _sync_agui_panel() -> None:
+        # Toggle visibility/width based on state
+        ag_panel_container.visible = controller.is_agui_expanded.value
         page.update()
 
     def _sync_workspace() -> None:
@@ -134,64 +128,63 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
     def _on_nav_change(e: ft.ControlEvent) -> None:
         rail = e.control
         if hasattr(rail, 'selected_index'):
-            idx = rail.selected_index  # type: ignore[attr-defined]
+            idx = rail.selected_index  # type: ignore[reportAttributeAccessIssue]
             items = controller.nav_items.value
             if 0 <= idx < len(items):
                 nav_id = items[idx].get("id", "")
                 controller.set_nav_selected(nav_id)
                 
-                # Switch content based on navigation
-                if nav_id == "ingest":
-                    content_container.content = ingest_controller.build_view()
-                elif nav_id == "graph":
-                    graph_controller = get_graph_controller()
-                    if graph_controller:
-                        content_container.content = graph_controller.build_view()
-                    else:
-                        content_container.content = ft.Container(
-                            padding=20,
-                            content=ft.Column([  # type: ignore[arg-type]
-                                ft.Text("Graph View", size=24, weight=ft.FontWeight.W_700, color=ft.Colors.WHITE),
-                                ft.Divider(color="rgba(255, 255, 255, 0.1)"),  # type: ignore[call-arg]
-                                ft.Text("Loading graph view...", color=ft.Colors.WHITE70),
-                            ])
-                        )
+                # Switch Views
+                if nav_id == "dashboard":
+                    # Rebuild dashboard to refresh stats
+                    content_container.content = dashboard_controller.build_view()
+                
                 elif nav_id == "intel":
-                    # Show workspace for intelligence view
+                    # Show Intelligence Dashboard (Workspace)
                     content_container.content = ft.Container(
                         padding=20,
-                        content=ft.Column([  # type: ignore[arg-type]
+                        content=ft.Column([
                             ft.Row([
                                 ft.Icon(ft.Icons.PSYCHOLOGY, size=32, color=ft.Colors.CYAN_300),
                                 ft.Text("Intelligence Dashboard", size=24, weight=ft.FontWeight.W_700, color=ft.Colors.WHITE),
                             ], spacing=12),
-                            ft.Divider(color="rgba(255, 255, 255, 0.1)"),  # type: ignore[call-arg]
+                            ft.Divider(color="rgba(255, 255, 255, 0.1)"),
                             workspace,
                         ], spacing=12, scroll=ft.ScrollMode.AUTO)
                     )
-                elif nav_id == "project":
-                    project_controller = get_project_controller()
-                    if project_controller:
-                        content_container.content = project_controller.build_view()
-                    else:
-                        content_container.content = ft.Container(
-                            padding=20,
-                            content=ft.Column([
-                                ft.Text("Session Manager not initialized", color=ft.Colors.AMBER_300, size=16),
-                                ft.Text("Please wait for services to initialize...", color=ft.Colors.WHITE70, size=12),
-                            ])
-                        )
         page.update()
 
     nav_rail.on_change = _on_nav_change  # type: ignore[assignment]
 
-    # Attach reactive listeners
+    # --- Listener Bindings ---
     controller.nav_items.listen(_sync_nav)
     controller.nav_selected.listen(_sync_nav)
     controller.status_text.listen(_sync_status)
     controller.ag_feed.listen(_sync_feed)
     controller.workspace_schemas.listen(_sync_workspace)
+    controller.is_agui_expanded.listen(_sync_agui_panel)
 
+    # --- Collapsible Panel Definition ---
+    ag_panel_container = ft.Container(
+        width=300, # Fixed width when open
+        padding=12,
+        bgcolor="rgba(255,255,255,0.06)",
+        border_radius=12,
+        animate_opacity=300, # Fade effect
+        content=ft.Column(
+            [
+                ft.Row([
+                    ft.Text("AG-UI Feed", weight=ft.FontWeight.W_600, color=ft.Colors.WHITE),
+                    ft.IconButton(ft.Icons.CLOSE, icon_size=16, on_click=lambda e: controller.toggle_agui())
+                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                ft.Divider(color="rgba(255,255,255,0.1)"),
+                ag_feed,
+            ],
+            spacing=8,
+        ),
+    )
+
+    # --- Main Layout ---
     chrome = ft.Container(
         expand=True,
         gradient=ft.LinearGradient(
@@ -208,40 +201,39 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
                     padding=16,
                     content=ft.Column(
                         [
+                            # Header Bar
                             ft.Row(
                                 [
-                                    ft.Text("PyScrAI Forge", size=18, weight=ft.FontWeight.W_700, color=ft.Colors.WHITE),
-                                    ft.Container(width=8),
-                                    status_text,
-
+                                    ft.Row([
+                                        ft.Text("PyScrAI Forge", size=18, weight=ft.FontWeight.W_700, color=ft.Colors.WHITE),
+                                        status_text,
+                                    ], spacing=20),
+                                    
+                                    # Toggle Button for AG-UI
+                                    ft.IconButton(
+                                        icon=ft.Icons.VIEW_SIDEBAR,
+                                        tooltip="Toggle AG-UI Feed",
+                                        icon_color=ft.Colors.CYAN_200,
+                                        on_click=lambda e: controller.toggle_agui()
+                                    )
                                 ],
                                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                             ),
                             ft.Container(height=8),
+                            
+                            # Content Area + Right Panel
                             ft.Row(
                                 [
                                     ft.Container(
-                                        expand=2,
+                                        expand=True, # Takes remaining space
                                         content=content_container,
                                         padding=0,
                                         bgcolor="rgba(255,255,255,0.04)",
                                         border_radius=12,
                                     ),
-                                    ft.VerticalDivider(width=1, color="rgba(255,255,255,0.1)"),
-                                    ft.Container(
-                                        expand=1,
-                                        padding=12,
-                                        bgcolor="rgba(255,255,255,0.06)",
-                                        border_radius=12,
-                                        content=ft.Column(  # type: ignore[arg-type]
-                                            [
-                                                ft.Text("AG-UI Feed", weight=ft.FontWeight.W_600, color=ft.Colors.WHITE),
-                                                ft.Divider(color="rgba(255,255,255,0.1)"),  # type: ignore[call-arg]
-                                                ag_feed,
-                                            ],
-                                            spacing=8,
-                                        ),
-                                    ),
+                                    
+                                    # The collapsible panel
+                                    ag_panel_container, 
                                 ],
                                 expand=True,
                                 spacing=12,
@@ -255,10 +247,12 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
         ),
     )
 
+    # Initial Sync
     _sync_nav()
     _sync_status()
     _sync_feed()
     _sync_workspace()
+    _sync_agui_panel()
 
     return ft.View(
         route="/",

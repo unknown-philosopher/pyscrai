@@ -390,40 +390,33 @@ class GraphController:
         return filtered_entities, filtered_relationships
     
     def _open_url_in_browser(self, url: str) -> bool:
-        """Open a URL in the default browser.
-        
-        Args:
-            url: URL to open
-            
-        Returns:
-            True if browser was launched successfully, False otherwise
-        """
-        # Try common browsers in order of preference
-        # Format: (command_name, use_app_mode)
+        """Open a URL in the default browser, using wslview if available (for WSL2)."""
+        import shutil
+        # Prefer wslview if available (for WSL2)
+        wslview_path = shutil.which('wslview')
+        if wslview_path:
+            try:
+                subprocess.Popen([wslview_path, url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                return True
+            except Exception:
+                pass
+        # Fallback to previous logic
         browsers = [
-            # Chromium-based browsers (with app mode for cleaner UI)
             ('chromium-browser', True),
             ('chromium', True),
             ('google-chrome', True),
             ('google-chrome-stable', True),
-            # Firefox
             ('firefox', False),
-            # Epiphany/GNOME Web
             ('epiphany', False),
             ('epiphany-browser', False),
-            # xdg-open as last resort
             ('xdg-open', False),
         ]
-        
         for browser_name, use_app_mode in browsers:
             try:
                 if use_app_mode:
-                    # Chromium browsers support --app flag for app-like experience
                     cmd = [browser_name, f'--app={url}']
                 else:
                     cmd = [browser_name, url]
-                
-                # Try to launch the browser
                 subprocess.Popen(
                     cmd,
                     stdout=subprocess.DEVNULL,
@@ -433,14 +426,11 @@ class GraphController:
                 return True
             except (FileNotFoundError, OSError):
                 continue
-        
-        # Fallback to webbrowser module (may not work but worth trying)
         try:
             webbrowser.open(url)
             return True
         except Exception:
             pass
-        
         return False
     
     def _find_free_port(self) -> int:

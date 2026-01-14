@@ -36,7 +36,14 @@ setup(
 
         # Pytesting
          "pytest-asyncio==1.3.0",
+         "pytest>=7.4.0",
          
     ],
+    extras_require={
+        "testing": [
+            "playwright>=1.40.0",
+            "pytest-playwright>=0.4.0",
+        ]
+    },
     python_requires=">=3.12",
 )
