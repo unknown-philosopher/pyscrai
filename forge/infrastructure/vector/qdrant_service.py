@@ -475,3 +475,36 @@ class QdrantService:
         )
         
         logger.debug(f"Stored relationship embedding: {relationship_id}")
+    
+    async def clear_collections(self) -> None:
+        """Clear both entities and relationships collections by deleting and recreating them.
+        
+        This is useful when re-indexing data to avoid IndexError from stale collection state.
+        """
+        loop = asyncio.get_event_loop()
+        
+        # Delete entities collection
+        try:
+            await loop.run_in_executor(
+                None,
+                lambda: self.client.delete_collection(collection_name="entities")
+            )
+            logger.info("Deleted 'entities' collection")
+        except Exception as e:
+            if "doesn't exist" not in str(e).lower() and "not found" not in str(e).lower():
+                logger.warning(f"Error deleting 'entities' collection: {e}")
+        
+        # Delete relationships collection
+        try:
+            await loop.run_in_executor(
+                None,
+                lambda: self.client.delete_collection(collection_name="relationships")
+            )
+            logger.info("Deleted 'relationships' collection")
+        except Exception as e:
+            if "doesn't exist" not in str(e).lower() and "not found" not in str(e).lower():
+                logger.warning(f"Error deleting 'relationships' collection: {e}")
+        
+        # Recreate collections
+        await self._initialize_collections()
+        logger.info("Collections cleared and recreated")

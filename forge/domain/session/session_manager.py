@@ -56,32 +56,99 @@ class SessionManager:
         else:
             await self.controller.push_agui_log("No saved UI artifacts found.", "warning")
 
-        # 3. Re-index Vectors
+        # 3. Clear QDrant collections before re-indexing to avoid IndexError
+        logger.info("Clearing QDrant collections before re-indexing...")
+        await self.controller.push_agui_log("Clearing vector store...", "info")
+        await self.qdrant.clear_collections()
+
+        # 4. Re-index Entities
         entities = self.persistence.get_all_entities()
         if entities:
             msg = f"Re-indexing {len(entities)} entities into Vector Store..."
             logger.info(msg)
             await self.controller.push_agui_log(msg, "info")
             
-            # Batch process re-indexing
-            batch_size = 20
-            for i in range(0, len(entities), batch_size):
-                batch = entities[i : i + batch_size]
-                
-                # We publish extraction events. The EmbeddingService listens to this
-                # and will re-generate embeddings and push to Qdrant.
+            # Convert database format to entity format for embedding
+            # Database has: id, type, label, created_at, updated_at
+            # Embedding format needs: text, type (for entity dict)
+            entity_list = [
+                {
+                    "text": entity["label"],
+                    "type": entity["type"]
+                }
+                for entity in entities
+            ]
+            
+            # Prepare texts for embedding (same format as EmbeddingService)
+            entity_texts = [
+                f"{entity['text']} ({entity['type']})"
+                for entity in entity_list
+            ]
+            
+            # Embed entities directly (bypass extraction pipeline)
+            embeddings = await self.embedding.embed_batch(entity_texts, use_long_context=False)
+            
+            # Publish embedded events directly (only QdrantService listens to these)
+            for entity, embedding_vec in zip(entity_list, embeddings):
                 await self.controller.publish(
-                    events.TOPIC_ENTITY_EXTRACTED,
+                    events.TOPIC_ENTITY_EMBEDDED,
                     {
                         "doc_id": "restore_session",
-                        "entities": batch
+                        "entity": entity,
+                        "text": f"{entity['text']} ({entity['type']})",
+                        "embedding": embedding_vec,
+                        "dimension": len(embedding_vec),
                     }
                 )
-                await asyncio.sleep(0.01)
             
-            await self.controller.push_agui_log("Vector re-indexing complete.", "success")
+            await self.controller.push_agui_log("Entity re-indexing complete.", "success")
         else:
             await self.controller.push_agui_log("No entities found to re-index.", "warning")
+
+        # 5. Re-index Relationships
+        relationships = self.persistence.get_all_relationships()
+        if relationships:
+            msg = f"Re-indexing {len(relationships)} relationships into Vector Store..."
+            logger.info(msg)
+            await self.controller.push_agui_log(msg, "info")
+            
+            # Convert database format to relationship format for embedding
+            # Database has: id, source, target, type, confidence, doc_id, created_at
+            # Embedding format needs: source, target, type
+            relationship_list = [
+                {
+                    "source": rel["source"],
+                    "target": rel["target"],
+                    "type": rel["type"]
+                }
+                for rel in relationships
+            ]
+            
+            # Prepare texts for embedding (same format as EmbeddingService)
+            relationship_texts = [
+                f"{rel['source']} {rel['type']} {rel['target']}"
+                for rel in relationship_list
+            ]
+            
+            # Embed relationships directly (bypass extraction pipeline)
+            embeddings = await self.embedding.embed_batch(relationship_texts, use_long_context=False)
+            
+            # Publish embedded events directly (only QdrantService listens to these)
+            for rel, embedding_vec in zip(relationship_list, embeddings):
+                await self.controller.publish(
+                    events.TOPIC_RELATIONSHIP_EMBEDDED,
+                    {
+                        "doc_id": "restore_session",
+                        "relationship": rel,
+                        "text": f"{rel['source']} {rel['type']} {rel['target']}",
+                        "embedding": embedding_vec,
+                        "dimension": len(embedding_vec),
+                    }
+                )
+            
+            await self.controller.push_agui_log("Relationship re-indexing complete.", "success")
+        else:
+            await self.controller.push_agui_log("No relationships found to re-index.", "warning")
 
     async def clear_session(self):
         """Wipes the database and clears the UI for a new project."""

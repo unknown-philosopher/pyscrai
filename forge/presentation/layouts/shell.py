@@ -9,6 +9,7 @@ from forge.core.service_registry import get_session_manager
 from forge.presentation.renderer import render_schema
 from forge.presentation.controllers.ingest_controller import IngestController
 from forge.presentation.controllers.project_controller import ProjectController
+from forge.presentation.controllers.graph_controller import GraphController
 
 
 def apply_shell_theme(page: ft.Page) -> None:
@@ -48,6 +49,10 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
         if sm:
             return ProjectController(controller, sm, page)
         return None
+    
+    def get_graph_controller():
+        """Lazy initialization of GraphController."""
+        return GraphController(controller, page)
 
     # --- UI primitives ---
     nav_rail = ft.NavigationRail(
@@ -139,24 +144,28 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
                 if nav_id == "ingest":
                     content_container.content = ingest_controller.build_view()
                 elif nav_id == "graph":
-                    content_container.content = ft.Container(
-                        padding=20,
-                        content=ft.Column([
-                            ft.Text("Graph View", size=24, weight=ft.FontWeight.W_700, color=ft.Colors.WHITE),
-                            ft.Divider(color="rgba(255, 255, 255, 0.1)"),
-                            ft.Text("Interactive graph visualization coming soon...", color=ft.Colors.WHITE70),
-                        ])
-                    )
+                    graph_controller = get_graph_controller()
+                    if graph_controller:
+                        content_container.content = graph_controller.build_view()
+                    else:
+                        content_container.content = ft.Container(
+                            padding=20,
+                            content=ft.Column([  # type: ignore[arg-type]
+                                ft.Text("Graph View", size=24, weight=ft.FontWeight.W_700, color=ft.Colors.WHITE),
+                                ft.Divider(color="rgba(255, 255, 255, 0.1)"),  # type: ignore[call-arg]
+                                ft.Text("Loading graph view...", color=ft.Colors.WHITE70),
+                            ])
+                        )
                 elif nav_id == "intel":
                     # Show workspace for intelligence view
                     content_container.content = ft.Container(
                         padding=20,
-                        content=ft.Column([
+                        content=ft.Column([  # type: ignore[arg-type]
                             ft.Row([
                                 ft.Icon(ft.Icons.PSYCHOLOGY, size=32, color=ft.Colors.CYAN_300),
                                 ft.Text("Intelligence Dashboard", size=24, weight=ft.FontWeight.W_700, color=ft.Colors.WHITE),
                             ], spacing=12),
-                            ft.Divider(color="rgba(255, 255, 255, 0.1)"),
+                            ft.Divider(color="rgba(255, 255, 255, 0.1)"),  # type: ignore[call-arg]
                             workspace,
                         ], spacing=12, scroll=ft.ScrollMode.AUTO)
                     )
@@ -224,10 +233,10 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
                                         padding=12,
                                         bgcolor="rgba(255,255,255,0.06)",
                                         border_radius=12,
-                                        content=ft.Column(
+                                        content=ft.Column(  # type: ignore[arg-type]
                                             [
                                                 ft.Text("AG-UI Feed", weight=ft.FontWeight.W_600, color=ft.Colors.WHITE),
-                                                ft.Divider(color="rgba(255,255,255,0.1)"),
+                                                ft.Divider(color="rgba(255,255,255,0.1)"),  # type: ignore[call-arg]
                                                 ag_feed,
                                             ],
                                             spacing=8,

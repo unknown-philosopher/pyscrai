@@ -6,7 +6,7 @@ import asyncio
 import logging
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Any
 
 import flet as ft
 
@@ -17,8 +17,8 @@ try:
     TKINTER_AVAILABLE = True
 except ImportError:
     TKINTER_AVAILABLE = False
-    tk = None
-    filedialog = None
+    tk: Any = None
+    filedialog: Any = None
 
 if TYPE_CHECKING:
     from forge.core.app_controller import AppController
@@ -126,7 +126,7 @@ class ProjectController:
             value=os.getenv("OPENROUTER_MODEL", "anthropic/claude-3-sonnet"),
             border_color="rgba(255,255,255,0.2)",
         )
-        
+
         def on_save_config(e):
             # In a real app, this might update a .env file or internal config state
             # For now, we just log it
@@ -146,8 +146,7 @@ class ProjectController:
                                 "Project Management",
                                 size=24,
                                 weight=ft.FontWeight.W_700,
-                                color=ft.Colors.WHITE,
-                            ),
+                                color=ft.Colors.WHITE),
                         ],
                         spacing=12,
                     ),
@@ -177,6 +176,14 @@ class ProjectController:
                                 bgcolor=ft.Colors.GREEN_700,
                                 color=ft.Colors.WHITE,
                                 tooltip="Save current project to a file",
+                            ),
+                            ft.ElevatedButton(
+                                "New Project",
+                                icon=ft.Icons.CREATE_NEW_FOLDER,
+                                on_click=lambda e: self.new_project(e),
+                                bgcolor=ft.Colors.AMBER_400,
+                                color=ft.Colors.WHITE,
+                                tooltip="Start a new intelligence project",
                             ),
                             ft.ElevatedButton(
                                 "Reset",
@@ -214,3 +221,14 @@ class ProjectController:
                 scroll=ft.ScrollMode.AUTO,
             )
         )
+
+    def new_project(self, e):
+        """Start a new project: clear session and notify user."""
+        # Log and clear current session asynchronously
+        asyncio.create_task(self.app_controller.push_agui_log("Starting new project...", "info"))
+        asyncio.create_task(self.session_manager.clear_session())
+        # Notify the user in the UI (use setattr/getattr to avoid static-type complaints)
+        snack = ft.SnackBar(ft.Text("New project started!"))
+        setattr(self.page, "snack_bar", snack)
+        getattr(self.page, "snack_bar").open = True
+        self.page.update()

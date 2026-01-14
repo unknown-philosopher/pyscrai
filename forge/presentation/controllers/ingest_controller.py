@@ -105,7 +105,7 @@ class IngestController:
                 self.page.update()
         
         process_btn = ft.ElevatedButton(
-            "Process Document",
+            "Process Document",  # type: ignore[arg-type]
             icon=ft.Icons.ROCKET_LAUNCH,
             on_click=lambda e: asyncio.create_task(on_process_click(e)),
             bgcolor=ft.Colors.CYAN_700,
@@ -122,7 +122,7 @@ class IngestController:
             self.page.update()
         
         clear_btn = ft.OutlinedButton(
-            "Clear",
+            "Clear",  # type: ignore[arg-type]
             icon=ft.Icons.CLEAR,
             on_click=on_clear_click,
             width=120,
@@ -155,7 +155,7 @@ class IngestController:
         
         example_buttons = [
             ft.OutlinedButton(
-                ex["title"],
+                ex["title"],  # type: ignore[arg-type]
                 icon=ft.Icons.FILE_COPY,
                 on_click=load_example(ex["text"]),
                 tooltip=ex["text"][:100] + "..."
