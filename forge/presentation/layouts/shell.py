@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
 import flet as ft
 
 from forge.core.app_controller import AppController
+from forge.core.service_registry import get_session_manager
 from forge.presentation.renderer import render_schema
 from forge.presentation.controllers.ingest_controller import IngestController
+from forge.presentation.controllers.project_controller import ProjectController
 
 
 def apply_shell_theme(page: ft.Page) -> None:
@@ -37,6 +39,15 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
 
     # Initialize ingest controller
     ingest_controller = IngestController(controller, page)
+    
+    def get_project_controller():
+        """Lazy initialization of ProjectController when session_manager becomes available."""
+        # Dynamically access the global session_manager (set in background thread)
+        # This allows the UI to access it even if it was None when build_shell() was called
+        sm = get_session_manager()
+        if sm:
+            return ProjectController(controller, sm, page)
+        return None
 
     # --- UI primitives ---
     nav_rail = ft.NavigationRail(
@@ -149,6 +160,18 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
                             workspace,
                         ], spacing=12, scroll=ft.ScrollMode.AUTO)
                     )
+                elif nav_id == "project":
+                    project_controller = get_project_controller()
+                    if project_controller:
+                        content_container.content = project_controller.build_view()
+                    else:
+                        content_container.content = ft.Container(
+                            padding=20,
+                            content=ft.Column([
+                                ft.Text("Session Manager not initialized", color=ft.Colors.AMBER_300, size=16),
+                                ft.Text("Please wait for services to initialize...", color=ft.Colors.WHITE70, size=12),
+                            ])
+                        )
         page.update()
 
     nav_rail.on_change = _on_nav_change  # type: ignore[assignment]

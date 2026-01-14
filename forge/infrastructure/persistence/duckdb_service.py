@@ -4,6 +4,7 @@ Stores entities and relationships for analytics and queries.
 """
 
 import asyncio
+import json
 import duckdb
 from pathlib import Path
 from typing import List, Dict, Any, Optional
@@ -41,6 +42,12 @@ class DuckDBPersistenceService:
         await self.event_bus.subscribe(
             events.TOPIC_GRAPH_UPDATED,
             self.handle_graph_updated
+        )
+        
+        # Subscribe to workspace schema events to auto-save UI artifacts
+        await self.event_bus.subscribe(
+            events.TOPIC_WORKSPACE_SCHEMA,
+            self.handle_workspace_schema
         )
     
     def _create_schema(self):
@@ -90,6 +97,19 @@ class DuckDBPersistenceService:
         """)
         self.conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_relationships_target ON relationships(target)
+        """)
+        
+        # UI Artifacts table for storing workspace schemas
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS ui_artifacts (
+                id VARCHAR PRIMARY KEY,
+                schema TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_ui_artifacts_created ON ui_artifacts(created_at)
         """)
         
         self.conn.commit()
@@ -159,6 +179,76 @@ class DuckDBPersistenceService:
             )
         )
     
+    async def handle_workspace_schema(self, payload: EventPayload):
+        """Persist workspace schema (UI artifact) to DuckDB."""
+        schema = payload.get("schema")
+        if not schema or not self.conn:
+            return
+        
+        # Generate a unique ID for this schema artifact
+        # Use a hash of the schema content or timestamp-based ID
+        import hashlib
+        schema_json = json.dumps(schema, sort_keys=True)
+        artifact_id = hashlib.md5(schema_json.encode()).hexdigest()
+        
+        # Check if this artifact already exists
+        result = self.conn.execute(
+            "SELECT id FROM ui_artifacts WHERE id = ?",
+            (artifact_id,)
+        ).fetchone()
+        
+        if not result:
+            # Insert new artifact
+            self.conn.execute("""
+                INSERT INTO ui_artifacts (id, schema)
+                VALUES (?, ?)
+            """, (artifact_id, schema_json))
+            self.conn.commit()
+    
+    def store_ui_artifact(self, schema: Dict[str, Any]) -> None:
+        """Manually store a UI artifact schema."""
+        if not schema or not self.conn:
+            return
+        
+        import hashlib
+        schema_json = json.dumps(schema, sort_keys=True)
+        artifact_id = hashlib.md5(schema_json.encode()).hexdigest()
+        
+        # Check if this artifact already exists
+        result = self.conn.execute(
+            "SELECT id FROM ui_artifacts WHERE id = ?",
+            (artifact_id,)
+        ).fetchone()
+        
+        if not result:
+            self.conn.execute("""
+                INSERT INTO ui_artifacts (id, schema)
+                VALUES (?, ?)
+            """, (artifact_id, schema_json))
+            self.conn.commit()
+    
+    def get_stored_ui_artifacts(self) -> List[Dict[str, Any]]:
+        """Retrieve all stored UI artifacts."""
+        if not self.conn:
+            return []
+        
+        result = self.conn.execute("""
+            SELECT id, schema, created_at
+            FROM ui_artifacts
+            ORDER BY created_at ASC
+        """).fetchall()
+        
+        artifacts = []
+        for row in result:
+            try:
+                schema_dict = json.loads(row[1])
+                artifacts.append(schema_dict)
+            except json.JSONDecodeError:
+                # Skip malformed JSON
+                continue
+        
+        return artifacts
+    
     def get_entity_count(self) -> int:
         """Get total number of entities in the database."""
         if not self.conn:
@@ -222,21 +312,28 @@ class DuckDBPersistenceService:
         if not self.conn:
             return
         
+        logger = __import__("logging").getLogger(__name__)
         try:
             # Delete relationships first (due to foreign key constraints)
             self.conn.execute("DELETE FROM relationships")
             # Then delete entities
             self.conn.execute("DELETE FROM entities")
-            # Reset sequence
-            self.conn.execute("ALTER SEQUENCE rel_seq RESTART WITH 1")
+            # Delete UI artifacts
+            self.conn.execute("DELETE FROM ui_artifacts")
+            # Note: DuckDB doesn't support ALTER SEQUENCE RESTART yet
+            # The sequence will continue from its current value, which is fine
+            # for our use case since we're using it for relationship IDs
             self.conn.commit()
-            logger = __import__("logging").getLogger(__name__)
-            logger.info("Database cleared: all entities and relationships removed")
+            logger.info("Database cleared: all entities, relationships, and UI artifacts removed")
         except Exception as e:
-            logger = __import__("logging").getLogger(__name__)
             logger.error(f"Error clearing database: {e}")
-            if self.conn:
+            # DuckDB doesn't require explicit rollback for most operations
+            # Only rollback if there's an active transaction
+            try:
                 self.conn.rollback()
+            except Exception:
+                # If rollback fails, just continue - the transaction may not be active
+                pass
     
     def close(self):
         """Close database connection."""

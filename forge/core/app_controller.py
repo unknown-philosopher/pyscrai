@@ -21,6 +21,7 @@ class AppController:
                 {"id": "ingest", "label": "Ingest", "icon": "database"},
                 {"id": "graph", "label": "Graph", "icon": "account_tree"},
                 {"id": "intel", "label": "Intel", "icon": "psychology"},
+                {"id": "project", "label": "Project", "icon": "settings_applications"},
             ]
         )
         self.nav_selected: RxStr = RxStr("ingest")

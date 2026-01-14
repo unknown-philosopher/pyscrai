@@ -6,6 +6,7 @@ import asyncio
 import logging
 import threading
 from pathlib import Path
+from typing import Optional
 
 from dotenv import load_dotenv
 
@@ -27,6 +28,8 @@ from forge.domain.interaction.workflow_service import UserInteractionWorkflowSer
 from forge.infrastructure.export.export_service import ExportService
 from forge.infrastructure.llm.provider_factory import ProviderFactory
 from forge.presentation.renderer import set_event_bus
+from forge.domain.session.session_manager import SessionManager
+from forge.core.service_registry import set_session_manager
 import duckdb
 
 # Load environment variables from .env file in project root
@@ -40,9 +43,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-
 async def init_services(controller: AppController) -> None:
     """Initialize all services asynchronously."""
+    
     # Start the controller (wire event bus subscriptions)
     await controller.start()
     logger.info("AppController started")
@@ -156,6 +159,16 @@ async def init_services(controller: AppController) -> None:
     # Set event bus in renderer for component actions
     set_event_bus(controller.bus)
     logger.info("Event bus set in renderer")
+    
+    # Initialize SessionManager but DO NOT auto-restore
+    session_manager = SessionManager(
+        controller, 
+        persistence_service, 
+        qdrant_service, 
+        embedding_service
+    )
+    set_session_manager(session_manager)
+    logger.info("Session Manager initialized (Ready for manual restore)")
 
 
 def _run_async_init(controller: AppController) -> None:
@@ -196,6 +209,7 @@ def main(page: ft.Page) -> None:
     init_thread.start()
 
     # Build the shell UI immediately
+    # SessionManager will be initialized in background thread and accessed via registry
     shell_view = build_shell(page, controller)
     page.views.append(shell_view)
     # View is already added, no need for route navigation

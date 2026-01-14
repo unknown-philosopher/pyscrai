@@ -1,0 +1,209 @@
+"""Session Manager for saving, loading, and clearing application state."""
+
+from __future__ import annotations
+
+import logging
+import asyncio
+import shutil
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from forge.core import events
+
+if TYPE_CHECKING:
+    from forge.core.app_controller import AppController
+    from forge.infrastructure.persistence.duckdb_service import DuckDBPersistenceService
+    from forge.infrastructure.vector.qdrant_service import QdrantService
+    from forge.infrastructure.embeddings.embedding_service import EmbeddingService
+
+logger = logging.getLogger(__name__)
+
+
+class SessionManager:
+    """Orchestrates loading persisted state into the runtime."""
+
+    def __init__(
+        self,
+        controller: "AppController",
+        persistence_service: "DuckDBPersistenceService",
+        qdrant_service: "QdrantService",
+        embedding_service: "EmbeddingService"
+    ):
+        self.controller = controller
+        self.persistence = persistence_service
+        self.qdrant = qdrant_service
+        self.embedding = embedding_service
+
+    async def restore_session(self):
+        """Reloads UI state and re-indexes vectors from persistent storage."""
+        logger.info("♻️ Restoring session from database...")
+        await self.controller.push_agui_log("♻️ Starting Session Restore...", "info")
+        
+        # 1. Clear current UI first to avoid duplicates
+        self.controller.clear_workspace()
+
+        # 2. Restore UI Visualizations
+        artifacts = self.persistence.get_stored_ui_artifacts()
+        if artifacts:
+            logger.info(f"Loading {len(artifacts)} UI artifacts...")
+            for schema in artifacts:
+                # Emit to AppController to render in Workspace
+                await self.controller.emit_schema(schema)
+            
+            await self.controller.push_agui_log(
+                f"Restored {len(artifacts)} intelligence cards.", "success"
+            )
+        else:
+            await self.controller.push_agui_log("No saved UI artifacts found.", "warning")
+
+        # 3. Re-index Vectors
+        entities = self.persistence.get_all_entities()
+        if entities:
+            msg = f"Re-indexing {len(entities)} entities into Vector Store..."
+            logger.info(msg)
+            await self.controller.push_agui_log(msg, "info")
+            
+            # Batch process re-indexing
+            batch_size = 20
+            for i in range(0, len(entities), batch_size):
+                batch = entities[i : i + batch_size]
+                
+                # We publish extraction events. The EmbeddingService listens to this
+                # and will re-generate embeddings and push to Qdrant.
+                await self.controller.publish(
+                    events.TOPIC_ENTITY_EXTRACTED,
+                    {
+                        "doc_id": "restore_session",
+                        "entities": batch
+                    }
+                )
+                await asyncio.sleep(0.01)
+            
+            await self.controller.push_agui_log("Vector re-indexing complete.", "success")
+        else:
+            await self.controller.push_agui_log("No entities found to re-index.", "warning")
+
+    async def clear_session(self):
+        """Wipes the database and clears the UI for a new project."""
+        logger.info("🗑️ Clearing session...")
+        
+        # 1. Clear UI
+        self.controller.clear_workspace()
+        
+        # 2. Clear Database
+        self.persistence.clear_all_data()
+        
+        # 3. Clear Vector Store (if supported by QdrantService, otherwise restart needed for in-memory)
+        # Assuming QdrantService has a way to reset or we just rely on DB wipe
+        # Re-creating collections in Qdrant is a heavy op, ideally we'd delete points.
+        # For now, we rely on the DB wipe. Future searches won't match if we don't clear vectors,
+        # but semantic deduplication logic will just fail to find matches (safe).
+        
+        await self.controller.push_agui_log("Session and Database Cleared.", "success")
+
+    async def save_project(self, file_path: str) -> None:
+        """Save the current project database to the specified file path."""
+        logger.info(f"💾 Saving project to {file_path}...")
+        await self.controller.push_agui_log(f"Saving project to {file_path}...", "info")
+        
+        try:
+            # Ensure all transactions are committed and WAL is checkpointed
+            if self.persistence.conn:
+                # Force a checkpoint to write WAL data to the main database file
+                try:
+                    self.persistence.conn.execute("CHECKPOINT")
+                except Exception as e:
+                    logger.warning(f"Could not checkpoint database: {e}")
+                
+                # Commit any pending transactions
+                try:
+                    self.persistence.conn.commit()
+                except Exception:
+                    pass
+                
+                # Close the connection to ensure all data is flushed
+                self.persistence.conn.close()
+                self.persistence.conn = None
+            
+            # Copy the database file to the target location
+            db_path = Path(self.persistence.db_path)
+            target_path = Path(file_path)
+            
+            # Ensure target directory exists
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Copy the database file
+            if db_path.exists():
+                shutil.copy2(db_path, target_path)
+                
+                # Also copy WAL file if it exists (for complete backup)
+                wal_path = db_path.with_suffix('.duckdb.wal')
+                if wal_path.exists():
+                    target_wal_path = target_path.with_suffix('.duckdb.wal')
+                    shutil.copy2(wal_path, target_wal_path)
+                
+                logger.info(f"Project saved successfully to {file_path}")
+                await self.controller.push_agui_log(f"Project saved successfully to {file_path}", "success")
+            else:
+                await self.controller.push_agui_log("No database file found to save.", "warning")
+            
+            # Reconnect to the database
+            import duckdb
+            self.persistence.conn = duckdb.connect(self.persistence.db_path)
+                
+        except Exception as e:
+            logger.error(f"Error saving project: {e}")
+            await self.controller.push_agui_log(f"Error saving project: {str(e)}", "error")
+            # Try to reconnect on error
+            try:
+                import duckdb
+                self.persistence.conn = duckdb.connect(self.persistence.db_path)
+            except Exception:
+                pass
+
+    async def open_project(self, file_path: str) -> None:
+        """Open a project database file and restore the session."""
+        logger.info(f"📂 Opening project from {file_path}...")
+        await self.controller.push_agui_log(f"Opening project from {file_path}...", "info")
+        
+        try:
+            source_path = Path(file_path).resolve()
+            if not source_path.exists():
+                await self.controller.push_agui_log(f"Project file not found: {file_path}", "error")
+                return
+            
+            # Check if the source path is the same as the current database path
+            db_path = Path(self.persistence.db_path).resolve()
+            if source_path == db_path:
+                # Same file, just restore the session
+                logger.info("Opening current database, restoring session...")
+                await self.controller.push_agui_log("Opening current database, restoring session...", "info")
+                await self.restore_session()
+                return
+            
+            # Close the current database connection
+            if self.persistence.conn:
+                self.persistence.conn.close()
+            
+            # Copy the selected database file to replace the current one
+            shutil.copy2(source_path, db_path)
+            
+            # Reconnect to the database
+            import duckdb
+            self.persistence.conn = duckdb.connect(str(db_path))
+            
+            logger.info(f"Project opened successfully from {file_path}")
+            await self.controller.push_agui_log(f"Project opened successfully. Restoring session...", "success")
+            
+            # Restore the session from the new database
+            await self.restore_session()
+            
+        except Exception as e:
+            logger.error(f"Error opening project: {e}")
+            await self.controller.push_agui_log(f"Error opening project: {str(e)}", "error")
+            # Try to reconnect on error
+            try:
+                import duckdb
+                self.persistence.conn = duckdb.connect(self.persistence.db_path)
+            except Exception:
+                pass
