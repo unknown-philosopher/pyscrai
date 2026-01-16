@@ -205,34 +205,34 @@ class DeduplicationService:
             return
         
         try:
-            # Update all relationships where entity2 is the source
             self.db_conn.execute("""
                 UPDATE relationships
                 SET source = ?
                 WHERE source = ?
             """, (entity1_id, entity2_id))
             
-            # Update all relationships where entity2 is the target
             self.db_conn.execute("""
                 UPDATE relationships
                 SET target = ?
                 WHERE target = ?
             """, (entity1_id, entity2_id))
             
-            # Delete semantic profile for entity2 (if exists)
-            # DuckDB doesn't support ON DELETE CASCADE, so we must delete manually
-            self.db_conn.execute("""
-                DELETE FROM semantic_profiles
-                WHERE entity_id = ?
-            """, (entity2_id,))
+            try:
+                self.db_conn.execute(
+                    "SELECT 1 FROM information_schema.tables WHERE table_name = 'semantic_profiles'"
+                ).fetchone()
+                self.db_conn.execute("""
+                    DELETE FROM semantic_profiles
+                    WHERE entity_id = ?
+                """, (entity2_id,))
+            except Exception:
+                pass
             
-            # Delete entity2
             self.db_conn.execute("""
                 DELETE FROM entities
                 WHERE id = ?
             """, (entity2_id,))
             
-            # Update entity1's timestamp
             self.db_conn.execute("""
                 UPDATE entities
                 SET updated_at = NOW()
@@ -243,7 +243,6 @@ class DeduplicationService:
             
             logger.info(f"Merged entity {entity2_id} into {entity1_id}")
             
-            # Emit entity merged event
             await self.event_bus.publish(
                 events.TOPIC_ENTITY_MERGED,
                 {
@@ -255,7 +254,10 @@ class DeduplicationService:
         except Exception as e:
             logger.error(f"Error merging entities {entity1_id} and {entity2_id}: {e}")
             if self.db_conn:
-                self.db_conn.rollback()
+                try:
+                    self.db_conn.rollback()
+                except Exception:
+                    pass
     
     async def run_deduplication_pass(self):
         """Manually trigger a deduplication pass."""
