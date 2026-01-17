@@ -1,6 +1,7 @@
 # Temporarily ignore pyscrai_engine for Gemini Context Window
 cuda/
 tkinter_legacy_forge/
+docs/
 
 _workspace
 .github

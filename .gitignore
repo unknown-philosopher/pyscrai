@@ -1,4 +1,5 @@
 # Temporarily ignore pyscrai_engine for Gemini Context Window
+docs
 .github
 .cursor
 world.db
@@ -9,7 +10,7 @@ data/
 *.wal
 data/_deprecated
 tests/ 
-.trae 
+# .trae 
 
 /data/projects/archive
 user_config.json
