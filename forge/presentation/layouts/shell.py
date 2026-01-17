@@ -12,14 +12,14 @@ from forge.presentation.controllers.dashboard_controller import DashboardControl
 
 
 def apply_shell_theme(page: ft.Page) -> None:
-    """Apply a dark, high-contrast baseline theme."""
+    """Apply a dark, high-contrast baseline theme with improved readability."""
     page.theme = ft.Theme(
         font_family="Space Grotesk",
         color_scheme_seed="#48b0f7",
-        visual_density=ft.VisualDensity.COMPACT,
+        visual_density=ft.VisualDensity.COMFORTABLE,
         use_material3=True,
     )
-    page.bgcolor = ft.Colors.BLACK
+    page.bgcolor = "#000000"  # Pure black
     page.padding = 0
 
 
@@ -43,15 +43,17 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
     # --- UI primitives ---
     nav_rail = ft.NavigationRail(
         label_type=ft.NavigationRailLabelType.ALL,
-        bgcolor="#080b31",  # Dark blue accent
-        indicator_color=ft.Colors.BLUE_400,
+        bgcolor="#0a0d1f",  # Refined dark blue
+        indicator_color="#48b0f7",  # Cyan accent
+        selected_label_text_style=ft.TextStyle(color="#E8F1F8"),  # Light text
+        unselected_label_text_style=ft.TextStyle(color="#8A9BA8"),  # Muted text
         min_width=80,
         min_extended_width=180,
         destinations=_nav_destinations(controller.nav_items.value),
         selected_index=0,
     )
 
-    status_text = ft.Text(controller.status_text.value, color=ft.Colors.WHITE70)
+    status_text = ft.Text(controller.status_text.value, color="#B8C5D0", size=12)
 
     # AG-UI Feed List
     ag_feed = ft.ListView(spacing=8, auto_scroll=True)
@@ -64,7 +66,7 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
 
     # Intelligence Workspace (Scrollable)
     workspace = ft.Column(
-        controls=[ft.Text("Awaiting Intel", color=ft.Colors.WHITE70)],
+        controls=[ft.Text("Awaiting Intel", color="#8A9BA8", size=14, italic=True)],
         scroll=ft.ScrollMode.AUTO,
         spacing=12,
     )
@@ -81,11 +83,25 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
         page.update()
 
     def _sync_feed() -> None:
+        # Color map for log levels
+        level_colors = {
+            "INFO": "#48b0f7",      # Cyan
+            "SUCCESS": "#4ECDC4",   # Teal
+            "WARNING": "#FFD93D",   # Yellow
+            "ERROR": "#FF6B6B",     # Red
+        }
+        
         ag_feed.controls = [
             ft.Row(
                 [
-                    ft.Text(entry.get("level", "info").upper(), color=ft.Colors.AMBER_200, size=10, width=40),
-                    ft.Text(entry.get("message", ""), color=ft.Colors.WHITE, size=12, expand=True),
+                    ft.Text(
+                        entry.get("level", "info").upper(), 
+                        color=level_colors.get(entry.get("level", "info").upper(), "#8A9BA8"), 
+                        size=10, 
+                        width=60,
+                        weight=ft.FontWeight.W_600
+                    ),
+                    ft.Text(entry.get("message", ""), color="#E8F1F8", size=12, expand=True),
                 ],
                 alignment=ft.MainAxisAlignment.START,
                 vertical_alignment=ft.CrossAxisAlignment.START,
@@ -101,7 +117,7 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
 
     def _sync_workspace() -> None:
         if not controller.workspace_schemas.value:
-            workspace.controls = [ft.Text("Awaiting Intel", color=ft.Colors.WHITE70)]
+            workspace.controls = [ft.Text("Awaiting Intel", color="#8A9BA8", size=14, italic=True)]
         else:
             # Use the AG-UI renderer to render schemas
             rendered_components: List[ft.Control] = []
@@ -113,12 +129,14 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
                     # Fallback to error display if rendering fails
                     rendered_components.append(
                         ft.Container(
-                            bgcolor="rgba(255,0,0,0.1)",
+                            bgcolor="rgba(255,59,48,0.1)",
                             padding=12,
                             border_radius=8,
+                            border=ft.border.all(1, "#FF6B6B"),
                             content=ft.Text(
                                 f"Render error: {str(e)}",
-                                color=ft.Colors.RED_300,
+                                color="#FF6B6B",
+                                size=12,
                             ),
                         )
                     )
@@ -145,12 +163,12 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
                         padding=20,
                         content=ft.Column([
                             ft.Row([
-                                ft.Icon(ft.Icons.PSYCHOLOGY, size=32, color=ft.Colors.CYAN_300),
-                                ft.Text("Intelligence Dashboard", size=24, weight=ft.FontWeight.W_700, color=ft.Colors.WHITE),
+                                ft.Icon(ft.Icons.PSYCHOLOGY, size=32, color="#48b0f7"),
+                                ft.Text("Intelligence Dashboard", size=24, weight=ft.FontWeight.W_700, color="#E8F1F8"),
                             ], spacing=12),
-                            ft.Divider(color="rgba(255, 255, 255, 0.1)"),
+                            ft.Divider(color="rgba(255, 255, 255, 0.12)", height=1),
                             workspace,
-                        ], spacing=12, scroll=ft.ScrollMode.AUTO)
+                        ], spacing=16, scroll=ft.ScrollMode.AUTO)
                     )
         page.update()
 
@@ -167,20 +185,26 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
     # --- Collapsible Panel Definition ---
     ag_panel_container = ft.Container(
         width=300, # Fixed width when open
-        padding=12,
-        bgcolor="rgba(255,255,255,0.06)",
+        padding=14,
+        bgcolor="rgba(255,255,255,0.04)",
         border_radius=12,
+        border=ft.border.all(1, "rgba(255,255,255,0.08)"),
         animate_opacity=300, # Fade effect
         content=ft.Column(
             [
                 ft.Row([
-                    ft.Text("AG-UI Feed", weight=ft.FontWeight.W_600, color=ft.Colors.WHITE),
-                    ft.IconButton(ft.Icons.CLOSE, icon_size=16, on_click=lambda e: controller.toggle_agui())
+                    ft.Text("AG-UI Feed", weight=ft.FontWeight.W_600, color="#E8F1F8", size=14),
+                    ft.IconButton(
+                        ft.Icons.CLOSE, 
+                        icon_size=18, 
+                        icon_color="#8A9BA8",
+                        on_click=lambda e: controller.toggle_agui()
+                    )
                 ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-                ft.Divider(color="rgba(255,255,255,0.1)"),
+                ft.Divider(color="rgba(255, 255, 255, 0.12)", height=1),
                 ag_feed,
             ],
-            spacing=8,
+            spacing=10,
         ),
     )
 
@@ -190,36 +214,33 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
         gradient=ft.LinearGradient(
             begin=ft.Alignment.TOP_LEFT,
             end=ft.Alignment.BOTTOM_RIGHT,
-            colors=["#0b1224", "#0a0f1c", "#05080f"],
+            colors=["#0d1528", "#0a0f1c", "#060a12"],
         ),
         content=ft.Row(
             [
                 nav_rail,
-                ft.VerticalDivider(width=1, color="rgba(255,255,255,0.1)"),
+                ft.VerticalDivider(width=1, color="rgba(255,255,255,0.12)"),
                 ft.Container(
                     expand=True,
-                    padding=16,
+                    padding=ft.padding.only(left=18, right=18, top=10, bottom=18),
                     content=ft.Column(
                         [
-                            # Header Bar
+                            # Header Bar (minimal, just for AG-UI toggle)
                             ft.Row(
                                 [
-                                    ft.Row([
-                                        ft.Text("PyScrAI Forge", size=18, weight=ft.FontWeight.W_700, color=ft.Colors.WHITE),
-                                        status_text,
-                                    ], spacing=20),
+                                    ft.Container(expand=True),  # Spacer
                                     
                                     # Toggle Button for AG-UI
                                     ft.IconButton(
                                         icon=ft.Icons.VIEW_SIDEBAR,
                                         tooltip="Toggle AG-UI Feed",
-                                        icon_color=ft.Colors.CYAN_200,
+                                        icon_color="#48b0f7",
                                         on_click=lambda e: controller.toggle_agui()
                                     )
                                 ],
                                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                height=36,  # Slightly taller for better clickability
                             ),
-                            ft.Container(height=8),
                             
                             # Content Area + Right Panel
                             ft.Row(
@@ -228,18 +249,19 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
                                         expand=True, # Takes remaining space
                                         content=content_container,
                                         padding=0,
-                                        bgcolor="rgba(255,255,255,0.04)",
+                                        bgcolor="rgba(255,255,255,0.025)",
                                         border_radius=12,
+                                        border=ft.border.all(1, "rgba(255,255,255,0.06)"),
                                     ),
                                     
                                     # The collapsible panel
                                     ag_panel_container, 
                                 ],
                                 expand=True,
-                                spacing=12,
+                                spacing=14,
                             ),
                         ],
-                        spacing=12,
+                        spacing=0,
                     ),
                 ),
             ],

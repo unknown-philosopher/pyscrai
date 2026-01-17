@@ -285,6 +285,13 @@ if __name__ == "__main__":
     if os.getenv("FLET_WEB_MODE") == "true":
         port = int(os.getenv("FLET_PORT", "8550"))
         logger.info(f"Starting Flet app in WEB mode on port {port} (for testing)")
+        
+        # DETERMINE RENDERER: Default to "html" for testing unless overridden
+        # "html" exposes text nodes to DOM, required for Playwright text selectors
+        renderer_env = os.getenv("FLET_WEB_RENDERER", "html").lower()
+        renderer = ft.WebRenderer.AUTO if renderer_env == "auto" else ft.WebRenderer.CANVAS_KIT
+        logger.info(f"Using web renderer: {renderer_env}")
+
         # Try FLET_APP_WEB first (no browser window), fall back to WEB_BROWSER if needed
         # In WSL2, we can suppress browser by unsetting DISPLAY if needed
         view_mode = ft.AppView.FLET_APP_WEB
@@ -292,7 +299,14 @@ if __name__ == "__main__":
         # Otherwise WEB_BROWSER will open a browser window (but Playwright can still connect)
         if os.getenv("FLET_FORCE_WEB_BROWSER") == "true":
             view_mode = ft.AppView.WEB_BROWSER
-        ft.run(main, view=view_mode, port=port, host="127.0.0.1")
+        
+        ft.run(
+            main, 
+            view=view_mode, 
+            port=port, 
+            host="127.0.0.1",
+            web_renderer=renderer  # <--- CRITICAL FIX
+        )
     else:
         logger.info("Starting Flet app in DESKTOP mode")
         ft.run(main, view=ft.AppView.FLET_APP)

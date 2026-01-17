@@ -23,12 +23,13 @@ from forge.core.service_registry import get_session_manager
 # Optional Tkinter for file dialogs
 try:
     import tkinter as tk
-    from tkinter import filedialog
+    from tkinter import filedialog, simpledialog
     TKINTER_AVAILABLE = True
 except ImportError:
     TKINTER_AVAILABLE = False
     tk: Any = None
     filedialog: Any = None
+    simpledialog: Any = None
 
 if TYPE_CHECKING:
     from forge.core.app_controller import AppController
@@ -57,40 +58,64 @@ class DashboardController:
         self._graph_html_path: Optional[Path] = None
         self._http_server: Optional[HTTPServer] = None
         self._http_server_thread: Optional[threading.Thread] = None
+        
+        # Selected file for processing
+        self._selected_file: Optional[Path] = None
 
     def build_view(self) -> ft.Control:
         """Build the unified dashboard view."""
         
-        # --- Section 1: Project Management (Top Bar) ---
-        project_section = self._build_project_controls()
+        # --- Section 1: Project Management Buttons (without header) ---
+        project_buttons = self._build_project_buttons()
         
-        # --- Section 2: Document Ingest (Left/Main Area) ---
-        ingest_section = self._build_ingest_panel()
+        # --- Section 2: Analyze Data Button (renamed from Select Data) ---
+        analyze_data_button = self._build_analyze_data_button()
         
         # --- Section 3: Graph View (Right/Side Area) ---
         graph_section = self._build_graph_panel()
 
         # Layout Assembly
         return ft.Container(
-            padding=20,
+            padding=ft.padding.only(left=20, right=20, top=16, bottom=16),
+            expand=True,
             content=ft.Column(
                 [
-                    # Row 1: Project Header & Controls
-                    project_section,
-                    ft.Divider(color="rgba(255, 255, 255, 0.1)", height=20),
+                    # Row 1: PyScrAI Header
+                    ft.Row([
+                        ft.Icon(ft.Icons.DASHBOARD, color="#48b0f7", size=26),
+                        ft.Text("PyScrAI", size=22, weight=ft.FontWeight.W_700, color="#E8F1F8"),
+                    ], spacing=12),
                     
-                    # Row 2: Main Content Area
+                    # Row 2: Divider beneath header
+                    ft.Divider(color="rgba(255, 255, 255, 0.12)", height=14),
+                    
+                    # Row 3: Main Content Area
                     ft.Row(
                         [
-                            # Left Column: Ingest (2/3 width)
+                            # Left Column: Project Management + Buttons + Analyze Data
                             ft.Container(
                                 expand=2,
-                                content=ingest_section,
+                                alignment=ft.Alignment(-1.0, -1.0),
+                                content=ft.Column(
+                                    [
+                                        # Project Management header (no icon)
+                                        ft.Text("Project Management", size=16, weight=ft.FontWeight.W_600, color="#B8C5D0"),
+                                        ft.Container(height=14),
+                                        
+                                        # Project buttons (New, Open, Save)
+                                        project_buttons,
+                                        ft.Container(height=18),
+                                        
+                                        # Analyze Data button
+                                        analyze_data_button,
+                                    ],
+                                    spacing=0,
+                                ),
                             ),
                             
-                            ft.VerticalDivider(width=1, color="rgba(255, 255, 255, 0.1)"),
+                            ft.VerticalDivider(width=1, color="rgba(255, 255, 255, 0.12)"),
                             
-                            # Right Column: Graph & Stats (1/3 width)
+                            # Right Column: Graph & Stats
                             ft.Container(
                                 expand=1,
                                 content=graph_section,
@@ -101,9 +126,9 @@ class DashboardController:
                         vertical_alignment=ft.CrossAxisAlignment.START,
                     ),
                 ],
-                spacing=10,
-                expand=True,
+                spacing=8,
                 scroll=ft.ScrollMode.AUTO,
+                alignment=ft.MainAxisAlignment.START,
             )
         )
 
@@ -111,7 +136,65 @@ class DashboardController:
     # PROJECT MANAGEMENT LOGIC
     # =========================================================================
     
-    def _build_project_controls(self) -> ft.Control:
+    def _build_project_buttons(self) -> ft.Control:
+        """Build just the project management buttons (New, Open, Save) without header."""
+        
+        async def on_new_project(e):
+            """Open dialog to create a new project."""
+            if not TKINTER_AVAILABLE:
+                await self.app_controller.push_agui_log("Tkinter required for file dialogs", "error")
+                return
+            
+            # Get project name
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes('-topmost', True)
+            
+            # Simple dialog for project name
+            project_name = simpledialog.askstring(
+                "New Project",
+                "Enter project name:",
+                parent=root
+            )
+            root.destroy()
+            
+            if not project_name:
+                return
+            
+            # Get storage directory (default: /data/projects)
+            project_root = Path(__file__).parent.parent.parent.parent
+            default_dir = project_root / "data" / "projects"
+            default_dir.mkdir(parents=True, exist_ok=True)
+            
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes('-topmost', True)
+            storage_dir = filedialog.askdirectory(
+                title="Select Project Storage Directory",
+                initialdir=str(default_dir)
+            )
+            root.destroy()
+            
+            if not storage_dir:
+                return
+            
+            # Create project directory and database file
+            project_dir = Path(storage_dir) / project_name
+            project_dir.mkdir(parents=True, exist_ok=True)
+            db_path = project_dir / f"{project_name}.duckdb"
+            
+            # Initialize new DuckDB database
+            import duckdb
+            conn = duckdb.connect(str(db_path))
+            # Let the persistence service create schema when opened
+            conn.close()
+            
+            await self.app_controller.push_agui_log(f"Created new project: {project_name}", "success")
+            
+            # Open the new project
+            sm = get_session_manager()
+            if sm:
+                await sm.open_project(str(db_path))
         
         async def on_save(e):
             sm = get_session_manager()
@@ -144,9 +227,131 @@ class DashboardController:
             if path:
                 await sm.open_project(path)
 
-        async def on_reset(e):
+        return ft.Row(
+            [
+                ft.OutlinedButton(
+                    "New",
+                    icon=ft.Icons.ADD,
+                    icon_color="#B8C5D0",
+                    tooltip="Create New Project",
+                    style=ft.ButtonStyle(
+                        color="#E8F1F8",
+                    ),
+                    on_click=lambda e: asyncio.create_task(on_new_project(e))
+                ),
+                ft.OutlinedButton(
+                    "Open",
+                    icon=ft.Icons.FOLDER_OPEN,
+                    icon_color="#B8C5D0",
+                    tooltip="Open Project",
+                    style=ft.ButtonStyle(
+                        color="#E8F1F8",
+                    ),
+                    on_click=lambda e: asyncio.create_task(on_open(e))
+                ),
+                ft.OutlinedButton(
+                    "Save",
+                    icon=ft.Icons.SAVE,
+                    icon_color="#B8C5D0",
+                    tooltip="Save Project",
+                    style=ft.ButtonStyle(
+                        color="#E8F1F8",
+                    ),
+                    on_click=lambda e: asyncio.create_task(on_save(e))
+                ),
+            ],
+            spacing=8,
+        )
+    
+    def _build_project_controls(self) -> ft.Control:
+        
+        async def on_new_project(e):
+            """Open dialog to create a new project."""
+            if not TKINTER_AVAILABLE:
+                await self.app_controller.push_agui_log("Tkinter required for file dialogs", "error")
+                return
+            
+            # Get project name
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes('-topmost', True)
+            
+            # Simple dialog for project name
+            project_name = simpledialog.askstring(
+                "New Project",
+                "Enter project name:",
+                parent=root
+            )
+            root.destroy()
+            
+            if not project_name:
+                return
+            
+            # Get storage directory (default: /data/projects)
+            project_root = Path(__file__).parent.parent.parent.parent
+            default_dir = project_root / "data" / "projects"
+            default_dir.mkdir(parents=True, exist_ok=True)
+            
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes('-topmost', True)
+            storage_dir = filedialog.askdirectory(
+                title="Select Project Storage Directory",
+                initialdir=str(default_dir)
+            )
+            root.destroy()
+            
+            if not storage_dir:
+                return
+            
+            # Create project directory and database file
+            project_dir = Path(storage_dir) / project_name
+            project_dir.mkdir(parents=True, exist_ok=True)
+            db_path = project_dir / f"{project_name}.duckdb"
+            
+            # Initialize new DuckDB database
+            import duckdb
+            conn = duckdb.connect(str(db_path))
+            # Let the persistence service create schema when opened
+            conn.close()
+            
+            await self.app_controller.push_agui_log(f"Created new project: {project_name}", "success")
+            
+            # Open the new project
             sm = get_session_manager()
-            if sm: await sm.clear_session()
+            if sm:
+                await sm.open_project(str(db_path))
+        
+        async def on_save(e):
+            sm = get_session_manager()
+            if not sm: return
+            if not TKINTER_AVAILABLE:
+                await self.app_controller.push_agui_log("Tkinter required for file dialogs", "error")
+                return
+                
+            root = tk.Tk(); root.withdraw(); root.attributes('-topmost', True)
+            path = filedialog.asksaveasfilename(
+                title="Save Project", defaultextension=".duckdb",
+                filetypes=[("DuckDB", "*.duckdb")], initialfile="project.duckdb"
+            )
+            root.destroy()
+            
+            if path:
+                await sm.save_project(path)
+
+        async def on_open(e):
+            sm = get_session_manager()
+            if not sm: return
+            if not TKINTER_AVAILABLE: return
+            
+            root = tk.Tk(); root.withdraw(); root.attributes('-topmost', True)
+            path = filedialog.askopenfilename(
+                title="Open Project", filetypes=[("DuckDB", "*.duckdb")]
+            )
+            root.destroy()
+            
+            if path:
+                await sm.open_project(path)
 
         return ft.Container(
             bgcolor="rgba(255,255,255,0.02)",
@@ -156,20 +361,29 @@ class DashboardController:
                 [
                     ft.Row([
                         ft.Icon(ft.Icons.DASHBOARD, color=ft.Colors.CYAN_300, size=20),
-                        ft.Text("Mission Control", size=18, weight=ft.FontWeight.W_500, color=ft.Colors.WHITE70),
+                        ft.Text("Project Management", size=18, weight=ft.FontWeight.W_500, color=ft.Colors.WHITE70),
                     ], spacing=8),
                     
                     ft.Container(expand=True),  # Spacer
                     
                     # Minimalist action buttons
                     ft.OutlinedButton(
+                        "New",
+                        icon=ft.Icons.ADD,
+                        icon_color=ft.Colors.WHITE70,
+                        tooltip="Create New Project",
+                        style=ft.ButtonStyle(
+                            text_style=ft.TextStyle(color=ft.Colors.WHITE70),
+                        ),
+                        on_click=lambda e: asyncio.create_task(on_new_project(e))
+                    ),
+                    ft.OutlinedButton(
                         "Open",
                         icon=ft.Icons.FOLDER_OPEN,
                         icon_color=ft.Colors.WHITE70,
                         tooltip="Open Project",
                         style=ft.ButtonStyle(
-                            color=ft.Colors.WHITE70,
-                            overlay_color=ft.Colors.WHITE10,
+                            text_style=ft.TextStyle(color=ft.Colors.WHITE70),
                         ),
                         on_click=lambda e: asyncio.create_task(on_open(e))
                     ),
@@ -179,21 +393,9 @@ class DashboardController:
                         icon_color=ft.Colors.WHITE70,
                         tooltip="Save Project",
                         style=ft.ButtonStyle(
-                            color=ft.Colors.WHITE70,
-                            overlay_color=ft.Colors.WHITE10,
+                            text_style=ft.TextStyle(color=ft.Colors.WHITE70),
                         ),
                         on_click=lambda e: asyncio.create_task(on_save(e))
-                    ),
-                    ft.OutlinedButton(
-                        "Reset",
-                        icon=ft.Icons.REFRESH,
-                        icon_color=ft.Colors.WHITE70,
-                        tooltip="Reset Session",
-                        style=ft.ButtonStyle(
-                            color=ft.Colors.WHITE70,
-                            overlay_color=ft.Colors.WHITE10,
-                        ),
-                        on_click=lambda e: asyncio.create_task(on_reset(e))
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -202,76 +404,305 @@ class DashboardController:
         )
 
     # =========================================================================
-    # INGEST LOGIC
+    # ANALYZE DATA BUTTON (formerly Select Data)
     # =========================================================================
 
-    def _build_ingest_panel(self) -> ft.Control:
-        doc_input = ft.TextField(
-            label="Input Document",
-            hint_text="Paste text here to begin extraction...",
-            multiline=True,
-            min_lines=15,
-            expand=True,
-            bgcolor="rgba(0,0,0,0.2)",
-            border_color="rgba(100, 200, 255, 0.2)",
-            text_size=13,
+    def _build_analyze_data_button(self) -> ft.Control:
+        """Build the Analyze Data button (renamed from Select Data) with file selection and processing."""
+        # Selected file display
+        selected_file_text = ft.Text(
+            "No file selected",
+            size=12,
+            color="#8A9BA8",
+            weight=ft.FontWeight.W_400,
+            italic=True
         )
         
-        status_text = ft.Text("Ready", size=11, color=ft.Colors.WHITE38, weight=ft.FontWeight.W_400)
+        def _read_file_content(file_path: Path) -> str:
+            """Read content from supported file formats."""
+            suffix = file_path.suffix.lower()
+            
+            if suffix == '.txt':
+                return file_path.read_text(encoding='utf-8')
+            elif suffix == '.pdf':
+                try:
+                    from pypdf import PdfReader
+                    reader = PdfReader(file_path)
+                    text = ""
+                    for page in reader.pages:
+                        text += page.extract_text() + "\n"
+                    return text
+                except ImportError:
+                    logger.error("pypdf not available for PDF reading")
+                    return ""
+                except Exception as e:
+                    logger.error(f"Error reading PDF: {e}")
+                    return ""
+            else:
+                # Try to read as text for other formats
+                try:
+                    return file_path.read_text(encoding='utf-8')
+                except Exception as e:
+                    logger.error(f"Error reading file {file_path}: {e}")
+                    return ""
+        
+        async def on_analyze_data(e):
+            """Open file picker to select a data file, then process it."""
+            if not TKINTER_AVAILABLE:
+                await self.app_controller.push_agui_log("Tkinter required for file dialogs", "error")
+                return
+            
+            project_root = Path(__file__).parent.parent.parent.parent
+            default_dir = project_root / "data"
+            default_dir.mkdir(parents=True, exist_ok=True)
+            
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes('-topmost', True)
+            
+            # Support multiple formats: .txt and .pdf
+            file_path = filedialog.askopenfilename(
+                title="Select Data File",
+                initialdir=str(default_dir),
+                filetypes=[
+                    ("Text files", "*.txt"),
+                    ("PDF files", "*.pdf"),
+                    ("All supported", "*.txt *.pdf"),
+                    ("All files", "*.*")
+                ]
+            )
+            root.destroy()
+            
+            if not file_path:
+                return
+            
+            self._selected_file = Path(file_path)
+            selected_file_text.value = f"Selected: {self._selected_file.name}"
+            selected_file_text.color = "#B8C5D0"
+            selected_file_text.italic = False
+            self.page.update()
+            await self.app_controller.push_agui_log(f"Selected file: {self._selected_file.name}", "info")
+            
+            # Automatically process the selected file
+            self._doc_counter += 1
+            doc_id = f"doc_{self._doc_counter:04d}"
+            
+            selected_file_text.value = f"Processing {self._selected_file.name}..."
+            selected_file_text.color = "#48b0f7"
+            self.page.update()
+            
+            try:
+                # Read file content
+                text = _read_file_content(self._selected_file)
+                if not text:
+                    await self.app_controller.push_agui_log(f"Could not read content from {self._selected_file.name}", "error")
+                    selected_file_text.value = "No file selected"
+                    selected_file_text.color = "#8A9BA8"
+                    selected_file_text.italic = True
+                    self.page.update()
+                    return
+                
+                # Publish ingestion event
+                await self.app_controller.publish(
+                    events.TOPIC_DATA_INGESTED,
+                    events.create_data_ingested_event(doc_id, text.strip())
+                )
+                
+                # Reset selection after processing
+                processed_filename = self._selected_file.name
+                self._selected_file = None
+                selected_file_text.value = "No file selected"
+                selected_file_text.color = "#8A9BA8"
+                selected_file_text.italic = True
+                await self.app_controller.push_agui_log(f"Processed {doc_id} from {processed_filename}", "success")
+                self.page.update()
+                
+            except Exception as ex:
+                logger.error(f"Error processing file: {ex}", exc_info=True)
+                await self.app_controller.push_agui_log(f"Error processing file: {str(ex)}", "error")
+                selected_file_text.value = "No file selected"
+                selected_file_text.color = "#8A9BA8"
+                selected_file_text.italic = True
+                self.page.update()
 
+        return ft.Column(
+            [
+                ft.OutlinedButton(
+                    "Analyze Data",
+                    icon=ft.Icons.ANALYTICS,
+                    icon_color="#B8C5D0",
+                    tooltip="Select and analyze a data file (.txt, .pdf)",
+                    style=ft.ButtonStyle(
+                        color="#E8F1F8",
+                    ),
+                    expand=True,
+                    on_click=lambda e: asyncio.create_task(on_analyze_data(e))
+                ),
+                ft.Container(height=10),
+                selected_file_text,
+            ],
+            spacing=0,
+        )
+
+    def _build_ingest_panel(self) -> ft.Control:
+        # Selected file display and Process button (will be created in async functions)
+        selected_file_text = ft.Text(
+            "No file selected",
+            size=12,
+            color=ft.Colors.WHITE54,
+            weight=ft.FontWeight.W_400
+        )
+        
+        process_button = ft.OutlinedButton(
+            "Process",
+            icon=ft.Icons.PLAY_ARROW,
+            icon_color=ft.Colors.CYAN_300,
+            tooltip="Process selected file and extract intelligence",
+            style=ft.ButtonStyle(
+                text_style=ft.TextStyle(color=ft.Colors.CYAN_300),
+            ),
+            disabled=True,  # Disabled until file is selected
+            on_click=lambda e: asyncio.create_task(on_process(e))
+        )
+        
+        def _read_file_content(file_path: Path) -> str:
+            """Read content from supported file formats."""
+            suffix = file_path.suffix.lower()
+            
+            if suffix == '.txt':
+                return file_path.read_text(encoding='utf-8')
+            elif suffix == '.pdf':
+                try:
+                    from pypdf import PdfReader
+                    reader = PdfReader(file_path)
+                    text = ""
+                    for page in reader.pages:
+                        text += page.extract_text() + "\n"
+                    return text
+                except ImportError:
+                    logger.error("pypdf not available for PDF reading")
+                    return ""
+                except Exception as e:
+                    logger.error(f"Error reading PDF: {e}")
+                    return ""
+            else:
+                # Try to read as text for other formats
+                try:
+                    return file_path.read_text(encoding='utf-8')
+                except Exception as e:
+                    logger.error(f"Error reading file {file_path}: {e}")
+                    return ""
+        
+        async def on_select_data(e):
+            """Open file picker to select a data file."""
+            if not TKINTER_AVAILABLE:
+                await self.app_controller.push_agui_log("Tkinter required for file dialogs", "error")
+                return
+            
+            project_root = Path(__file__).parent.parent.parent.parent
+            default_dir = project_root / "data"
+            default_dir.mkdir(parents=True, exist_ok=True)
+            
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes('-topmost', True)
+            
+            # Support multiple formats: .txt and .pdf
+            file_path = filedialog.askopenfilename(
+                title="Select Data File",
+                initialdir=str(default_dir),
+                filetypes=[
+                    ("Text files", "*.txt"),
+                    ("PDF files", "*.pdf"),
+                    ("All supported", "*.txt *.pdf"),
+                    ("All files", "*.*")
+                ]
+            )
+            root.destroy()
+            
+            if file_path:
+                self._selected_file = Path(file_path)
+                selected_file_text.value = f"Selected: {self._selected_file.name}"
+                selected_file_text.color = ft.Colors.WHITE70
+                process_button.disabled = False
+                self.page.update()
+                await self.app_controller.push_agui_log(f"Selected file: {self._selected_file.name}", "info")
+        
         async def on_process(e):
-            text = doc_input.value
-            if not text: return
+            if not self._selected_file or not self._selected_file.exists():
+                await self.app_controller.push_agui_log("No file selected", "warning")
+                return
             
             self._doc_counter += 1
             doc_id = f"doc_{self._doc_counter:04d}"
             
-            status_text.value = f"Processing {doc_id}..."
-            status_text.color = ft.Colors.CYAN_300
+            # Disable button during processing
+            process_button.disabled = True
+            selected_file_text.value = f"Processing {self._selected_file.name}..."
+            selected_file_text.color = ft.Colors.CYAN_300
             self.page.update()
             
-            await self.app_controller.publish(
-                events.TOPIC_DATA_INGESTED,
-                events.create_data_ingested_event(doc_id, text.strip())
-            )
-            
-            doc_input.value = ""
-            status_text.value = f"Processed {doc_id}"
-            status_text.color = ft.Colors.WHITE38
-            await self.app_controller.push_agui_log(f"Ingested {doc_id}", "info")
-            self.page.update()
+            try:
+                # Read file content
+                text = _read_file_content(self._selected_file)
+                if not text:
+                    await self.app_controller.push_agui_log(f"Could not read content from {self._selected_file.name}", "error")
+                    process_button.disabled = False
+                    self.page.update()
+                    return
+                
+                # Publish ingestion event
+                await self.app_controller.publish(
+                    events.TOPIC_DATA_INGESTED,
+                    events.create_data_ingested_event(doc_id, text.strip())
+                )
+                
+                # Reset selection after processing
+                processed_filename = self._selected_file.name if self._selected_file else 'file'
+                self._selected_file = None
+                selected_file_text.value = "No file selected"
+                selected_file_text.color = ft.Colors.WHITE54
+                process_button.disabled = True
+                await self.app_controller.push_agui_log(f"Processed {doc_id} from {processed_filename}", "success")
+                self.page.update()
+                
+            except Exception as ex:
+                logger.error(f"Error processing file: {ex}", exc_info=True)
+                await self.app_controller.push_agui_log(f"Error processing file: {str(ex)}", "error")
+                process_button.disabled = False
+                self.page.update()
 
         return ft.Column(
             [
                 ft.Row([
-                    ft.Icon(ft.Icons.DESCRIPTION, size=18, color=ft.Colors.WHITE70),
-                    ft.Text("Document Ingest", size=14, weight=ft.FontWeight.W_500, color=ft.Colors.WHITE70),
+                    ft.Icon(ft.Icons.ANALYTICS, size=18, color=ft.Colors.WHITE70),
+                    ft.Text("Analyze Data", size=14, weight=ft.FontWeight.W_500, color=ft.Colors.WHITE70),
                 ], spacing=8),
                 ft.Container(height=8),
+                
+                # Process button directly under header
                 ft.Container(
-                    content=doc_input,
-                    expand=True,  # Fill vertical space
+                    content=process_button,
+                    padding=0,
                 ),
-                ft.Container(height=12),
-                ft.Row(
-                    [
-                        ft.OutlinedButton(
-                            "Process",
-                            icon=ft.Icons.PLAY_ARROW,
-                            icon_color=ft.Colors.CYAN_300,
-                            tooltip="Process document and extract intelligence",
-                            style=ft.ButtonStyle(
-                                color=ft.Colors.CYAN_300,
-                                overlay_color=ft.Colors.CYAN_900,
-                                side=ft.BorderSide(1, ft.Colors.CYAN_300),
-                            ),
-                            on_click=lambda e: asyncio.create_task(on_process(e))
-                        ),
-                        ft.Container(width=12),
-                        status_text,
-                    ],
-                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                )
+                ft.Container(height=8),
+                
+                # Select Data button
+                ft.OutlinedButton(
+                    "Select Data",
+                    icon=ft.Icons.UPLOAD_FILE,
+                    icon_color=ft.Colors.WHITE70,
+                    tooltip="Select a data file to analyze (.txt, .pdf)",
+                    style=ft.ButtonStyle(
+                        text_style=ft.TextStyle(color=ft.Colors.WHITE70),
+                    ),
+                    expand=True,
+                    on_click=lambda e: asyncio.create_task(on_select_data(e))
+                ),
+                ft.Container(height=8),
+                
+                # Selected file display
+                selected_file_text,
             ],
             expand=True,
             spacing=0
@@ -324,49 +755,49 @@ class DashboardController:
         # Minimalist Stats Cards
         def _stat_card(label, value, icon, color):
             return ft.Container(
-                bgcolor="rgba(255,255,255,0.03)",
-                padding=ft.padding.symmetric(horizontal=12, vertical=10),
-                border_radius=6,
+                bgcolor="rgba(255,255,255,0.025)",
+                padding=ft.padding.symmetric(horizontal=14, vertical=12),
+                border_radius=8,
                 border=ft.border.all(1, "rgba(255,255,255,0.1)"),
                 expand=True,
                 content=ft.Column([
                     ft.Row([
-                        ft.Icon(icon, color=color, size=14),
-                        ft.Text(str(value), size=18, weight=ft.FontWeight.W_600, color=ft.Colors.WHITE),
-                    ], spacing=6, alignment=ft.MainAxisAlignment.START),
-                    ft.Text(label, size=11, color=ft.Colors.WHITE54, weight=ft.FontWeight.W_400)
-                ], spacing=4, horizontal_alignment=ft.CrossAxisAlignment.START)
+                        ft.Icon(icon, color=color, size=16),
+                        ft.Text(str(value), size=20, weight=ft.FontWeight.W_700, color="#E8F1F8"),
+                    ], spacing=8, alignment=ft.MainAxisAlignment.START),
+                    ft.Text(label, size=11, color="#8A9BA8", weight=ft.FontWeight.W_500)
+                ], spacing=6, horizontal_alignment=ft.CrossAxisAlignment.START)
             )
 
         return ft.Column(
             [
                 ft.Row([
-                    ft.Icon(ft.Icons.HUB, size=18, color=ft.Colors.WHITE70),
-                    ft.Text("Knowledge Graph", size=14, weight=ft.FontWeight.W_500, color=ft.Colors.WHITE70),
-                ], spacing=8),
-                ft.Container(height=12),
-                
-                ft.Row([
-                    _stat_card("Entities", e_count, ft.Icons.CIRCLE, ft.Colors.CYAN_300),
-                    ft.Container(width=8),
-                    _stat_card("Relations", r_count, ft.Icons.SHARE, ft.Colors.CYAN_300),
+                    _stat_card("Entities", e_count, ft.Icons.CIRCLE, "#48b0f7"),
+                    ft.Container(width=10),
+                    _stat_card("Relations", r_count, ft.Icons.SHARE, "#4ECDC4"),
                 ], spacing=0),
                 
-                ft.Container(height=16),
+                ft.Container(height=18),
+                
+                # Divider with "Knowledge Graph" header
+                ft.Column([
+                    ft.Text("Knowledge Graph", size=14, weight=ft.FontWeight.W_600, color="#B8C5D0"),
+                    ft.Divider(color="rgba(255, 255, 255, 0.12)", height=1),
+                ], spacing=6),
+                
+                ft.Container(height=10),
                 
                 self._create_layout_dropdown(),
                 
-                ft.Container(height=12),
+                ft.Container(height=14),
                 
                 ft.OutlinedButton(
                     "View Graph",
                     icon=ft.Icons.OPEN_IN_BROWSER,
-                    icon_color=ft.Colors.WHITE70,
+                    icon_color="#B8C5D0",
                     tooltip="Open interactive graph visualization",
                     style=ft.ButtonStyle(
-                        color=ft.Colors.WHITE70,
-                        overlay_color=ft.Colors.WHITE10,
-                        side=ft.BorderSide(1, "rgba(255,255,255,0.2)"),
+                        color="#E8F1F8",
                     ),
                     expand=True,
                     disabled=not has_data,
@@ -390,12 +821,13 @@ class DashboardController:
                 ft.dropdown.Option("force-directed"),
                 ft.dropdown.Option("circular"),
             ],
-            text_size=12, 
-            height=36, 
-            content_padding=ft.padding.symmetric(horizontal=8, vertical=6),
+            text_size=13, 
+            height=40, 
+            content_padding=ft.padding.symmetric(horizontal=10, vertical=8),
             border_color="rgba(255,255,255,0.15)",
             bgcolor="rgba(255,255,255,0.02)",
-            color=ft.Colors.WHITE70,
+            color="#E8F1F8",
+            label_style=ft.TextStyle(color="#B8C5D0", size=12),
         )
         dropdown.on_change = on_layout_change  # type: ignore[assignment]
         return dropdown

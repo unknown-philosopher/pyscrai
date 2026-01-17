@@ -9,6 +9,7 @@ data/
 *.wal
 data/_deprecated
 tests/ 
+.trae 
 
 /data/projects/archive
 user_config.json

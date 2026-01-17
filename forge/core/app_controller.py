@@ -19,9 +19,9 @@ class AppController:
         self.nav_items: RxList[Dict[str, str]] = RxList(
             [
                 # MERGED VIEW: Project + Graph + Ingest
-                {"id": "dashboard", "label": "Dashboard", "icon": "dashboard"},
+                {"id": "dashboard", "label": "", "icon": "dashboard"},
                 # EXISTING VIEW: Intelligence Dashboard
-                {"id": "intel", "label": "Intel", "icon": "psychology"},
+                {"id": "intel", "label": "", "icon": "psychology"},
             ]
         )
         self.nav_selected: RxStr = RxStr("dashboard")
