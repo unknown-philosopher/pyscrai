@@ -184,7 +184,7 @@ def build_shell(page: ft.Page, controller: AppController) -> ft.View:
 
     # --- Collapsible Panel Definition ---
     ag_panel_container = ft.Container(
-        width=300, # Fixed width when open
+        width=350, # Fixed width when open
         padding=14,
         bgcolor="rgba(255,255,255,0.04)",
         border_radius=12,
